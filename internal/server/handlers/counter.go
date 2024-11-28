@@ -2,20 +2,40 @@ package handlers
 
 import (
 	"fmt"
-	"github.com/Bloodlog/metrics/internal/server/storage"
+	"metrics/internal/server/repository"
 	"net/http"
+	"strconv"
+	"strings"
 	"time"
 )
 
-func CounterHandler(memStorage *storage.MemStorage) http.HandlerFunc {
+func CounterHandler(memStorage *repository.MemStorage, debug bool) http.HandlerFunc {
 	return func(response http.ResponseWriter, request *http.Request) {
-		validateURL(response, request)
+		if status := validateRequest(request); status != 0 {
+			response.WriteHeader(status)
+			return
+		}
 
-		memStorage.SetCounter("req", 1)
+		timeStr := time.Now().Format("2006-01-02 15:04:05")
+		parts := strings.Split(request.RequestURI, "/")
+
+		counterValue, err := strconv.ParseInt(parts[4], 10, 64)
+		if err != nil {
+			response.WriteHeader(http.StatusBadRequest)
+			if debug {
+				log := "[" + timeStr + "] " + request.RequestURI + " " + strconv.Itoa(http.StatusOK)
+				fmt.Println(log)
+			}
+			return
+		}
+
+		memStorage.SetCounter("req", uint64(counterValue))
 
 		response.Header().Set("Content-Type", "text/plain; charset=utf-8")
 		response.WriteHeader(http.StatusOK)
-
-		fmt.Printf("%s - Status: %d\n", time.Now().Format(time.RFC3339), http.StatusOK)
+		if debug {
+			log := "[" + timeStr + "] " + request.RequestURI + " " + strconv.Itoa(http.StatusOK)
+			fmt.Println(log)
+		}
 	}
 }

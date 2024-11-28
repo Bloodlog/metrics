@@ -1,22 +1,20 @@
 package router
 
 import (
-	"github.com/Bloodlog/metrics/internal/server/handlers"
-	"github.com/Bloodlog/metrics/internal/server/storage"
-	"log"
+	"metrics/internal/server/handlers"
+	"metrics/internal/server/repository"
 	"net/http"
 )
 
-func Run() {
-	memStorage := storage.NewMemStorage()
-
+func Run(memStorage *repository.MemStorage, debug bool) error {
 	mux := http.NewServeMux()
-	mux.HandleFunc(`/update/gauge/`, handlers.GaugeHandler(memStorage))
-	mux.HandleFunc(`/update/counter/`, handlers.CounterHandler(memStorage))
+	mux.HandleFunc(`/update/gauge/`, handlers.GaugeHandler(memStorage, debug))
+	mux.HandleFunc(`/update/counter/`, handlers.CounterHandler(memStorage, debug))
 	mux.HandleFunc(`/update/`, DefaultHandler)
-	log.Fatal(http.ListenAndServe(`:8080`, mux))
+
+	return http.ListenAndServe(`:8080`, mux)
 }
 
-func DefaultHandler(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusBadRequest)
+func DefaultHandler(response http.ResponseWriter, request *http.Request) {
+	response.WriteHeader(http.StatusBadRequest)
 }
