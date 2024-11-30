@@ -14,7 +14,7 @@ func main() {
 
 func run() error {
 	rep := repository.NewRepository()
-	debug := false
+	debug := true
 
 	return handlers.Handle(rep, debug)
 }
