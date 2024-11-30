@@ -1,8 +1,10 @@
 package router
 
 import (
+	"fmt"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"metrics/internal/server/config"
 	"metrics/internal/server/handlers"
 	"metrics/internal/server/handlers/counter"
 	"metrics/internal/server/handlers/gauge"
@@ -10,12 +12,15 @@ import (
 	"net/http"
 )
 
-func Run(netAddr string, memStorage *repository.MemStorage, debug bool) error {
+func Run(configs *config.Config, memStorage *repository.MemStorage) error {
+	serverAddr := fmt.Sprintf("%s:%d", configs.NetAddress.Host, configs.NetAddress.Port)
+
 	router := chi.NewRouter()
 
-	register(router, memStorage, debug)
+	register(router, memStorage, configs.Debug)
 
-	return http.ListenAndServe(netAddr, router)
+	fmt.Println("Запуск сервера на адресе:", serverAddr)
+	return http.ListenAndServe(serverAddr, router)
 }
 
 func register(r *chi.Mux, memStorage *repository.MemStorage, debug bool) *chi.Mux {

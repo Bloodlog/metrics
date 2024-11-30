@@ -3,6 +3,7 @@ package handlers
 import (
 	"fmt"
 	"github.com/go-resty/resty/v2"
+	"metrics/internal/agent/config"
 	"metrics/internal/agent/repository"
 	"metrics/internal/agent/service"
 	"strings"
@@ -10,7 +11,8 @@ import (
 	"time"
 )
 
-func Handle(serverAddr string, reportInterval int, pollInterval int, repository *repository.Repository, debug bool) error {
+func Handle(configs *config.Config, repository *repository.Repository) error {
+	serverAddr := "http://" + fmt.Sprintf("%s:%d", configs.NetAddress.Host, configs.NetAddress.Port)
 	client := resty.New().SetBaseURL(serverAddr)
 	metricsChan := make(chan []string)
 
@@ -18,13 +20,13 @@ func Handle(serverAddr string, reportInterval int, pollInterval int, repository 
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		getMetrics(metricsChan, repository, pollInterval)
+		getMetrics(metricsChan, repository, configs.PollInterval)
 	}()
 
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		sendMetrics(metricsChan, client, reportInterval, debug)
+		sendMetrics(metricsChan, client, configs.ReportInterval, configs.Debug)
 	}()
 
 	wg.Wait()
@@ -60,7 +62,7 @@ func sendMetrics(metricsChan chan []string, client *resty.Client, reportInterval
 		for _, metricStr := range stringMetrics {
 			parts := strings.Split(metricStr, ":")
 			if len(parts) != 2 {
-				fmt.Println("неверный формат строки метрики:", err)
+				fmt.Println("invalid metric string format:", err)
 				return
 			}
 			err2 := service.SendMetric(client, parts[0], parts[1], debug)
