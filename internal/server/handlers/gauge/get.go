@@ -10,6 +10,7 @@ import (
 func GetGaugeHandler(memStorage *repository.MemStorage) http.HandlerFunc {
 	return func(response http.ResponseWriter, request *http.Request) {
 		metricNameRequest := chi.URLParam(request, "metricName")
+		response.Header().Set("Content-Type", "text/plain; charset=utf-8")
 
 		gauge, err := memStorage.GetGauge(metricNameRequest)
 		if err != nil {
@@ -19,10 +20,8 @@ func GetGaugeHandler(memStorage *repository.MemStorage) http.HandlerFunc {
 
 		_, writeErr := response.Write([]byte(strconv.FormatFloat(gauge, 'g', -1, 64)))
 		if writeErr != nil {
-			http.Error(response, "failed to write response", http.StatusInternalServerError)
+			response.WriteHeader(http.StatusInternalServerError)
+			return
 		}
-
-		response.Header().Set("Content-Type", "text/plain; charset=utf-8")
-		response.WriteHeader(http.StatusOK)
 	}
 }

@@ -10,12 +10,12 @@ import (
 	"net/http"
 )
 
-func Run(memStorage *repository.MemStorage, debug bool) error {
+func Run(netAddr string, memStorage *repository.MemStorage, debug bool) error {
 	router := chi.NewRouter()
 
 	register(router, memStorage, debug)
 
-	return http.ListenAndServe(":8080", router)
+	return http.ListenAndServe(netAddr, router)
 }
 
 func register(r *chi.Mux, memStorage *repository.MemStorage, debug bool) *chi.Mux {

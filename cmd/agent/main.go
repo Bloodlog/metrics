@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"metrics/internal/agent/handlers"
 	"metrics/internal/agent/repository"
@@ -13,8 +14,14 @@ func main() {
 }
 
 func run() error {
+	config, err := parseFlag()
+	if err != nil {
+		return err
+	}
+
 	rep := repository.NewRepository()
 	debug := true
 
-	return handlers.Handle(rep, debug)
+	serverAddr := fmt.Sprintf("%s:%d", config.NetAddress.Host, config.NetAddress.Port)
+	return handlers.Handle(serverAddr, config.ReportInterval, config.PollInterval, rep, debug)
 }

@@ -12,6 +12,8 @@ func UpdateCounterHandler(memStorage *repository.MemStorage) http.HandlerFunc {
 		counterNameRequest := chi.URLParam(request, "counterName")
 		counterValueRequest := chi.URLParam(request, "counterValue")
 
+		response.Header().Set("Content-Type", "text/plain; charset=utf-8")
+
 		counterValue, err := strconv.ParseUint(counterValueRequest, 10, 64)
 		if err != nil {
 			response.WriteHeader(http.StatusBadRequest)
@@ -19,8 +21,5 @@ func UpdateCounterHandler(memStorage *repository.MemStorage) http.HandlerFunc {
 		}
 
 		memStorage.SetCounter(counterNameRequest, counterValue)
-
-		response.Header().Set("Content-Type", "text/plain; charset=utf-8")
-		response.WriteHeader(http.StatusOK)
 	}
 }

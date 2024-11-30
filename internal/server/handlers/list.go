@@ -9,7 +9,6 @@ import (
 func ListHandler(memStorage *repository.MemStorage) http.HandlerFunc {
 	return func(response http.ResponseWriter, request *http.Request) {
 		response.Header().Set("Content-Type", "text/html; charset=utf-8")
-		response.WriteHeader(http.StatusOK)
 
 		_, err := response.Write([]byte("<html><head><title>Metrics List</title></head><body><h1>Metrics</h1><ul>"))
 		if err != nil {
@@ -36,6 +35,7 @@ func ListHandler(memStorage *repository.MemStorage) http.HandlerFunc {
 		_, err = response.Write([]byte("</ul></body></html>"))
 		if err != nil {
 			http.Error(response, "failed to write response", http.StatusInternalServerError)
+			return
 		}
 	}
 }

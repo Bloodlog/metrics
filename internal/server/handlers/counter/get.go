@@ -11,6 +11,8 @@ func GetCounterHandler(memStorage *repository.MemStorage) http.HandlerFunc {
 	return func(response http.ResponseWriter, request *http.Request) {
 		metricNameRequest := chi.URLParam(request, "metricName")
 
+		response.Header().Set("Content-Type", "text/plain; charset=utf-8")
+
 		counter, err := memStorage.GetCounter(metricNameRequest)
 		if err != nil {
 			response.WriteHeader(http.StatusNotFound)
@@ -18,10 +20,8 @@ func GetCounterHandler(memStorage *repository.MemStorage) http.HandlerFunc {
 		}
 		_, writeErr := response.Write([]byte(fmt.Sprintf("%d", counter)))
 		if writeErr != nil {
-			http.Error(response, "failed to write response", http.StatusInternalServerError)
+			response.WriteHeader(http.StatusInternalServerError)
+			return
 		}
-
-		response.Header().Set("Content-Type", "text/plain; charset=utf-8")
-		response.WriteHeader(http.StatusOK)
 	}
 }

@@ -7,12 +7,12 @@ import (
 	"time"
 )
 
-func SendMetric(client *resty.Client, name string, value uint64, debug bool) error {
+func SendMetric(client *resty.Client, name string, value string, debug bool) error {
 	response, err := client.R().
 		SetHeader("Content-Type", "text/plain").
 		SetPathParams(map[string]string{
 			"metricName":  name,
-			"metricValue": strconv.Itoa(int(value)),
+			"metricValue": value,
 		}).
 		Post("http://localhost:8080/update/gauge/{metricName}/{metricValue}")
 	if err != nil {
