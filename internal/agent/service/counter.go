@@ -13,7 +13,7 @@ func SendIncrement(client *resty.Client, counter uint64, debug bool) error {
 		SetPathParams(map[string]string{
 			"counter": strconv.Itoa(int(counter)),
 		}).
-		Post("http://localhost:8080/update/counter/PollCount/{counter}")
+		Post("/update/counter/PollCount/{counter}")
 	if err != nil {
 		return err
 	}

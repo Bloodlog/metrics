@@ -9,13 +9,12 @@ import (
 )
 
 func TestCounterService_SendIncrement(t *testing.T) {
-
 	client := resty.New()
 
 	httpmock.ActivateNonDefault(client.GetClient())
 
 	responder := httpmock.NewStringResponder(http.StatusOK, ``)
-	url := "http://localhost:8080/update/counter/PollCount/42"
+	url := "/update/counter/PollCount/42"
 
 	httpmock.RegisterResponder("POST", url, responder)
 

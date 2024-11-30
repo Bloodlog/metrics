@@ -14,7 +14,7 @@ func SendMetric(client *resty.Client, name string, value string, debug bool) err
 			"metricName":  name,
 			"metricValue": value,
 		}).
-		Post("http://localhost:8080/update/gauge/{metricName}/{metricValue}")
+		Post("/update/gauge/{metricName}/{metricValue}")
 	if err != nil {
 		return err
 	}
