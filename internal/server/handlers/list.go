@@ -1,39 +1,49 @@
 package handlers
 
 import (
-	"fmt"
+	"html/template"
 	"metrics/internal/server/repository"
 	"net/http"
 )
+
+type MetricsData struct {
+	Gauges   map[string]float64
+	Counters map[string]uint64
+}
 
 func ListHandler(memStorage *repository.MemStorage) http.HandlerFunc {
 	return func(response http.ResponseWriter, request *http.Request) {
 		const ErrorText = "failed to write response"
 		response.Header().Set("Content-Type", "text/html; charset=utf-8")
 
-		_, err := response.Write([]byte("<html><head><title>Metrics List</title></head><body><h1>Metrics</h1><ul>"))
+		data := MetricsData{
+			Gauges:   memStorage.Gauges(),
+			Counters: memStorage.Counters(),
+		}
+
+		tmpl, err := template.New("metrics").Parse(`
+			<html>
+				<head><title>Metrics List</title></head>
+				<body>
+					<h1>Metrics</h1>
+					<ul>
+						{{range $name, $value := .Gauges}}
+							<li>{{$name}} (gauge): {{$value}}</li>
+						{{end}}
+						{{range $name, $value := .Counters}}
+							<li>{{$name}} (counter): {{$value}}</li>
+						{{end}}
+					</ul>
+				</body>
+			</html>
+		`)
+
 		if err != nil {
 			http.Error(response, ErrorText, http.StatusInternalServerError)
 			return
 		}
 
-		for name, value := range memStorage.Gauges() {
-			_, err := response.Write([]byte(fmt.Sprintf("<li>%s (gauge): %.6f</li>", name, value)))
-			if err != nil {
-				http.Error(response, ErrorText, http.StatusInternalServerError)
-				return
-			}
-		}
-
-		for name, value := range memStorage.Counters() {
-			_, err := response.Write([]byte(fmt.Sprintf("<li>%s (counter): %d</li>", name, value)))
-			if err != nil {
-				http.Error(response, ErrorText, http.StatusInternalServerError)
-				return
-			}
-		}
-
-		_, err = response.Write([]byte("</ul></body></html>"))
+		err = tmpl.Execute(response, data)
 		if err != nil {
 			http.Error(response, ErrorText, http.StatusInternalServerError)
 			return
