@@ -2,9 +2,10 @@ package service
 
 import (
 	"fmt"
-	"github.com/go-resty/resty/v2"
 	"strconv"
 	"time"
+
+	"github.com/go-resty/resty/v2"
 )
 
 func SendIncrement(client *resty.Client, counter uint64, debug bool) error {

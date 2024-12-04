@@ -1,10 +1,11 @@
 package gauge
 
 import (
-	"github.com/go-chi/chi/v5"
 	"metrics/internal/server/repository"
 	"net/http"
 	"strconv"
+
+	"github.com/go-chi/chi/v5"
 )
 
 func GetGaugeHandler(memStorage *repository.MemStorage) http.HandlerFunc {

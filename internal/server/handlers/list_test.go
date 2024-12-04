@@ -2,11 +2,12 @@ package handlers
 
 import (
 	"fmt"
-	"github.com/go-chi/chi/v5"
 	"net/http"
 	"net/http/httptest"
 	"regexp"
 	"testing"
+
+	"github.com/go-chi/chi/v5"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/stretchr/testify/assert"

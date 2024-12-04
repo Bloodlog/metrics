@@ -2,9 +2,10 @@ package service
 
 import (
 	"fmt"
-	"github.com/go-resty/resty/v2"
 	"strconv"
 	"time"
+
+	"github.com/go-resty/resty/v2"
 )
 
 func SendMetric(client *resty.Client, name string, value string, debug bool) error {

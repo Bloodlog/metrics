@@ -19,7 +19,8 @@ type NetAddress struct {
 }
 
 func ParseFlags() (*Config, error) {
-	address := flag.String("a", "localhost:8080", "HTTP server address in the format host:port (default: localhost:8080)")
+	const DefaultAddress = "localhost:8080"
+	address := flag.String("a", DefaultAddress, "HTTP server address in the format host:port (default: localhost:8080)")
 
 	flag.Parse()
 

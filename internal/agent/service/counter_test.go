@@ -1,11 +1,12 @@
 package service
 
 import (
+	"net/http"
+	"testing"
+
 	"github.com/go-resty/resty/v2"
 	"github.com/jarcoal/httpmock"
 	"github.com/stretchr/testify/assert"
-	"net/http"
-	"testing"
 )
 
 func TestCounterService_SendIncrement(t *testing.T) {

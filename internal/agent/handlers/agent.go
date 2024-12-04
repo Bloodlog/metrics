@@ -2,13 +2,14 @@ package handlers
 
 import (
 	"fmt"
-	"github.com/go-resty/resty/v2"
 	"metrics/internal/agent/config"
 	"metrics/internal/agent/repository"
 	"metrics/internal/agent/service"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/go-resty/resty/v2"
 )
 
 func Handle(configs *config.Config, repository *repository.Repository) error {

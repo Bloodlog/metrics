@@ -1,11 +1,11 @@
 package config
 
 import (
-	"flag"
+	"errors"
 	"fmt"
+	"net/url"
 	"os"
 	"strconv"
-	"strings"
 )
 
 type NetAddress struct {
@@ -20,40 +20,36 @@ type Config struct {
 	Debug          bool
 }
 
-func ParseFlags() (*Config, error) {
-	address := flag.String("a", "localhost:8080", "HTTP server address in the format host:port (default: localhost:8080)")
-	reportIntervalArg := flag.Int("r", 10, "Overrides the metric reporting frequency to the server (default: 10 seconds)")
-	pollIntervalArg := flag.Int("p", 2, "Overrides the metric polling frequency from the runtime package (default: 2 seconds)")
-
-	flag.Parse()
-
-	if len(flag.Args()) > 0 {
-		_, _ = fmt.Fprintf(os.Stderr, "Error: unknown flags detected")
-		os.Exit(1)
+func ParseFlags(flagAddress string, flagReportInterval int, flagPollInterval int, unknownArgs []string) (*Config, error) {
+	if err := validateUnknownArgs(unknownArgs); err != nil {
+		return nil, err
 	}
 
-	parts := strings.Split(*address, ":")
-	if envRunAddr := os.Getenv("ADDRESS"); envRunAddr != "" {
-		parts = strings.Split(envRunAddr, ":")
-	}
-	if len(parts) != 2 {
-		return nil, fmt.Errorf("invalid address format: %s (expected host:port)", *address)
-	}
+	const EnvAddress = "ADDRESS"
+	const EnvReportInterval = "REPORT_INTERVAL"
+	const EnvPoolInterval = "POLL_INTERVAL"
+	envAddress := os.Getenv(EnvAddress)
+	envReportInterval := os.Getenv(EnvReportInterval)
+	envPollInterval := os.Getenv(EnvPoolInterval)
 
-	host := parts[0]
-	port, err := strconv.Atoi(parts[1])
+	finalAddress, err := getFinalAddress(flagAddress, envAddress)
 	if err != nil {
-		return nil, fmt.Errorf("failed to convert port to number: %w", err)
+		return nil, err
 	}
 
-	reportInterval := *reportIntervalArg
-	if envReportInterval := os.Getenv("REPORT_INTERVAL"); envReportInterval != "" {
-		reportInterval, _ = strconv.Atoi(envReportInterval)
+	host, port, err := parseAddress(finalAddress)
+	if err != nil {
+		return nil, err
 	}
 
-	pollInterval := *pollIntervalArg
-	if envPollInterval := os.Getenv("POLL_INTERVAL"); envPollInterval != "" {
-		pollInterval, _ = strconv.Atoi(envPollInterval)
+	reportInterval, err := getInterval(flagReportInterval, envReportInterval)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse REPORT_INTERVAL: %w", err)
+	}
+
+	pollInterval, err := getInterval(flagPollInterval, envPollInterval)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse POLL_INTERVAL: %w", err)
 	}
 
 	return &Config{
@@ -62,4 +58,57 @@ func ParseFlags() (*Config, error) {
 		PollInterval:   pollInterval,
 		Debug:          false,
 	}, nil
+}
+
+func getFinalAddress(flagValue string, envVar string) (string, error) {
+	if envVar != "" {
+		return envVar, nil
+	}
+
+	if flagValue != "" {
+		return flagValue, nil
+	}
+
+	return "", errors.New("no address provided via flag or environment variable")
+}
+
+func parseAddress(address string) (string, int, error) {
+	parsedURL, err := url.Parse(address)
+	if err != nil {
+		return "", 0, fmt.Errorf("failed to parse address: %w", err)
+	}
+
+	host := parsedURL.Hostname()
+	portStr := parsedURL.Port()
+
+	if host == "" || portStr == "" {
+		return "", 0, fmt.Errorf("invalid address format: %s (expected host:port)", address)
+	}
+
+	port, err := strconv.Atoi(portStr)
+	if err != nil {
+		return "", 0, fmt.Errorf("invalid port value: %w", err)
+	}
+
+	return host, port, nil
+}
+
+func getInterval(flagValue int, envVar string) (int, error) {
+	if envVar != "" {
+		interval, err := strconv.Atoi(envVar)
+		if err != nil {
+			return 0, err
+		}
+
+		return interval, nil
+	}
+
+	return flagValue, nil
+}
+
+func validateUnknownArgs(unknownArgs []string) error {
+	if len(unknownArgs) > 0 {
+		return fmt.Errorf("error: unknown flags or arguments detected: %v", unknownArgs)
+	}
+	return nil
 }

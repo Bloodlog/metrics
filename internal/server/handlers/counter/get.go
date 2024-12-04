@@ -2,9 +2,10 @@ package counter
 
 import (
 	"fmt"
-	"github.com/go-chi/chi/v5"
 	"metrics/internal/server/repository"
 	"net/http"
+
+	"github.com/go-chi/chi/v5"
 )
 
 func GetCounterHandler(memStorage *repository.MemStorage) http.HandlerFunc {

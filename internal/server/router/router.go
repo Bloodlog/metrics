@@ -2,14 +2,15 @@ package router
 
 import (
 	"fmt"
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
 	"metrics/internal/server/config"
 	"metrics/internal/server/handlers"
 	"metrics/internal/server/handlers/counter"
 	"metrics/internal/server/handlers/gauge"
 	"metrics/internal/server/repository"
 	"net/http"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 )
 
 func Run(configs *config.Config, memStorage *repository.MemStorage) error {

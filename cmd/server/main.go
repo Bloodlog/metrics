@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"metrics/internal/server/config"
 	"metrics/internal/server/repository"
@@ -16,9 +17,9 @@ func main() {
 func run() error {
 	configs, err := config.ParseFlags()
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to parse flags: %w", err)
 	}
-	memStorage := repository.NewMemStorage()
+	storage := repository.NewMemStorage()
 
-	return router.Run(configs, memStorage)
+	return router.Run(configs, storage)
 }
