@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"regexp"
+	"strconv"
 	"testing"
 
 	"github.com/go-chi/chi/v5"
@@ -60,13 +61,13 @@ func TestListGaugeHandler(t *testing.T) {
 
 			counterNameMatch, _ := regexp.MatchString(counterName, respBody)
 
-			counterValueStr := fmt.Sprintf("%d", counterValue)
+			counterValueStr := strconv.FormatUint(counterValue, 10)
 			counterMatch, _ := regexp.MatchString(counterValueStr, respBody)
 
 			assert.True(t, counterNameMatch, "counter name is not exist on page")
 			assert.True(t, counterMatch, "counter value is not exist on page")
 
-			assert.Equal(t, tc.expectedCode, resp.StatusCode(), "Response code didn't match expected. Route: "+tc.method+" "+srv.URL+tc.path)
+			assert.Equal(t, tc.expectedCode, resp.StatusCode(), "Route: "+tc.method+" "+srv.URL+tc.path)
 		})
 	}
 }

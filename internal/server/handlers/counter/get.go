@@ -19,8 +19,8 @@ func GetCounterHandler(memStorage *repository.MemStorage) http.HandlerFunc {
 			response.WriteHeader(http.StatusNotFound)
 			return
 		}
-		_, writeErr := response.Write([]byte(fmt.Sprintf("%d", counter)))
-		if writeErr != nil {
+		_, err = fmt.Fprintf(response, "%d", counter)
+		if err != nil {
 			response.WriteHeader(http.StatusInternalServerError)
 			return
 		}

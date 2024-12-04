@@ -1,11 +1,10 @@
 package config
 
 import (
-	"flag"
+	"errors"
 	"fmt"
-	"os"
+	"net/url"
 	"strconv"
-	"strings"
 )
 
 type Config struct {
@@ -18,33 +17,63 @@ type NetAddress struct {
 	Port int
 }
 
-func ParseFlags() (*Config, error) {
-	const DefaultAddress = "localhost:8080"
-	address := flag.String("a", DefaultAddress, "HTTP server address in the format host:port (default: localhost:8080)")
-
-	flag.Parse()
-
-	if len(flag.Args()) > 0 {
-		_, _ = fmt.Fprintf(os.Stderr, "Error: unknown flags detected")
-		os.Exit(1)
+func ParseFlags(flagAddress string, unknownArgs []string, envAddress string) (*Config, error) {
+	if err := validateUnknownArgs(unknownArgs); err != nil {
+		return nil, err
 	}
 
-	parts := strings.Split(*address, ":")
-	if envRunAddr := os.Getenv("ADDRESS"); envRunAddr != "" {
-		parts = strings.Split(envRunAddr, ":")
-	}
-	if len(parts) != 2 {
-		return nil, fmt.Errorf("invalid address format: %s (expected host:port)", *address)
-	}
-
-	host := parts[0]
-	port, err := strconv.Atoi(parts[1])
+	finalAddress, err := getFinalAddress(flagAddress, envAddress)
 	if err != nil {
-		return nil, fmt.Errorf("failed to convert port to number: %w", err)
+		return nil, err
+	}
+
+	host, port, err := parseAddress(finalAddress)
+	if err != nil {
+		return nil, err
 	}
 
 	return &Config{
 		NetAddress: NetAddress{Host: host, Port: port},
 		Debug:      false,
 	}, nil
+}
+
+func validateUnknownArgs(unknownArgs []string) error {
+	if len(unknownArgs) > 0 {
+		return fmt.Errorf("error: unknown flags or arguments detected: %v", unknownArgs)
+	}
+	return nil
+}
+
+func getFinalAddress(flagValue string, envVar string) (string, error) {
+	if envVar != "" {
+		return envVar, nil
+	}
+
+	if flagValue != "" {
+		return flagValue, nil
+	}
+
+	return "", errors.New("no address provided via flag or environment variable")
+}
+
+func parseAddress(address string) (string, int, error) {
+	parsedURL, err := url.Parse(address)
+	if err != nil {
+		return "", 0, fmt.Errorf("failed to parse address: %w", err)
+	}
+
+	host := parsedURL.Hostname()
+	portStr := parsedURL.Port()
+
+	if host == "" || portStr == "" {
+		return "", 0, fmt.Errorf("invalid address format: %s (expected host:port)", address)
+	}
+
+	port, err := strconv.Atoi(portStr)
+	if err != nil {
+		return "", 0, fmt.Errorf("invalid port value: %w", err)
+	}
+
+	return host, port, nil
 }

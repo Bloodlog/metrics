@@ -51,7 +51,7 @@ func TestGetCounterHandler(t *testing.T) {
 				t.Fatalf("не удалось преобразовать тело в uint64: %v", err)
 			}
 			assert.Equal(t, tc.expectedBody, bodyUint64)
-			assert.Equal(t, tc.expectedCode, resp.StatusCode(), "Response code didn't match expected. Route: "+tc.method+" "+srv.URL+tc.path)
+			assert.Equal(t, tc.expectedCode, resp.StatusCode(), "Route: "+tc.method+" "+srv.URL+tc.path)
 		})
 	}
 }
@@ -82,7 +82,7 @@ func TestGetCounterFailsHandler(t *testing.T) {
 			resp, err := req.Send()
 			assert.NoError(t, err, "error making HTTP request")
 
-			assert.Equal(t, tc.expectedCode, resp.StatusCode(), "Response code didn't match expected. Route: "+tc.method+" "+srv.URL+tc.path)
+			assert.Equal(t, tc.expectedCode, resp.StatusCode(), "Route: "+tc.method+" "+srv.URL+tc.path)
 		})
 	}
 }

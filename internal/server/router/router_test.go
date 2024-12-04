@@ -39,7 +39,7 @@ func TestRouter(t *testing.T) {
 			resp, err := req.Send()
 			assert.NoError(t, err, "error making HTTP request")
 
-			assert.Equal(t, tc.expectedCode, resp.StatusCode(), "Response code didn't match expected. Route: "+tc.method+" "+srv.URL+tc.path)
+			assert.Equal(t, tc.expectedCode, resp.StatusCode(), "Route: "+tc.method+" "+srv.URL+tc.path)
 		})
 	}
 }

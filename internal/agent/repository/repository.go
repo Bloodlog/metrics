@@ -2,7 +2,6 @@ package repository
 
 import (
 	"runtime"
-	"sync"
 )
 
 type Metric struct {
@@ -11,7 +10,6 @@ type Metric struct {
 }
 
 type Repository struct {
-	mu sync.RWMutex
 }
 
 func NewRepository() *Repository {
@@ -19,13 +17,12 @@ func NewRepository() *Repository {
 }
 
 func (r *Repository) GetMemoryMetrics() []Metric {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
+	const metricsCount = 27
 
 	var memStats runtime.MemStats
 	runtime.ReadMemStats(&memStats)
 
-	metrics := make([]Metric, 27)
+	metrics := make([]Metric, metricsCount)
 
 	metrics[0] = Metric{"Alloc", memStats.Alloc}
 	metrics[1] = Metric{"BuckHashSys", memStats.BuckHashSys}

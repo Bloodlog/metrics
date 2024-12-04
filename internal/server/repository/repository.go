@@ -7,11 +7,6 @@ import (
 
 type MetricType string
 
-const (
-	Gauge   MetricType = "gauge"
-	Counter MetricType = "counter"
-)
-
 type MetricStorage interface {
 	SetGauge(name string, value float64)
 	GetGauge(name string) (float64, error)
@@ -20,13 +15,14 @@ type MetricStorage interface {
 }
 
 type MemStorage struct {
-	mu       sync.RWMutex
-	gauges   map[string]float64 // Хранилище для метрик типа gauge
-	counters map[string]uint64  // Хранилище для метрик типа counter
+	gauges   map[string]float64
+	counters map[string]uint64
+	mu       *sync.RWMutex
 }
 
 func NewMemStorage() *MemStorage {
 	return &MemStorage{
+		mu:       &sync.RWMutex{},
 		gauges:   make(map[string]float64),
 		counters: make(map[string]uint64),
 	}

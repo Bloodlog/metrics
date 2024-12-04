@@ -16,15 +16,11 @@ func SendIncrement(client *resty.Client, counter uint64, debug bool) error {
 		}).
 		Post("/update/counter/PollCount/{counter}")
 	if err != nil {
-		return err
-	}
-
-	if response.IsError() {
-		return err
+		return fmt.Errorf("failed to send POST request: %w", err)
 	}
 
 	if debug {
-		timeStr := time.Now().Format("2006-01-02 15:04:05")
+		timeStr := time.Now().Format(time.DateTime)
 		log := "[" + timeStr + "] " + response.Request.URL + " " + strconv.Itoa(response.StatusCode())
 		fmt.Println(log)
 	}

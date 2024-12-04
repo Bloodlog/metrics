@@ -12,7 +12,7 @@ import (
 	"github.com/go-resty/resty/v2"
 )
 
-func Handle(configs *config.Config, repository *repository.Repository) error {
+func Handle(configs *config.Config, storage *repository.Repository) error {
 	serverAddr := "http://" + fmt.Sprintf("%s:%d", configs.NetAddress.Host, configs.NetAddress.Port)
 	client := resty.New().SetBaseURL(serverAddr)
 	metricsChan := make(chan []string)
@@ -21,13 +21,16 @@ func Handle(configs *config.Config, repository *repository.Repository) error {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		getMetrics(metricsChan, repository, configs.PollInterval)
+		getMetrics(metricsChan, storage, configs.PollInterval)
 	}()
 
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		sendMetrics(metricsChan, client, configs.ReportInterval, configs.Debug)
+		err := sendMetrics(metricsChan, client, configs.ReportInterval, configs.Debug)
+		if err != nil {
+			return
+		}
 	}()
 
 	wg.Wait()
@@ -35,9 +38,9 @@ func Handle(configs *config.Config, repository *repository.Repository) error {
 	return nil
 }
 
-func getMetrics(metricsChan chan []string, repository *repository.Repository, pollInterval int) {
+func getMetrics(metricsChan chan []string, storage *repository.Repository, pollInterval int) {
 	for {
-		metrics := repository.GetMemoryMetrics()
+		metrics := storage.GetMemoryMetrics()
 
 		var stringMetrics []string
 		for _, metric := range metrics {
@@ -49,27 +52,25 @@ func getMetrics(metricsChan chan []string, repository *repository.Repository, po
 	}
 }
 
-func sendMetrics(metricsChan chan []string, client *resty.Client, reportIntervalrepository int, debug bool) {
+func sendMetrics(metricsChan chan []string, client *resty.Client, reportIntervalrepository int, debug bool) error {
+	const numberParts = 2
 	counter := 0
 	for {
 		time.Sleep(time.Duration(reportIntervalrepository) * time.Second)
 		counter++
 		err := service.SendIncrement(client, uint64(counter), debug)
 		if err != nil {
-			fmt.Println("Error sending increment:", err)
-			return
+			return fmt.Errorf("error sending increment: %w", err)
 		}
 		stringMetrics := <-metricsChan
 		for _, metricStr := range stringMetrics {
 			parts := strings.Split(metricStr, ":")
-			if len(parts) != 2 {
-				fmt.Println("invalid metric string format:", err)
-				return
+			if len(parts) != numberParts {
+				return fmt.Errorf("invalid metric string format: %w", err)
 			}
-			err2 := service.SendMetric(client, parts[0], parts[1], debug)
-			if err2 != nil {
-				fmt.Println("Error sending metrics:", err2)
-				return
+			err := service.SendMetric(client, parts[0], parts[1], debug)
+			if err != nil {
+				return fmt.Errorf("error sending metrics: %w", err)
 			}
 		}
 	}

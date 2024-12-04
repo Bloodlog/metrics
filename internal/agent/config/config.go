@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
-	"os"
 	"strconv"
 )
 
@@ -20,17 +19,18 @@ type Config struct {
 	Debug          bool
 }
 
-func ParseFlags(flagAddress string, flagReportInterval int, flagPollInterval int, unknownArgs []string) (*Config, error) {
+func ParseFlags(
+	flagAddress string,
+	flagReportInterval int,
+	flagPollInterval int,
+	unknownArgs []string,
+	envAddress string,
+	envReportInterval string,
+	envPollInterval string,
+) (*Config, error) {
 	if err := validateUnknownArgs(unknownArgs); err != nil {
 		return nil, err
 	}
-
-	const EnvAddress = "ADDRESS"
-	const EnvReportInterval = "REPORT_INTERVAL"
-	const EnvPoolInterval = "POLL_INTERVAL"
-	envAddress := os.Getenv(EnvAddress)
-	envReportInterval := os.Getenv(EnvReportInterval)
-	envPollInterval := os.Getenv(EnvPoolInterval)
 
 	finalAddress, err := getFinalAddress(flagAddress, envAddress)
 	if err != nil {
@@ -97,7 +97,7 @@ func getInterval(flagValue int, envVar string) (int, error) {
 	if envVar != "" {
 		interval, err := strconv.Atoi(envVar)
 		if err != nil {
-			return 0, err
+			return 0, fmt.Errorf("interval value: %w", err)
 		}
 
 		return interval, nil

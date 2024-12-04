@@ -21,10 +21,14 @@ func Run(configs *config.Config, memStorage *repository.MemStorage) error {
 	register(router, memStorage, configs.Debug)
 
 	fmt.Println("Запуск сервера на адресе:", serverAddr)
-	return http.ListenAndServe(serverAddr, router)
+	err := http.ListenAndServe(serverAddr, router)
+	if err != nil {
+		return fmt.Errorf("failed to start server on %s: %w", serverAddr, err)
+	}
+	return nil
 }
 
-func register(r *chi.Mux, memStorage *repository.MemStorage, debug bool) *chi.Mux {
+func register(r *chi.Mux, memStorage *repository.MemStorage, debug bool) {
 	if debug {
 		r.Use(middleware.Logger)
 	}
@@ -42,8 +46,6 @@ func register(r *chi.Mux, memStorage *repository.MemStorage, debug bool) *chi.Mu
 	})
 
 	r.Get("/", handlers.ListHandler(memStorage))
-
-	return r
 }
 
 func validateMetricType(w http.ResponseWriter, r *http.Request) {
