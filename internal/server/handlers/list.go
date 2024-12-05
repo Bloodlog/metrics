@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"html/template"
+	"log"
 	"metrics/internal/server/repository"
 	"net/http"
 )
@@ -39,12 +40,14 @@ func ListHandler(memStorage *repository.MemStorage) http.HandlerFunc {
 		`)
 
 		if err != nil {
+			log.Printf("error parse metrics: %v", err)
 			http.Error(response, ErrorText, http.StatusInternalServerError)
 			return
 		}
 
 		err = tmpl.Execute(response, data)
 		if err != nil {
+			log.Printf("error parse metrics: %v", err)
 			http.Error(response, ErrorText, http.StatusInternalServerError)
 			return
 		}

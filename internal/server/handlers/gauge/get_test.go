@@ -15,14 +15,7 @@ import (
 )
 
 func TestGetGaugeHandler(t *testing.T) {
-	memStorage := repository.NewMemStorage()
 	metricValue := 1234.1234
-	memStorage.SetGauge("metricName", metricValue)
-	r := chi.NewRouter()
-	r.Get("/value/gauge/{metricName}", GetGaugeHandler(memStorage))
-	srv := httptest.NewServer(r)
-	defer srv.Close()
-
 	testCases := []struct {
 		method       string
 		path         string
@@ -34,6 +27,14 @@ func TestGetGaugeHandler(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.method, func(t *testing.T) {
+			memStorage := repository.NewMemStorage()
+			memStorage.SetGauge("metricName", metricValue)
+			r := chi.NewRouter()
+			r.Get("/value/gauge/{metricName}", GetGaugeHandler(memStorage))
+			srv := httptest.NewServer(r)
+			defer srv.Close()
+
+
 			req := resty.New().R()
 			req.Method = tc.method
 			req.URL = srv.URL + tc.path
@@ -53,14 +54,6 @@ func TestGetGaugeHandler(t *testing.T) {
 }
 
 func TestGetGaugeFailHandler(t *testing.T) {
-	memStorage := repository.NewMemStorage()
-	metricValue := 1234.1234
-	memStorage.SetGauge("metricName", metricValue)
-	r := chi.NewRouter()
-	r.Get("/value/gauge/{metricName}", GetGaugeHandler(memStorage))
-	srv := httptest.NewServer(r)
-	defer srv.Close()
-
 	testCases := []struct {
 		method       string
 		path         string
@@ -71,6 +64,14 @@ func TestGetGaugeFailHandler(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.method, func(t *testing.T) {
+			memStorage := repository.NewMemStorage()
+			metricValue := 1234.1234
+			memStorage.SetGauge("metricName", metricValue)
+			r := chi.NewRouter()
+			r.Get("/value/gauge/{metricName}", GetGaugeHandler(memStorage))
+			srv := httptest.NewServer(r)
+			defer srv.Close()
+
 			req := resty.New().R()
 			req.Method = tc.method
 			req.URL = srv.URL + tc.path

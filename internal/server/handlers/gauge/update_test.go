@@ -14,12 +14,6 @@ import (
 )
 
 func TestGaugeHandler(t *testing.T) {
-	memStorage := repository.NewMemStorage()
-	r := chi.NewRouter()
-	r.Post("/update/gauge/{metricName}/{metricValue}", UpdateGaugeHandler(memStorage))
-	srv := httptest.NewServer(r)
-	defer srv.Close()
-
 	testCases := []struct {
 		method       string
 		path         string
@@ -32,6 +26,12 @@ func TestGaugeHandler(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.method, func(t *testing.T) {
+			memStorage := repository.NewMemStorage()
+			r := chi.NewRouter()
+			r.Post("/update/gauge/{metricName}/{metricValue}", UpdateGaugeHandler(memStorage))
+			srv := httptest.NewServer(r)
+			defer srv.Close()
+		
 			req := resty.New().R()
 			req.Method = tc.method
 			req.URL = srv.URL + tc.path

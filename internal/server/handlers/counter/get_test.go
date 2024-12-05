@@ -15,14 +15,8 @@ import (
 )
 
 func TestGetCounterHandler(t *testing.T) {
-	memStorage := repository.NewMemStorage()
 	counterValue := uint64(100)
-	memStorage.SetCounter("PollCount", counterValue)
-	r := chi.NewRouter()
-	r.Get("/value/{metricType}/{metricName}", GetCounterHandler(memStorage))
-	srv := httptest.NewServer(r)
-	defer srv.Close()
-
+	
 	testCases := []struct {
 		method       string
 		path         string
@@ -34,6 +28,13 @@ func TestGetCounterHandler(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.method, func(t *testing.T) {
+			memStorage := repository.NewMemStorage()
+			memStorage.SetCounter("PollCount", counterValue)
+			r := chi.NewRouter()
+			r.Get("/value/{metricType}/{metricName}", GetCounterHandler(memStorage))
+			srv := httptest.NewServer(r)
+			defer srv.Close()
+
 			req := resty.New().R()
 			req.Method = tc.method
 			req.URL = srv.URL + tc.path

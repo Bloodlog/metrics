@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"regexp"
@@ -17,17 +16,7 @@ import (
 )
 
 func TestListGaugeHandler(t *testing.T) {
-	memStorage := repository.NewMemStorage()
-	metricName := "metricName"
 	metricValue := 1234.1234
-	memStorage.SetGauge(metricName, metricValue)
-	counterValue := uint64(100)
-	counterName := "PollCount"
-	memStorage.SetCounter(counterName, counterValue)
-	r := chi.NewRouter()
-	r.Get("/", ListHandler(memStorage))
-	srv := httptest.NewServer(r)
-	defer srv.Close()
 
 	testCases := []struct {
 		method       string
@@ -40,6 +29,17 @@ func TestListGaugeHandler(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.method, func(t *testing.T) {
+			memStorage := repository.NewMemStorage()
+			metricName := "metricName"
+			memStorage.SetGauge(metricName, metricValue)
+			counterValue := uint64(100)
+			counterName := "PollCount"
+			memStorage.SetCounter(counterName, counterValue)
+			r := chi.NewRouter()
+			r.Get("/", ListHandler(memStorage))
+			srv := httptest.NewServer(r)
+			defer srv.Close()
+
 			req := resty.New().R()
 			req.Method = tc.method
 			req.URL = srv.URL + tc.path
@@ -52,12 +52,10 @@ func TestListGaugeHandler(t *testing.T) {
 				t.Fatalf("response body is empty")
 			}
 
-			metricNameMatch, _ := regexp.MatchString(metricName, respBody)
+			metricValueStr := strconv.FormatFloat(metricValue, 'f', -1, 64)
 
-			metricValueStr := fmt.Sprintf("%f", metricValue)
-			numberMatch, _ := regexp.MatchString(metricValueStr, respBody)
-			assert.True(t, metricNameMatch, "metric Name name is not exist on page")
-			assert.True(t, numberMatch, "metric Value is not exist on page")
+			assert.Contains(t, respBody, metricName, "metric Name is not exist on page")
+			assert.Contains(t, respBody, metricValueStr, "metric Value is not exist on page")
 
 			counterNameMatch, _ := regexp.MatchString(counterName, respBody)
 
