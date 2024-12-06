@@ -31,7 +31,7 @@ func TestGaugeHandler(t *testing.T) {
 			r.Post("/update/gauge/{metricName}/{metricValue}", UpdateGaugeHandler(memStorage))
 			srv := httptest.NewServer(r)
 			defer srv.Close()
-		
+
 			req := resty.New().R()
 			req.Method = tc.method
 			req.URL = srv.URL + tc.path

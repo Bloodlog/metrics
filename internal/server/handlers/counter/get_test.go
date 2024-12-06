@@ -16,7 +16,7 @@ import (
 
 func TestGetCounterHandler(t *testing.T) {
 	counterValue := uint64(100)
-	
+
 	testCases := []struct {
 		method       string
 		path         string

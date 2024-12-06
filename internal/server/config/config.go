@@ -1,10 +1,17 @@
 package config
 
 import (
-	"errors"
+	"flag"
 	"fmt"
 	"net/url"
-	"strconv"
+	"os"
+	"strings"
+)
+
+const (
+	DefaultAddress         = "http://localhost:8080"
+	EnvAddress             = "ADDRESS"
+	AddressFlagDescription = "HTTP server address in the format host:port (default: localhost:8080)"
 )
 
 type Config struct {
@@ -14,18 +21,18 @@ type Config struct {
 
 type NetAddress struct {
 	Host string
-	Port int
+	Port string
 }
 
-func ParseFlags(flagAddress string, unknownArgs []string, envAddress string) (*Config, error) {
-	if err := validateUnknownArgs(unknownArgs); err != nil {
+func ParseFlags() (*Config, error) {
+	addressFlag := flag.String("a", DefaultAddress, AddressFlagDescription)
+	flag.Parse()
+
+	if err := validateUnknownArgs(flag.Args()); err != nil {
 		return nil, err
 	}
 
-	finalAddress, err := getFinalAddress(flagAddress, envAddress)
-	if err != nil {
-		return nil, err
-	}
+	finalAddress := getStringValue(*addressFlag, EnvAddress, DefaultAddress)
 
 	host, port, err := parseAddress(finalAddress)
 	if err != nil {
@@ -45,35 +52,31 @@ func validateUnknownArgs(unknownArgs []string) error {
 	return nil
 }
 
-func getFinalAddress(flagValue string, envVar string) (string, error) {
-	if envVar != "" {
-		return envVar, nil
+func parseAddress(address string) (string, string, error) {
+	if !strings.HasPrefix(address, "http://") && !strings.HasPrefix(address, "https://") {
+		address = "http://" + address
 	}
-
-	if flagValue != "" {
-		return flagValue, nil
-	}
-
-	return "", errors.New("no address provided via flag or environment variable")
-}
-
-func parseAddress(address string) (string, int, error) {
 	parsedURL, err := url.Parse(address)
 	if err != nil {
-		return "", 0, fmt.Errorf("failed to parse address: %w", err)
+		return "", "", fmt.Errorf("failed to parse address: %w", err)
 	}
 
 	host := parsedURL.Hostname()
-	portStr := parsedURL.Port()
+	port := parsedURL.Port()
 
-	if host == "" || portStr == "" {
-		return "", 0, fmt.Errorf("invalid address format: %s (expected host:port)", address)
-	}
-
-	port, err := strconv.Atoi(portStr)
-	if err != nil {
-		return "", 0, fmt.Errorf("invalid port value: %w", err)
+	if host == "" || port == "" {
+		return "", "", fmt.Errorf("invalid address format: %s (expected host:port)", address)
 	}
 
 	return host, port, nil
+}
+
+func getStringValue(flagValue, envKey, defaultValue string) string {
+	if flagValue != defaultValue {
+		return flagValue
+	}
+	if envValue, exists := os.LookupEnv(envKey); exists {
+		return envValue
+	}
+	return defaultValue
 }

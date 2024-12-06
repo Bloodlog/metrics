@@ -7,6 +7,7 @@ import (
 	"metrics/internal/server/handlers/counter"
 	"metrics/internal/server/handlers/gauge"
 	"metrics/internal/server/repository"
+	"net"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -14,7 +15,7 @@ import (
 )
 
 func Run(configs *config.Config, memStorage *repository.MemStorage) error {
-	serverAddr := fmt.Sprintf("%s:%d", configs.NetAddress.Host, configs.NetAddress.Port)
+	serverAddr := net.JoinHostPort(configs.NetAddress.Host, configs.NetAddress.Port)
 
 	router := chi.NewRouter()
 

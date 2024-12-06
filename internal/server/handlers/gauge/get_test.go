@@ -34,7 +34,6 @@ func TestGetGaugeHandler(t *testing.T) {
 			srv := httptest.NewServer(r)
 			defer srv.Close()
 
-
 			req := resty.New().R()
 			req.Method = tc.method
 			req.URL = srv.URL + tc.path

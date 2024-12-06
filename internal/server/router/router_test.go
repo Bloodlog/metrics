@@ -14,7 +14,6 @@ import (
 )
 
 func TestRouter(t *testing.T) {
-
 	testCases := []struct {
 		method       string
 		path         string
@@ -32,7 +31,7 @@ func TestRouter(t *testing.T) {
 			register(router, memStorage, false)
 			srv := httptest.NewServer(router)
 			defer srv.Close()
-			
+
 			req := resty.New().R()
 			req.Method = tc.method
 			req.URL = srv.URL + tc.path

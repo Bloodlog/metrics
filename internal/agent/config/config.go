@@ -1,15 +1,18 @@
 package config
 
 import (
-	"errors"
+	"flag"
 	"fmt"
+	"log"
 	"net/url"
+	"os"
 	"strconv"
+	"strings"
 )
 
 type NetAddress struct {
 	Host string
-	Port int
+	Port string
 }
 
 type Config struct {
@@ -19,91 +22,62 @@ type Config struct {
 	Debug          bool
 }
 
-func ParseFlags(
-	flagAddress string,
-	flagReportInterval int,
-	flagPollInterval int,
-	unknownArgs []string,
-	envAddress string,
-	envReportInterval string,
-	envPollInterval string,
-) (*Config, error) {
-	if err := validateUnknownArgs(unknownArgs); err != nil {
+const (
+	DefaultAddress        = "http://localhost:8080"
+	DefaultReportInterval = 10
+	DefaultPollInterval   = 2
+
+	EnvAddress        = "ADDRESS"
+	EnvReportInterval = "REPORT_INTERVAL"
+	EnvPollInterval   = "POLL_INTERVAL"
+
+	AddressFlagDescription        = "HTTP server address in the format host:port (default: localhost:8080)"
+	ReportIntervalFlagDescription = "Overrides the metric reporting frequency to the server (default: 10 seconds)"
+	PollIntervalFlagDescription   = "Overrides the metric polling frequency (default: 2 seconds)"
+)
+
+func ParseFlags() (*Config, error) {
+	addressFlag := flag.String("a", DefaultAddress, AddressFlagDescription)
+	reportIntervalFlag := flag.Int("r", DefaultReportInterval, ReportIntervalFlagDescription)
+	pollIntervalFlag := flag.Int("p", DefaultPollInterval, PollIntervalFlagDescription)
+	flag.Parse()
+
+	if err := validateUnknownArgs(flag.Args()); err != nil {
 		return nil, err
 	}
 
-	finalAddress, err := getFinalAddress(flagAddress, envAddress)
-	if err != nil {
-		return nil, err
-	}
+	finalAddress := getStringValue(*addressFlag, EnvAddress, DefaultAddress)
 
 	host, port, err := parseAddress(finalAddress)
 	if err != nil {
 		return nil, err
 	}
 
-	reportInterval, err := getInterval(flagReportInterval, envReportInterval)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse REPORT_INTERVAL: %w", err)
-	}
-
-	pollInterval, err := getInterval(flagPollInterval, envPollInterval)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse POLL_INTERVAL: %w", err)
-	}
-
 	return &Config{
 		NetAddress:     NetAddress{Host: host, Port: port},
-		ReportInterval: reportInterval,
-		PollInterval:   pollInterval,
+		ReportInterval: getIntValue(*reportIntervalFlag, EnvReportInterval, DefaultReportInterval),
+		PollInterval:   getIntValue(*pollIntervalFlag, EnvPollInterval, DefaultPollInterval),
 		Debug:          false,
 	}, nil
 }
 
-func getFinalAddress(flagValue string, envVar string) (string, error) {
-	if envVar != "" {
-		return envVar, nil
+func parseAddress(address string) (string, string, error) {
+	if !strings.HasPrefix(address, "http://") && !strings.HasPrefix(address, "https://") {
+		address = "http://" + address
 	}
-
-	if flagValue != "" {
-		return flagValue, nil
-	}
-
-	return "", errors.New("no address provided via flag or environment variable")
-}
-
-func parseAddress(address string) (string, int, error) {
 	parsedURL, err := url.Parse(address)
 	if err != nil {
-		return "", 0, fmt.Errorf("failed to parse address: %w", err)
+		return "", "", fmt.Errorf("failed to parse address: %w", err)
 	}
 
 	host := parsedURL.Hostname()
-	portStr := parsedURL.Port()
+	port := parsedURL.Port()
 
-	if host == "" || portStr == "" {
-		return "", 0, fmt.Errorf("invalid address format: %s (expected host:port)", address)
-	}
-
-	port, err := strconv.Atoi(portStr)
-	if err != nil {
-		return "", 0, fmt.Errorf("invalid port value: %w", err)
+	if host == "" || port == "" {
+		return "", "", fmt.Errorf("invalid address format: %s (expected host:port)", address)
 	}
 
 	return host, port, nil
-}
-
-func getInterval(flagValue int, envVar string) (int, error) {
-	if envVar != "" {
-		interval, err := strconv.Atoi(envVar)
-		if err != nil {
-			return 0, fmt.Errorf("interval value: %w", err)
-		}
-
-		return interval, nil
-	}
-
-	return flagValue, nil
 }
 
 func validateUnknownArgs(unknownArgs []string) error {
@@ -111,4 +85,27 @@ func validateUnknownArgs(unknownArgs []string) error {
 		return fmt.Errorf("error: unknown flags or arguments detected: %v", unknownArgs)
 	}
 	return nil
+}
+
+func getStringValue(flagValue, envKey, defaultValue string) string {
+	if flagValue != defaultValue {
+		return flagValue
+	}
+	if envValue, exists := os.LookupEnv(envKey); exists {
+		return envValue
+	}
+	return defaultValue
+}
+
+func getIntValue(flagValue int, envKey string, defaultValue int) int {
+	if flagValue != defaultValue {
+		return flagValue
+	}
+	if envValue, exists := os.LookupEnv(envKey); exists {
+		if parsedValue, err := strconv.Atoi(envValue); err == nil {
+			return parsedValue
+		}
+		log.Printf("Warning: invalid value for %s, using default: %d", envKey, defaultValue)
+	}
+	return defaultValue
 }
