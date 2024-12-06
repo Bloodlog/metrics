@@ -1,13 +1,18 @@
 package config
 
 import (
+	"errors"
 	"flag"
-	"fmt"
 	"log"
 	"net/url"
 	"os"
 	"strconv"
 	"strings"
+)
+
+var (
+	ErrParseAddress   = errors.New("failed to parse address (expected host:port)")
+	ErrArgumentsCount = errors.New("unknown flags or arguments detected")
 )
 
 type NetAddress struct {
@@ -67,14 +72,14 @@ func parseAddress(address string) (string, string, error) {
 	}
 	parsedURL, err := url.Parse(address)
 	if err != nil {
-		return "", "", fmt.Errorf("failed to parse address: %w", err)
+		return "", "", ErrParseAddress
 	}
 
 	host := parsedURL.Hostname()
 	port := parsedURL.Port()
 
 	if host == "" || port == "" {
-		return "", "", fmt.Errorf("invalid address format: %s (expected host:port)", address)
+		return "", "", ErrParseAddress
 	}
 
 	return host, port, nil
@@ -82,7 +87,8 @@ func parseAddress(address string) (string, string, error) {
 
 func validateUnknownArgs(unknownArgs []string) error {
 	if len(unknownArgs) > 0 {
-		return fmt.Errorf("error: unknown flags or arguments detected: %v", unknownArgs)
+		log.Printf("error: unknown flags or arguments detected: %v", unknownArgs)
+		return ErrArgumentsCount
 	}
 	return nil
 }

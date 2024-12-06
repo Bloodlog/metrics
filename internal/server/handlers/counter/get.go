@@ -1,9 +1,10 @@
 package counter
 
 import (
-	"fmt"
+	"log"
 	"metrics/internal/server/repository"
 	"net/http"
+	"strconv"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -19,8 +20,11 @@ func GetCounterHandler(memStorage *repository.MemStorage) http.HandlerFunc {
 			response.WriteHeader(http.StatusNotFound)
 			return
 		}
-		_, err = fmt.Fprintf(response, "%d", counter)
+
+		counterString := strconv.Itoa(int(counter))
+		_, err = response.Write([]byte(counterString))
 		if err != nil {
+			log.Printf("error get counter: %v", err)
 			response.WriteHeader(http.StatusInternalServerError)
 			return
 		}

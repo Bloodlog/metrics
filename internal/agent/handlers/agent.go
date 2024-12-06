@@ -31,16 +31,16 @@ func Handle(configs *config.Config, storage *repository.Repository) error {
 			counter++
 
 		case <-reportTicker.C:
-			err := service.SendIncrement(client, uint64(counter), configs.Debug)
+			err := service.SendIncrement(client, uint64(counter))
 			if err != nil {
-				return fmt.Errorf("error sending increment: %w", err)
+				return fmt.Errorf("failed to send increment: %w", err)
 			}
 
 			for _, metric := range metrics {
 				metricValueString := strconv.FormatUint(metric.Value, 10)
-				err := service.SendMetric(client, metric.Name, metricValueString, configs.Debug)
+				err := service.SendMetric(client, metric.Name, metricValueString)
 				if err != nil {
-					return fmt.Errorf("error sending metric: %w", err)
+					return fmt.Errorf("failed to send metric %s: %w", metric.Name, err)
 				}
 			}
 		}

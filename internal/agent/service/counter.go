@@ -1,28 +1,27 @@
 package service
 
 import (
-	"fmt"
+	"errors"
+	"log"
 	"strconv"
-	"time"
 
 	"github.com/go-resty/resty/v2"
 )
 
-func SendIncrement(client *resty.Client, counter uint64, debug bool) error {
-	response, err := client.R().
+var (
+	ErrSendIncrement = errors.New("failed to send POST request PollCount")
+)
+
+func SendIncrement(client *resty.Client, counter uint64) error {
+	_, err := client.R().
 		SetHeader("Content-Type", "text/plain").
 		SetPathParams(map[string]string{
 			"counter": strconv.Itoa(int(counter)),
 		}).
 		Post("/update/counter/PollCount/{counter}")
 	if err != nil {
-		return fmt.Errorf("failed to send POST request: %w", err)
-	}
-
-	if debug {
-		timeStr := time.Now().Format(time.DateTime)
-		log := "[" + timeStr + "] " + response.Request.URL + " " + strconv.Itoa(response.StatusCode())
-		fmt.Println(log)
+		log.Printf("failed to send POST request PollCount: %v", err)
+		return ErrSendIncrement
 	}
 
 	return nil

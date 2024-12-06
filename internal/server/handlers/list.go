@@ -14,7 +14,6 @@ type MetricsData struct {
 
 func ListHandler(memStorage *repository.MemStorage) http.HandlerFunc {
 	return func(response http.ResponseWriter, request *http.Request) {
-		const ErrorText = "failed to write response"
 		response.Header().Set("Content-Type", "text/html; charset=utf-8")
 
 		data := MetricsData{
@@ -41,14 +40,14 @@ func ListHandler(memStorage *repository.MemStorage) http.HandlerFunc {
 
 		if err != nil {
 			log.Printf("error parse metrics: %v", err)
-			http.Error(response, ErrorText, http.StatusInternalServerError)
+			response.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 
 		err = tmpl.Execute(response, data)
 		if err != nil {
 			log.Printf("error parse metrics: %v", err)
-			http.Error(response, ErrorText, http.StatusInternalServerError)
+			response.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 	}

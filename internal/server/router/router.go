@@ -1,7 +1,8 @@
 package router
 
 import (
-	"fmt"
+	"errors"
+	"log"
 	"metrics/internal/server/config"
 	"metrics/internal/server/handlers"
 	"metrics/internal/server/handlers/counter"
@@ -14,6 +15,10 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 )
 
+var (
+	ErrFailedStartServer = errors.New("failed to start server")
+)
+
 func Run(configs *config.Config, memStorage *repository.MemStorage) error {
 	serverAddr := net.JoinHostPort(configs.NetAddress.Host, configs.NetAddress.Port)
 
@@ -21,10 +26,11 @@ func Run(configs *config.Config, memStorage *repository.MemStorage) error {
 
 	register(router, memStorage, configs.Debug)
 
-	fmt.Println("Запуск сервера на адресе:", serverAddr)
+	log.Printf("Запуск сервера на адресе: %v", serverAddr)
 	err := http.ListenAndServe(serverAddr, router)
 	if err != nil {
-		return fmt.Errorf("failed to start server on %s: %w", serverAddr, err)
+		log.Printf("failed to start server on %s: %v", serverAddr, err)
+		return ErrFailedStartServer
 	}
 	return nil
 }

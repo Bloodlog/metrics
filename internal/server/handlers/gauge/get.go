@@ -22,7 +22,7 @@ func GetGaugeHandler(memStorage *repository.MemStorage) http.HandlerFunc {
 
 		_, err = response.Write([]byte(strconv.FormatFloat(gauge, 'g', -1, 64)))
 		if err != nil {
-			log.Printf("error writing response: %v", err)
+			log.Printf("error get metric: %v", err)
 			response.WriteHeader(http.StatusInternalServerError)
 			return
 		}

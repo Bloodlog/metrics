@@ -19,7 +19,7 @@ func TestCounterService_SendIncrement(t *testing.T) {
 
 	httpmock.RegisterResponder("POST", url, responder)
 
-	err := SendIncrement(client, 42, false)
+	err := SendIncrement(client, 42)
 
 	assert.NoError(t, err)
 }

@@ -19,7 +19,7 @@ func TestCounterService_SendGauge(t *testing.T) {
 	responder := httpmock.NewStringResponder(http.StatusOK, ``)
 	httpmock.RegisterResponder("POST", url, responder)
 
-	err := SendMetric(client, metricName, metricValue, false)
+	err := SendMetric(client, metricName, metricValue)
 
 	assert.NoError(t, err)
 }

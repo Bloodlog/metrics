@@ -5,6 +5,11 @@ import (
 	"sync"
 )
 
+var (
+	ErrMetricNotFound  = errors.New("gauge metric not found")
+	ErrCounterNotFound = errors.New("counter metric not found")
+)
+
 type MetricType string
 
 type MetricStorage interface {
@@ -39,7 +44,7 @@ func (ms *MemStorage) GetGauge(name string) (float64, error) {
 	defer ms.mu.RUnlock()
 	value, exists := ms.gauges[name]
 	if !exists {
-		return 0, errors.New("gauge metric not found")
+		return 0, ErrMetricNotFound
 	}
 	return value, nil
 }
@@ -55,7 +60,7 @@ func (ms *MemStorage) GetCounter(name string) (uint64, error) {
 	defer ms.mu.RUnlock()
 	value, exists := ms.counters[name]
 	if !exists {
-		return 0, errors.New("counter metric not found")
+		return 0, ErrCounterNotFound
 	}
 	return value, nil
 }

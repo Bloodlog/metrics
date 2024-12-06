@@ -1,15 +1,18 @@
 package service
 
 import (
-	"fmt"
-	"strconv"
-	"time"
+	"errors"
+	"log"
 
 	"github.com/go-resty/resty/v2"
 )
 
-func SendMetric(client *resty.Client, name string, value string, debug bool) error {
-	response, err := client.R().
+var (
+	ErrSendMetric = errors.New("failed to send POST request PollCount")
+)
+
+func SendMetric(client *resty.Client, name string, value string) error {
+	_, err := client.R().
 		SetHeader("Content-Type", "text/plain").
 		SetPathParams(map[string]string{
 			"metricName":  name,
@@ -17,13 +20,8 @@ func SendMetric(client *resty.Client, name string, value string, debug bool) err
 		}).
 		Post("/update/gauge/{metricName}/{metricValue}")
 	if err != nil {
-		return fmt.Errorf("failed to send POST request: %w", err)
-	}
-
-	if debug {
-		timeStr := time.Now().Format(time.DateTime)
-		log := "[" + timeStr + "] " + response.Request.URL + " " + strconv.Itoa(response.StatusCode())
-		fmt.Println(log)
+		log.Printf("failed to send POST request PollCount: %v", err)
+		return ErrSendMetric
 	}
 
 	return nil
