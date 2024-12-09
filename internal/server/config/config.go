@@ -3,15 +3,11 @@ package config
 import (
 	"errors"
 	"flag"
+	"fmt"
 	"log"
 	"net/url"
 	"os"
 	"strings"
-)
-
-var (
-	ErrParseAddress   = errors.New("failed to parse address (expected host:port)")
-	ErrArgumentsCount = errors.New("unknown flags or arguments detected")
 )
 
 const (
@@ -34,14 +30,21 @@ func ParseFlags() (*Config, error) {
 	addressFlag := flag.String("a", DefaultAddress, AddressFlagDescription)
 	flag.Parse()
 
-	if err := validateUnknownArgs(flag.Args()); err != nil {
+	uknownArguments := flag.Args()
+	if err := validateUnknownArgs(uknownArguments); err != nil {
+		log.Printf("error: unknown flags or arguments detected: %v", uknownArguments)
 		return nil, err
 	}
 
-	finalAddress := getStringValue(*addressFlag, EnvAddress, DefaultAddress)
+	finalAddress, err := getStringValue(*addressFlag, EnvAddress)
+	if err != nil {
+		log.Printf("error: invalid address: %v", err)
+		return nil, err
+	}
 
 	host, port, err := parseAddress(finalAddress)
 	if err != nil {
+		log.Printf("error: invalid address: %v", err)
 		return nil, err
 	}
 
@@ -53,8 +56,7 @@ func ParseFlags() (*Config, error) {
 
 func validateUnknownArgs(unknownArgs []string) error {
 	if len(unknownArgs) > 0 {
-		log.Printf("error: unknown flags or arguments detected: %v", unknownArgs)
-		return ErrArgumentsCount
+		return errors.New("unknown flags or arguments detected")
 	}
 	return nil
 }
@@ -65,25 +67,27 @@ func parseAddress(address string) (string, string, error) {
 	}
 	parsedURL, err := url.Parse(address)
 	if err != nil {
-		return "", "", ErrParseAddress
+		return "", "", errors.New("failed to parse address (expected host:port)")
 	}
 
 	host := parsedURL.Hostname()
 	port := parsedURL.Port()
 
 	if host == "" || port == "" {
-		return "", "", ErrParseAddress
+		return "", "", errors.New("failed to parse address (expected host:port)")
 	}
 
 	return host, port, nil
 }
 
-func getStringValue(flagValue, envKey, defaultValue string) string {
-	if flagValue != defaultValue {
-		return flagValue
-	}
+func getStringValue(flagValue, envKey string) (string, error) {
 	if envValue, exists := os.LookupEnv(envKey); exists {
-		return envValue
+		return envValue, nil
 	}
-	return defaultValue
+
+	if flagValue != "" {
+		return flagValue, nil
+	}
+
+	return "", fmt.Errorf("missing required configuration: %s or flag value", envKey)
 }

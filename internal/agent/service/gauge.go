@@ -1,14 +1,9 @@
 package service
 
 import (
-	"errors"
-	"log"
+	"fmt"
 
 	"github.com/go-resty/resty/v2"
-)
-
-var (
-	ErrSendMetric = errors.New("failed to send POST request PollCount")
 )
 
 func SendMetric(client *resty.Client, name string, value string) error {
@@ -20,8 +15,7 @@ func SendMetric(client *resty.Client, name string, value string) error {
 		}).
 		Post("/update/gauge/{metricName}/{metricValue}")
 	if err != nil {
-		log.Printf("failed to send POST request PollCount: %v", err)
-		return ErrSendMetric
+		return fmt.Errorf("failed to send metric %s: %w", name, err)
 	}
 
 	return nil

@@ -49,7 +49,8 @@ func TestListGaugeHandler(t *testing.T) {
 
 			respBody := string(resp.Body())
 			if respBody == "" {
-				t.Fatalf("response body is empty")
+				t.Error("response body is empty")
+				return
 			}
 
 			metricValueStr := strconv.FormatFloat(metricValue, 'f', -1, 64)
@@ -60,7 +61,11 @@ func TestListGaugeHandler(t *testing.T) {
 			counterNameMatch, _ := regexp.MatchString(counterName, respBody)
 
 			counterValueStr := strconv.FormatUint(counterValue, 10)
-			counterMatch, _ := regexp.MatchString(counterValueStr, respBody)
+			counterMatch, err := regexp.MatchString(counterValueStr, respBody)
+			if err != nil {
+				t.Error("parsing regexp in response body")
+				return
+			}
 
 			assert.True(t, counterNameMatch, "counter name is not exist on page")
 			assert.True(t, counterMatch, "counter value is not exist on page")

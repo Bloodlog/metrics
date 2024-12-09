@@ -29,8 +29,8 @@ func TestMemStorage_GetGauge_NotFound(t *testing.T) {
 func TestMemStorage_SetAndGetCounter(t *testing.T) {
 	ms := NewMemStorage()
 
-	ms.SetCounter("requests", 10)
 	ms.SetCounter("requests", 5)
+	ms.SetCounter("requests", 10)
 
 	value, err := ms.GetCounter("requests")
 

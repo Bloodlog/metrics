@@ -44,12 +44,14 @@ func TestGetCounterHandler(t *testing.T) {
 
 			respBody := string(resp.Body())
 			if respBody == "" {
-				t.Fatalf("тело ответа пустое")
+				t.Error("response body is empty")
+				return
 			}
 
 			bodyUint64, err := strconv.ParseUint(respBody, 10, 64)
 			if err != nil {
-				t.Fatalf("не удалось преобразовать тело в uint64: %v", err)
+				t.Error("не удалось преобразовать тело в uint64")
+				return
 			}
 			assert.Equal(t, tc.expectedBody, bodyUint64)
 			assert.Equal(t, tc.expectedCode, resp.StatusCode(), "Route: "+tc.method+" "+srv.URL+tc.path)

@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"fmt"
+	"log"
 	"metrics/internal/agent/config"
 	"metrics/internal/agent/repository"
 	"metrics/internal/agent/service"
@@ -32,15 +33,18 @@ func Handle(configs *config.Config, storage *repository.Repository) error {
 
 		case <-reportTicker.C:
 			err := service.SendIncrement(client, uint64(counter))
+			counter = 0
 			if err != nil {
-				return fmt.Errorf("failed to send increment: %w", err)
+				log.Printf("failed to send POST request Increment: %v", err)
+				return fmt.Errorf("failed to send Increment %d to server: %w", counter, err)
 			}
 
 			for _, metric := range metrics {
 				metricValueString := strconv.FormatUint(metric.Value, 10)
 				err := service.SendMetric(client, metric.Name, metricValueString)
 				if err != nil {
-					return fmt.Errorf("failed to send metric %s: %w", metric.Name, err)
+					log.Printf("failed to send POST metric: %v", err)
+					return fmt.Errorf("failed to send metric %s to server: %w", metric.Name, err)
 				}
 			}
 		}

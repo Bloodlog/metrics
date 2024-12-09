@@ -3,16 +3,12 @@ package config
 import (
 	"errors"
 	"flag"
+	"fmt"
 	"log"
 	"net/url"
 	"os"
 	"strconv"
 	"strings"
-)
-
-var (
-	ErrParseAddress   = errors.New("failed to parse address (expected host:port)")
-	ErrArgumentsCount = errors.New("unknown flags or arguments detected")
 )
 
 type NetAddress struct {
@@ -47,21 +43,40 @@ func ParseFlags() (*Config, error) {
 	pollIntervalFlag := flag.Int("p", DefaultPollInterval, PollIntervalFlagDescription)
 	flag.Parse()
 
-	if err := validateUnknownArgs(flag.Args()); err != nil {
+	uknownArguments := flag.Args()
+	if err := validateUnknownArgs(uknownArguments); err != nil {
+		log.Printf("error: unknown flags or arguments detected: %v", uknownArguments)
 		return nil, err
 	}
 
-	finalAddress := getStringValue(*addressFlag, EnvAddress, DefaultAddress)
+	finalAddress, err := getStringValue(*addressFlag, EnvAddress)
+	if err != nil {
+		log.Printf("error: invalid address: %v", err)
+		return nil, err
+	}
 
 	host, port, err := parseAddress(finalAddress)
 	if err != nil {
+		log.Printf("error: invalid address: %v", err)
+		return nil, err
+	}
+
+	reportInterval, err := getIntValue(*reportIntervalFlag, EnvReportInterval)
+	if err != nil {
+		log.Printf("Warning: invalid value for %s", EnvReportInterval)
+		return nil, err
+	}
+
+	poolInterval, err := getIntValue(*pollIntervalFlag, EnvPollInterval)
+	if err != nil {
+		log.Printf("Warning: invalid value for %s", EnvPollInterval)
 		return nil, err
 	}
 
 	return &Config{
 		NetAddress:     NetAddress{Host: host, Port: port},
-		ReportInterval: getIntValue(*reportIntervalFlag, EnvReportInterval, DefaultReportInterval),
-		PollInterval:   getIntValue(*pollIntervalFlag, EnvPollInterval, DefaultPollInterval),
+		ReportInterval: reportInterval,
+		PollInterval:   poolInterval,
 		Debug:          false,
 	}, nil
 }
@@ -72,14 +87,14 @@ func parseAddress(address string) (string, string, error) {
 	}
 	parsedURL, err := url.Parse(address)
 	if err != nil {
-		return "", "", ErrParseAddress
+		return "", "", errors.New("failed to parse address (expected host:port)")
 	}
 
 	host := parsedURL.Hostname()
 	port := parsedURL.Port()
 
 	if host == "" || port == "" {
-		return "", "", ErrParseAddress
+		return "", "", errors.New("failed to parse address (expected host:port)")
 	}
 
 	return host, port, nil
@@ -87,31 +102,35 @@ func parseAddress(address string) (string, string, error) {
 
 func validateUnknownArgs(unknownArgs []string) error {
 	if len(unknownArgs) > 0 {
-		log.Printf("error: unknown flags or arguments detected: %v", unknownArgs)
-		return ErrArgumentsCount
+		return errors.New("unknown flags or arguments detected")
 	}
 	return nil
 }
 
-func getStringValue(flagValue, envKey, defaultValue string) string {
-	if flagValue != defaultValue {
-		return flagValue
-	}
+func getStringValue(flagValue, envKey string) (string, error) {
 	if envValue, exists := os.LookupEnv(envKey); exists {
-		return envValue
+		return envValue, nil
 	}
-	return defaultValue
+
+	if flagValue != "" {
+		return flagValue, nil
+	}
+
+	return "", fmt.Errorf("missing required configuration: %s or flag value", envKey)
 }
 
-func getIntValue(flagValue int, envKey string, defaultValue int) int {
-	if flagValue != defaultValue {
-		return flagValue
-	}
+func getIntValue(flagValue int, envKey string) (int, error) {
 	if envValue, exists := os.LookupEnv(envKey); exists {
-		if parsedValue, err := strconv.Atoi(envValue); err == nil {
-			return parsedValue
+		parsedValue, err := strconv.Atoi(envValue)
+		if err != nil {
+			return 0, fmt.Errorf("invalid value for environment variable %s: %s", envKey, envValue)
 		}
-		log.Printf("Warning: invalid value for %s, using default: %d", envKey, defaultValue)
+		return parsedValue, nil
 	}
-	return defaultValue
+
+	if flagValue != 0 {
+		return flagValue, nil
+	}
+
+	return 0, fmt.Errorf("missing required configuration: %s or flag value", envKey)
 }

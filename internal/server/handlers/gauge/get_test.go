@@ -43,7 +43,8 @@ func TestGetGaugeHandler(t *testing.T) {
 
 			respBody := string(resp.Body())
 			if respBody == "" {
-				t.Fatalf("тело ответа пустое")
+				t.Error("response body is empty")
+				return
 			}
 
 			assert.Equal(t, strconv.FormatFloat(tc.expectedBody, 'g', -1, 64), respBody)

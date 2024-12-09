@@ -1,15 +1,10 @@
 package service
 
 import (
-	"errors"
-	"log"
+	"fmt"
 	"strconv"
 
 	"github.com/go-resty/resty/v2"
-)
-
-var (
-	ErrSendIncrement = errors.New("failed to send POST request PollCount")
 )
 
 func SendIncrement(client *resty.Client, counter uint64) error {
@@ -20,8 +15,7 @@ func SendIncrement(client *resty.Client, counter uint64) error {
 		}).
 		Post("/update/counter/PollCount/{counter}")
 	if err != nil {
-		log.Printf("failed to send POST request PollCount: %v", err)
-		return ErrSendIncrement
+		return fmt.Errorf("failed to send increment: %w", err)
 	}
 
 	return nil
