@@ -4,10 +4,11 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"log"
 	"net/url"
 	"os"
 	"strings"
+
+	"go.uber.org/zap"
 )
 
 const (
@@ -26,25 +27,25 @@ type NetAddress struct {
 	Port string
 }
 
-func ParseFlags() (*Config, error) {
+func ParseFlags(logger zap.SugaredLogger) (*Config, error) {
 	addressFlag := flag.String("a", DefaultAddress, AddressFlagDescription)
 	flag.Parse()
 
 	uknownArguments := flag.Args()
 	if err := validateUnknownArgs(uknownArguments); err != nil {
-		log.Printf("error: unknown flags or arguments detected: %v", uknownArguments)
+		logger.Infoln(err.Error(), "event", "read flag")
 		return nil, err
 	}
 
 	finalAddress, err := getStringValue(*addressFlag, EnvAddress)
 	if err != nil {
-		log.Printf("error: invalid address: %v", err)
+		logger.Infoln(err.Error(), "event", "read flag")
 		return nil, err
 	}
 
 	host, port, err := parseAddress(finalAddress)
 	if err != nil {
-		log.Printf("error: invalid address: %v", err)
+		logger.Infoln(err.Error(), "event", "read flag")
 		return nil, err
 	}
 
