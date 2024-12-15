@@ -4,8 +4,6 @@ import (
 	"errors"
 	"metrics/internal/server/config"
 	"metrics/internal/server/handlers"
-	"metrics/internal/server/handlers/counter"
-	"metrics/internal/server/handlers/gauge"
 	"metrics/internal/server/repository"
 	"net"
 	"net/http"
@@ -39,23 +37,9 @@ func Run(configs *config.Config, memStorage *repository.MemStorage, logger zap.S
 func register(r *chi.Mux, memStorage *repository.MemStorage, logger zap.SugaredLogger) {
 	r.Use(LoggingMiddleware(logger))
 
-	r.Route("/update", func(r chi.Router) {
-		r.Post("/gauge/{metricName}/{metricValue}", gauge.UpdateGaugeHandler(memStorage))
-		r.Post("/counter/{counterName}/{counterValue}", counter.UpdateCounterHandler(memStorage))
-		r.Post("/{metricType}/{counterName}/{counterValue}", validateMetricType)
-	})
-
-	r.Route("/value", func(r chi.Router) {
-		r.Get("/gauge/{metricName}", gauge.GetGaugeHandler(memStorage))
-		r.Get("/counter/{metricName}", counter.GetCounterHandler(memStorage))
-		r.Get("/{metricType}/{counterName}", validateMetricType)
-	})
-
-	r.Get("/", handlers.ListHandler(memStorage))
-}
-
-func validateMetricType(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusBadRequest)
+	r.Post("/update", handlers.UpdateHandler(memStorage, logger))
+	r.Post("/value", handlers.GetHandler(memStorage, logger))
+	r.Get("/", handlers.ListHandler(memStorage, logger))
 }
 
 func LoggingMiddleware(logger zap.SugaredLogger) func(next http.Handler) http.Handler {

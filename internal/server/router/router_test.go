@@ -22,8 +22,6 @@ func TestRouter(t *testing.T) {
 		expectedCode int
 	}{
 		{method: http.MethodGet, path: "/", expectedCode: http.StatusOK},
-		{method: http.MethodPost, path: "/update/unknown/testCounter/100", expectedCode: http.StatusBadRequest},
-		{method: http.MethodGet, path: "/value/unknown/testCounter", expectedCode: http.StatusBadRequest},
 	}
 
 	for _, tc := range testCases {

@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"testing"
 
+	"go.uber.org/zap"
+
 	"github.com/go-chi/chi/v5"
 
 	"github.com/go-resty/resty/v2"
@@ -29,6 +31,9 @@ func TestListGaugeHandler(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.method, func(t *testing.T) {
+			logger := zap.NewNop()
+			sugar := *logger.Sugar()
+
 			memStorage := repository.NewMemStorage()
 			metricName := "metricName"
 			memStorage.SetGauge(metricName, metricValue)
@@ -36,7 +41,7 @@ func TestListGaugeHandler(t *testing.T) {
 			counterName := "PollCount"
 			memStorage.SetCounter(counterName, counterValue)
 			r := chi.NewRouter()
-			r.Get("/", ListHandler(memStorage))
+			r.Get("/", ListHandler(memStorage, sugar))
 			srv := httptest.NewServer(r)
 			defer srv.Close()
 

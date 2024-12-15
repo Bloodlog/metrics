@@ -7,7 +7,6 @@ import (
 	"metrics/internal/agent/repository"
 	"metrics/internal/agent/service"
 	"net"
-	"strconv"
 	"time"
 
 	"github.com/go-resty/resty/v2"
@@ -32,7 +31,17 @@ func Handle(configs *config.Config, storage *repository.Repository) error {
 			counter++
 
 		case <-reportTicker.C:
-			err := service.SendIncrement(client, uint64(counter))
+			var metricCounterRequest service.MetricsCounterRequest
+			delta := int64(counter)
+
+			metricCounterRequest = service.MetricsCounterRequest{
+				Delta: &delta,
+				ID:    "PoolCounter",
+				MType: "counter",
+			}
+
+			err := service.SendIncrement(client, metricCounterRequest)
+
 			counter = 0
 			if err != nil {
 				log.Printf("failed to send POST request Increment: %v", err)
@@ -40,8 +49,16 @@ func Handle(configs *config.Config, storage *repository.Repository) error {
 			}
 
 			for _, metric := range metrics {
-				metricValueString := strconv.FormatUint(metric.Value, 10)
-				err := service.SendMetric(client, metric.Name, metricValueString)
+				var MetricGaugeUpdateRequest service.MetricsUpdateRequest
+				valueFloat := float64(metric.Value)
+
+				MetricGaugeUpdateRequest = service.MetricsUpdateRequest{
+					Value: &valueFloat,
+					ID:    metric.Name,
+					MType: "gauge",
+				}
+
+				err := service.SendMetric(client, MetricGaugeUpdateRequest)
 				if err != nil {
 					log.Printf("failed to send POST metric: %v", err)
 					return fmt.Errorf("failed to send metric %s to server: %w", metric.Name, err)

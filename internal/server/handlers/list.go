@@ -2,9 +2,10 @@ package handlers
 
 import (
 	"html/template"
-	"log"
 	"metrics/internal/server/repository"
 	"net/http"
+
+	"go.uber.org/zap"
 )
 
 type MetricsData struct {
@@ -12,9 +13,10 @@ type MetricsData struct {
 	Counters map[string]uint64
 }
 
-func ListHandler(memStorage *repository.MemStorage) http.HandlerFunc {
+func ListHandler(memStorage *repository.MemStorage, logger zap.SugaredLogger) http.HandlerFunc {
 	return func(response http.ResponseWriter, request *http.Request) {
 		response.Header().Set("Content-Type", "text/html; charset=utf-8")
+		const nameError = "error"
 
 		data := MetricsData{
 			Gauges:   memStorage.Gauges(),
@@ -39,14 +41,14 @@ func ListHandler(memStorage *repository.MemStorage) http.HandlerFunc {
 		`)
 
 		if err != nil {
-			log.Printf("error parse metrics: %v", err)
+			logger.Infow("error parse metrics", nameError, err)
 			response.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 
 		err = tmpl.Execute(response, data)
 		if err != nil {
-			log.Printf("error parse metrics: %v", err)
+			logger.Infow("error parse metrics", nameError, err)
 			response.WriteHeader(http.StatusInternalServerError)
 			return
 		}

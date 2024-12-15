@@ -6,16 +6,19 @@ import (
 	"github.com/go-resty/resty/v2"
 )
 
-func SendMetric(client *resty.Client, name string, value string) error {
+type MetricsUpdateRequest struct {
+	Value *float64 `json:"value,omitempty"`
+	ID    string   `json:"id"`
+	MType string   `json:"type"`
+}
+
+func SendMetric(client *resty.Client, request MetricsUpdateRequest) error {
 	_, err := client.R().
-		SetHeader("Content-Type", "text/plain").
-		SetPathParams(map[string]string{
-			"metricName":  name,
-			"metricValue": value,
-		}).
-		Post("/update/gauge/{metricName}/{metricValue}")
+		SetHeader("Content-Type", "application/json").
+		SetBody(request).
+		Post("/update")
 	if err != nil {
-		return fmt.Errorf("failed to send metric %s: %w", name, err)
+		return fmt.Errorf("failed to send metric %s: %w", request.ID, err)
 	}
 
 	return nil
