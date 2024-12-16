@@ -15,7 +15,7 @@ func TestCounterService_SendGauge(t *testing.T) {
 	httpmock.ActivateNonDefault(client.GetClient())
 	metricName := "metricName"
 	metricValue := 5
-	url := "/update"
+	url := "/update/"
 	responder := httpmock.NewStringResponder(http.StatusOK, "")
 	httpmock.RegisterResponder("POST", url, responder)
 

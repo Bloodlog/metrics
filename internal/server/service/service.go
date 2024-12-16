@@ -2,7 +2,6 @@ package service
 
 import (
 	"errors"
-	"fmt"
 	"metrics/internal/server/repository"
 )
 
@@ -25,11 +24,13 @@ type MetricsResponse struct {
 	MType string   `json:"type"`
 }
 
+var ErrMetricNotFound = errors.New("metric not found")
+
 func Get(req MetricsGetRequest, storage *repository.MemStorage) (*MetricsResponse, error) {
 	if req.MType == "counter" {
 		counter, err := storage.GetCounter(req.ID)
 		if err != nil {
-			return nil, fmt.Errorf("failed to get counter for ID %s: %w", req.ID, err)
+			return nil, ErrMetricNotFound
 		}
 
 		counterValue := int64(counter)
@@ -44,7 +45,7 @@ func Get(req MetricsGetRequest, storage *repository.MemStorage) (*MetricsRespons
 	if req.MType == "gauge" {
 		gauge, err := storage.GetGauge(req.ID)
 		if err != nil {
-			return nil, fmt.Errorf("failed to get gauge for ID %s: %w", req.ID, err)
+			return nil, ErrMetricNotFound
 		}
 		gaugeValue := gauge
 		return &MetricsResponse{
@@ -55,31 +56,52 @@ func Get(req MetricsGetRequest, storage *repository.MemStorage) (*MetricsRespons
 		}, nil
 	}
 
-	return nil, errors.New("type metric not found")
+	return nil, ErrMetricNotFound
 }
 
 func Update(req MetricsUpdateRequest, storage *repository.MemStorage) (*MetricsResponse, error) {
 	if req.MType == "counter" {
-		deltaValue := uint64(*req.Delta)
+		if req.Delta == nil {
+			return nil, errors.New("delta field cannot be nil for counter type")
+		}
+		delta := *req.Delta
+		deltaValue := uint64(delta)
 		storage.SetCounter(req.ID, deltaValue)
+
+		counter, err := storage.GetCounter(req.ID)
+		if err != nil {
+			return nil, ErrMetricNotFound
+		}
+
+		counterValue := int64(counter)
 		return &MetricsResponse{
 			ID:    req.ID,
 			MType: req.MType,
-			Delta: req.Delta,
+			Delta: &counterValue,
 			Value: nil,
 		}, nil
 	}
 
 	if req.MType == "gauge" {
+		if req.Value == nil {
+			return nil, errors.New("value field cannot be nil for gauge type")
+		}
 		value := *req.Value
 		storage.SetGauge(req.ID, value)
+
+		gauge, err := storage.GetGauge(req.ID)
+		if err != nil {
+			return nil, ErrMetricNotFound
+		}
+		gaugeValue := gauge
+
 		return &MetricsResponse{
 			ID:    req.ID,
 			MType: req.MType,
 			Delta: nil,
-			Value: req.Value,
+			Value: &gaugeValue,
 		}, nil
 	}
 
-	return nil, errors.New("type metric not found")
+	return nil, ErrMetricNotFound
 }

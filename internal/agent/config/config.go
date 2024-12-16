@@ -4,11 +4,12 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"log"
 	"net/url"
 	"os"
 	"strconv"
 	"strings"
+
+	"go.uber.org/zap"
 )
 
 type NetAddress struct {
@@ -37,7 +38,9 @@ const (
 	PollIntervalFlagDescription   = "Overrides the metric polling frequency (default: 2 seconds)"
 )
 
-func ParseFlags() (*Config, error) {
+const nameError = "event"
+
+func ParseFlags(logger zap.SugaredLogger) (*Config, error) {
 	addressFlag := flag.String("a", DefaultAddress, AddressFlagDescription)
 	reportIntervalFlag := flag.Int("r", DefaultReportInterval, ReportIntervalFlagDescription)
 	pollIntervalFlag := flag.Int("p", DefaultPollInterval, PollIntervalFlagDescription)
@@ -45,31 +48,31 @@ func ParseFlags() (*Config, error) {
 
 	uknownArguments := flag.Args()
 	if err := validateUnknownArgs(uknownArguments); err != nil {
-		log.Printf("error: unknown flags or arguments detected: %v", uknownArguments)
+		logger.Infoln(err.Error(), nameError, "read flag")
 		return nil, err
 	}
 
 	finalAddress, err := getStringValue(*addressFlag, EnvAddress)
 	if err != nil {
-		log.Printf("error: invalid address: %v", err)
+		logger.Infoln(err.Error(), nameError, "read flag address")
 		return nil, err
 	}
 
 	host, port, err := parseAddress(finalAddress)
 	if err != nil {
-		log.Printf("error: invalid address: %v", err)
+		logger.Infoln(err.Error(), nameError, "read flag address")
 		return nil, err
 	}
 
 	reportInterval, err := getIntValue(*reportIntervalFlag, EnvReportInterval)
 	if err != nil {
-		log.Printf("Warning: invalid value for %s", EnvReportInterval)
+		logger.Infoln(err.Error(), nameError, "read flag report interval")
 		return nil, err
 	}
 
 	poolInterval, err := getIntValue(*pollIntervalFlag, EnvPollInterval)
 	if err != nil {
-		log.Printf("Warning: invalid value for %s", EnvPollInterval)
+		logger.Infoln(err.Error(), nameError, "read flag pool interval")
 		return nil, err
 	}
 

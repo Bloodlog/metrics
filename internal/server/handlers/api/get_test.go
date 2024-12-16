@@ -1,4 +1,4 @@
-package handlers
+package api
 
 import (
 	"net/http"
@@ -54,11 +54,11 @@ func TestGetHandler(t *testing.T) {
 			name:         "Metric Not Found",
 			requestBody:  `{"id": "Unknown", "type": "counter"}`,
 			setupStorage: func(memStorage *repository.MemStorage) {},
-			expectedCode: http.StatusBadRequest,
+			expectedCode: http.StatusNotFound,
 		},
 		{
 			name:         "Invalid JSON",
-			requestBody:  `{"id": "PollCount", "type": "counter", "delta": "invalid"}`,
+			requestBody:  `{"id": nil, "type": "counter", "delta": "invalid"}`,
 			setupStorage: func(memStorage *repository.MemStorage) {},
 			expectedCode: http.StatusBadRequest,
 		},

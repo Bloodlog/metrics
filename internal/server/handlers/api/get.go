@@ -1,7 +1,8 @@
-package handlers
+package api
 
 import (
 	"encoding/json"
+	"errors"
 	"metrics/internal/server/repository"
 	"metrics/internal/server/service"
 	"net/http"
@@ -9,21 +10,31 @@ import (
 	"go.uber.org/zap"
 )
 
-func UpdateHandler(memStorage *repository.MemStorage, logger zap.SugaredLogger) http.HandlerFunc {
+func GetHandler(memStorage *repository.MemStorage, logger zap.SugaredLogger) http.HandlerFunc {
 	return func(response http.ResponseWriter, request *http.Request) {
 		response.Header().Set("Content-Type", "application/json")
 		const nameError = "error"
+		var metricGetRequest service.MetricsGetRequest
 
-		var metricUpdateRequest service.MetricsUpdateRequest
-		if err := json.NewDecoder(request.Body).Decode(&metricUpdateRequest); err != nil {
-			logger.Infow("Invalid JSON", "error", err)
+		if err := json.NewDecoder(request.Body).Decode(&metricGetRequest); err != nil {
+			logger.Infow("Invalid JSON", nameError, err)
 			response.WriteHeader(http.StatusBadRequest)
 
 			return
 		}
 
-		result, err := service.Update(metricUpdateRequest, memStorage)
+		if metricGetRequest.MType != "counter" && metricGetRequest.MType != "gauge" {
+			response.WriteHeader(http.StatusBadRequest)
+
+			return
+		}
+
+		result, err := service.Get(metricGetRequest, memStorage)
 		if err != nil {
+			if errors.Is(err, service.ErrMetricNotFound) {
+				response.WriteHeader(http.StatusNotFound)
+				return
+			}
 			logger.Infow("error in service", nameError, err)
 			response.WriteHeader(http.StatusBadRequest)
 

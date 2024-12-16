@@ -16,7 +16,7 @@ func SendIncrement(client *resty.Client, request MetricsCounterRequest) error {
 	_, err := client.R().
 		SetHeader("Content-Type", "application/json").
 		SetBody(request).
-		Post("/update")
+		Post("/update/")
 	if err != nil {
 		return fmt.Errorf("failed to send increment: %w", err)
 	}

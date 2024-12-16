@@ -3,7 +3,8 @@ package router
 import (
 	"errors"
 	"metrics/internal/server/config"
-	"metrics/internal/server/handlers"
+	"metrics/internal/server/handlers/api"
+	"metrics/internal/server/handlers/web"
 	"metrics/internal/server/repository"
 	"net"
 	"net/http"
@@ -37,9 +38,15 @@ func Run(configs *config.Config, memStorage *repository.MemStorage, logger zap.S
 func register(r *chi.Mux, memStorage *repository.MemStorage, logger zap.SugaredLogger) {
 	r.Use(LoggingMiddleware(logger))
 
-	r.Post("/update", handlers.UpdateHandler(memStorage, logger))
-	r.Post("/value", handlers.GetHandler(memStorage, logger))
-	r.Get("/", handlers.ListHandler(memStorage, logger))
+	r.Route("/update", func(r chi.Router) {
+		r.Post("/", api.UpdateHandler(memStorage, logger))
+		r.Post("/{metricType}/{metricName}/{metricValue}", web.UpdateHandler(memStorage, logger))
+	})
+	r.Route("/value", func(r chi.Router) {
+		r.Post("/", api.GetHandler(memStorage, logger))
+		r.Get("/{metricType}/{metricName}", web.GetHandler(memStorage, logger))
+	})
+	r.Get("/", web.ListHandler(memStorage, logger))
 }
 
 func LoggingMiddleware(logger zap.SugaredLogger) func(next http.Handler) http.Handler {
