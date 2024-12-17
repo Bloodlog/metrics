@@ -36,9 +36,8 @@ const (
 	AddressFlagDescription        = "HTTP server address in the format host:port (default: localhost:8080)"
 	ReportIntervalFlagDescription = "Overrides the metric reporting frequency to the server (default: 10 seconds)"
 	PollIntervalFlagDescription   = "Overrides the metric polling frequency (default: 2 seconds)"
+	nameError                     = "config"
 )
-
-const nameError = "event"
 
 func ParseFlags(logger zap.SugaredLogger) (*Config, error) {
 	addressFlag := flag.String("a", DefaultAddress, AddressFlagDescription)

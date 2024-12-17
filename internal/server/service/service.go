@@ -26,7 +26,7 @@ type MetricsResponse struct {
 
 var ErrMetricNotFound = errors.New("metric not found")
 
-func Get(req MetricsGetRequest, storage *repository.MemStorage) (*MetricsResponse, error) {
+func Get(req MetricsGetRequest, storage repository.MetricStorage) (*MetricsResponse, error) {
 	if req.MType == "counter" {
 		counter, err := storage.GetCounter(req.ID)
 		if err != nil {
@@ -59,7 +59,7 @@ func Get(req MetricsGetRequest, storage *repository.MemStorage) (*MetricsRespons
 	return nil, ErrMetricNotFound
 }
 
-func Update(req MetricsUpdateRequest, storage *repository.MemStorage) (*MetricsResponse, error) {
+func Update(req MetricsUpdateRequest, storage repository.MetricStorage) (*MetricsResponse, error) {
 	if req.MType == "counter" {
 		if req.Delta == nil {
 			return nil, errors.New("delta field cannot be nil for counter type")

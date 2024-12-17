@@ -34,10 +34,23 @@ func run() error {
 	if err != nil {
 		return fmt.Errorf("failed to parse flags: %w", err)
 	}
+
 	storage := repository.NewMemStorage()
 
-	if err := router.Run(configs, storage, sugar); err != nil {
+	fileStorage := repository.NewFileStorageWrapper(storage, configs.FileStoragePath, configs.StoreInterval)
+
+	if configs.Restore {
+		if err := fileStorage.LoadFromFile(); err != nil {
+			fmt.Println("Error loading metrics:", err)
+		}
+	}
+
+	if err := router.Run(configs, fileStorage, sugar); err != nil {
 		return fmt.Errorf("failed to run router with provided configs and storage: %w", err)
+	}
+
+	if configs.StoreInterval > 0 {
+		fileStorage.AutoSave()
 	}
 
 	return nil
