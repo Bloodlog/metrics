@@ -11,7 +11,7 @@ func TestGetMemoryMetrics(t *testing.T) {
 
 	metrics := repo.GetMemoryMetrics()
 
-	assert.Equal(t, 27, len(metrics), "Количество метрик должно быть равно 27")
+	assert.Equal(t, 28, len(metrics), "Количество метрик должно быть равно 28")
 
 	for _, metric := range metrics {
 		assert.NotEmpty(t, metric.Name, "Имя метрики не должно быть пустым")
