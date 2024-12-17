@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"math/rand"
 	"runtime"
 )
 
@@ -17,7 +18,7 @@ func NewRepository() *Repository {
 }
 
 func (r *Repository) GetMemoryMetrics() []Metric {
-	const metricsCount = 27
+	const metricsCount = 28
 
 	var memStats runtime.MemStats
 	runtime.ReadMemStats(&memStats)
@@ -51,6 +52,7 @@ func (r *Repository) GetMemoryMetrics() []Metric {
 	metrics[24] = Metric{"StackSys", memStats.StackSys}
 	metrics[25] = Metric{"Sys", memStats.Sys}
 	metrics[26] = Metric{"TotalAlloc", memStats.TotalAlloc}
+	metrics[27] = Metric{"RandomValue", rand.Uint64()}
 
 	return metrics
 }
