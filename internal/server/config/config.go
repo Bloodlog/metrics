@@ -4,21 +4,51 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"log"
 	"net/url"
 	"os"
+	"strconv"
 	"strings"
+
+	"go.uber.org/zap"
 )
 
 const (
-	DefaultAddress         = "http://localhost:8080"
+	AddressFlag            = "a"
 	EnvAddress             = "ADDRESS"
+	DefaultAddress         = "http://localhost:8080"
 	AddressFlagDescription = "HTTP server address in the format host:port (default: localhost:8080)"
 )
 
+const (
+	StoreIntervalFlg         = "i"
+	EnvStoreInterval         = "STORE_INTERVAL"
+	DefaultStoreInterval     = 300
+	StoreIntervalDescription = "Interval fo store server"
+)
+
+const (
+	RestoreFlag        = "r"
+	EnvRestore         = "RESTORE"
+	DefaultRestore     = true
+	RestoreDescription = "загружать ранее сохранённые значения из указанного файла при старте сервера"
+)
+
+const (
+	FileStoragePathFlag        = "f"
+	EnvFileStoragePath         = "FILE_STORAGE_PATH"
+	DefaultFileStoragePath     = "metrics.json"
+	FileStoragePathDescription = "путь до файла, куда сохраняются текущие значения"
+)
+
+const (
+	nameError = "config"
+)
+
 type Config struct {
-	NetAddress NetAddress
-	Debug      bool
+	NetAddress      NetAddress
+	FileStoragePath string
+	StoreInterval   int
+	Restore         bool
 }
 
 type NetAddress struct {
@@ -26,37 +56,61 @@ type NetAddress struct {
 	Port string
 }
 
-func ParseFlags() (*Config, error) {
-	addressFlag := flag.String("a", DefaultAddress, AddressFlagDescription)
+func ParseFlags(logger zap.SugaredLogger) (*Config, error) {
+	addressFlag := flag.String(AddressFlag, DefaultAddress, AddressFlagDescription)
+	storeIntervalFlag := flag.Int(StoreIntervalFlg, DefaultStoreInterval, StoreIntervalDescription)
+	storagePathFlag := flag.String(FileStoragePathFlag, DefaultFileStoragePath, FileStoragePathDescription)
+	restoreFlag := flag.Bool(RestoreFlag, DefaultRestore, RestoreDescription)
+
 	flag.Parse()
 
 	uknownArguments := flag.Args()
 	if err := validateUnknownArgs(uknownArguments); err != nil {
-		log.Printf("error: unknown flags or arguments detected: %v", uknownArguments)
+		logger.Infoln(err.Error(), nameError, "read flag UnknownArgs")
 		return nil, err
 	}
 
 	finalAddress, err := getStringValue(*addressFlag, EnvAddress)
 	if err != nil {
-		log.Printf("error: invalid address: %v", err)
+		logger.Infoln(err.Error(), nameError, "read flag address")
 		return nil, err
 	}
 
 	host, port, err := parseAddress(finalAddress)
 	if err != nil {
-		log.Printf("error: invalid address: %v", err)
+		logger.Infoln(err.Error(), nameError, "read flag address")
+		return nil, err
+	}
+
+	storeInterval, err := getIntValue(*storeIntervalFlag, EnvStoreInterval)
+	if err != nil {
+		logger.Infoln(err.Error(), nameError, "read flag report interval")
+		return nil, err
+	}
+
+	storagePath, err := getStringValue(*storagePathFlag, EnvFileStoragePath)
+	if err != nil {
+		logger.Infoln(err.Error(), nameError, "read flag storage")
+		return nil, err
+	}
+
+	restore, err := getBoolValue(*restoreFlag, EnvRestore)
+	if err != nil {
+		logger.Infoln(err.Error(), nameError, "read flag restore")
 		return nil, err
 	}
 
 	return &Config{
-		NetAddress: NetAddress{Host: host, Port: port},
-		Debug:      false,
+		NetAddress:      NetAddress{Host: host, Port: port},
+		StoreInterval:   storeInterval,
+		FileStoragePath: storagePath,
+		Restore:         restore,
 	}, nil
 }
 
 func validateUnknownArgs(unknownArgs []string) error {
 	if len(unknownArgs) > 0 {
-		return errors.New("unknown flags or arguments detected")
+		return fmt.Errorf("unknown flags or arguments detected: %v", unknownArgs)
 	}
 	return nil
 }
@@ -90,4 +144,32 @@ func getStringValue(flagValue, envKey string) (string, error) {
 	}
 
 	return "", fmt.Errorf("missing required configuration: %s or flag value", envKey)
+}
+
+func getIntValue(flagValue int, envKey string) (int, error) {
+	if envValue, exists := os.LookupEnv(envKey); exists {
+		parsedValue, err := strconv.Atoi(envValue)
+		if err != nil {
+			return 0, fmt.Errorf("invalid value for environment variable %s: %s", envKey, envValue)
+		}
+		return parsedValue, nil
+	}
+
+	if flagValue != 0 {
+		return flagValue, nil
+	}
+
+	return 0, fmt.Errorf("missing required configuration: %s or flag value", envKey)
+}
+
+func getBoolValue(flagValue bool, envKey string) (bool, error) {
+	if envValue, exists := os.LookupEnv(envKey); exists {
+		parsedValue, err := strconv.ParseBool(envValue)
+		if err != nil {
+			return false, fmt.Errorf("invalid boolean value for environment variable %s: %s", envKey, envValue)
+		}
+		return parsedValue, nil
+	}
+
+	return flagValue, nil
 }
