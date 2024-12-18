@@ -21,7 +21,6 @@ type Config struct {
 	NetAddress     NetAddress
 	ReportInterval int
 	PollInterval   int
-	Debug          bool
 }
 
 const (
@@ -79,7 +78,6 @@ func ParseFlags(logger zap.SugaredLogger) (*Config, error) {
 		NetAddress:     NetAddress{Host: host, Port: port},
 		ReportInterval: reportInterval,
 		PollInterval:   poolInterval,
-		Debug:          false,
 	}, nil
 }
 
@@ -104,7 +102,7 @@ func parseAddress(address string) (string, string, error) {
 
 func validateUnknownArgs(unknownArgs []string) error {
 	if len(unknownArgs) > 0 {
-		return errors.New("unknown flags or arguments detected")
+		return fmt.Errorf("unknown flags or arguments detected: %v", unknownArgs)
 	}
 	return nil
 }

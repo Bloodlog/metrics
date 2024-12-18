@@ -12,7 +12,8 @@ import (
 func UpdateHandler(memStorage repository.MetricStorage, logger zap.SugaredLogger) http.HandlerFunc {
 	return func(response http.ResponseWriter, request *http.Request) {
 		response.Header().Set("Content-Type", "application/json")
-		const nameError = "error"
+		const nameError = "update handler"
+
 		var metricUpdateRequest service.MetricsUpdateRequest
 
 		if err := json.NewDecoder(request.Body).Decode(&metricUpdateRequest); err != nil {

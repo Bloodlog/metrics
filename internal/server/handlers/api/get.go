@@ -13,7 +13,8 @@ import (
 func GetHandler(memStorage repository.MetricStorage, logger zap.SugaredLogger) http.HandlerFunc {
 	return func(response http.ResponseWriter, request *http.Request) {
 		response.Header().Set("Content-Type", "application/json")
-		const nameError = "error"
+		const nameError = "get handler"
+
 		var metricGetRequest service.MetricsGetRequest
 
 		if err := json.NewDecoder(request.Body).Decode(&metricGetRequest); err != nil {

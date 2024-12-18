@@ -1,7 +1,7 @@
 package router
 
 import (
-	"errors"
+	"fmt"
 	"metrics/internal/server/config"
 	"metrics/internal/server/handlers/api"
 	"metrics/internal/server/handlers/web"
@@ -29,7 +29,7 @@ func Run(configs *config.Config, memStorage repository.MetricStorage, logger zap
 	err := http.ListenAndServe(serverAddr, router)
 	if err != nil {
 		logger.Info(err.Error(), "router", "start server")
-		return errors.New("failed to start server")
+		return fmt.Errorf("failed to start server: %w", err)
 	}
 	return nil
 }

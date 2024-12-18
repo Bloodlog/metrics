@@ -16,7 +16,7 @@ type MetricsData struct {
 func ListHandler(memStorage repository.MetricStorage, logger zap.SugaredLogger) http.HandlerFunc {
 	return func(response http.ResponseWriter, request *http.Request) {
 		response.Header().Set("Content-Type", "text/html; charset=utf-8")
-		const nameError = "error"
+		const nameError = "list handler"
 
 		data := MetricsData{
 			Gauges:   memStorage.Gauges(),

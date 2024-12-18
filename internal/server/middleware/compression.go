@@ -25,26 +25,34 @@ func (g gzipResponseWriter) Write(b []byte) (int, error) {
 	return n, nil
 }
 
+const (
+	HeaderDefaultEncoding = "Content-Encoding"
+	AceptEncoding         = "Accept-Encoding"
+	DefaultEncoding       = "gzip"
+)
+
 func CompressionMiddleware(logger zap.SugaredLogger) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if strings.Contains(r.Header.Get("Content-Encoding"), "gzip") {
+			if strings.Contains(r.Header.Get(HeaderDefaultEncoding), DefaultEncoding) {
 				gzr, err := gzip.NewReader(r.Body)
 				if err != nil {
 					logger.Infoln(nameError, "Failed to decompress request body", err)
-					http.Error(w, "Failed to decompress request body", http.StatusBadRequest)
+					w.WriteHeader(http.StatusInternalServerError)
 					return
 				}
 				defer func(gzr *gzip.Reader) {
 					err := gzr.Close()
 					if err != nil {
 						logger.Infoln(nameError, "Failed to decompress request body", err)
+						w.WriteHeader(http.StatusInternalServerError)
+						return
 					}
 				}(gzr)
 				r.Body = io.NopCloser(gzr)
 			}
 
-			if !strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") {
+			if !strings.Contains(r.Header.Get(AceptEncoding), DefaultEncoding) {
 				next.ServeHTTP(w, r)
 				return
 			}
@@ -52,17 +60,19 @@ func CompressionMiddleware(logger zap.SugaredLogger) func(next http.Handler) htt
 			gz, err := gzip.NewWriterLevel(w, gzip.BestSpeed)
 			if err != nil {
 				logger.Infoln(nameError, "Failed to compress response", err)
-				http.Error(w, "Failed to compress response", http.StatusInternalServerError)
+				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
 			defer func(gz *gzip.Writer) {
 				err := gz.Close()
 				if err != nil {
 					logger.Infoln(nameError, "Failed to compress response", err)
+					w.WriteHeader(http.StatusInternalServerError)
+					return
 				}
 			}(gz)
 
-			w.Header().Set("Content-Encoding", "gzip")
+			w.Header().Set(HeaderDefaultEncoding, DefaultEncoding)
 
 			gzr := gzipResponseWriter{ResponseWriter: w, Writer: gz}
 			next.ServeHTTP(gzr, r)

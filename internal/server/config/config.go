@@ -48,7 +48,6 @@ type Config struct {
 	NetAddress      NetAddress
 	FileStoragePath string
 	StoreInterval   int
-	Debug           bool
 	Restore         bool
 }
 
@@ -103,7 +102,6 @@ func ParseFlags(logger zap.SugaredLogger) (*Config, error) {
 
 	return &Config{
 		NetAddress:      NetAddress{Host: host, Port: port},
-		Debug:           false,
 		StoreInterval:   storeInterval,
 		FileStoragePath: storagePath,
 		Restore:         restore,
@@ -112,7 +110,7 @@ func ParseFlags(logger zap.SugaredLogger) (*Config, error) {
 
 func validateUnknownArgs(unknownArgs []string) error {
 	if len(unknownArgs) > 0 {
-		return errors.New("unknown flags or arguments detected")
+		return fmt.Errorf("unknown flags or arguments detected: %v", unknownArgs)
 	}
 	return nil
 }

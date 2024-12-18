@@ -6,6 +6,7 @@ import (
 	"metrics/internal/agent/repository"
 	"metrics/internal/agent/service"
 	"net"
+	"net/http"
 	"time"
 
 	"go.uber.org/zap"
@@ -13,9 +14,20 @@ import (
 	"github.com/go-resty/resty/v2"
 )
 
-const maxNumberAttempts = 3
-const retryWaitSecond = 2
-const retryMaxWaitSecond = 5
+const (
+	maxNumberAttempts  = 3
+	retryWaitSecond    = 2
+	retryMaxWaitSecond = 5
+)
+
+const (
+	DefaultNameCounter = "PollCount"
+	TypeCounter        = "counter"
+)
+
+const TypeMetricName = "gauge"
+
+const NameError = "handler"
 
 func Handle(configs *config.Config, storage *repository.Repository, logger zap.SugaredLogger) error {
 	serverAddr := "http://" + net.JoinHostPort(configs.NetAddress.Host, configs.NetAddress.Port)
@@ -25,7 +37,7 @@ func Handle(configs *config.Config, storage *repository.Repository, logger zap.S
 		SetRetryWaitTime(retryWaitSecond * time.Second).
 		SetRetryMaxWaitTime(retryMaxWaitSecond * time.Second).
 		AddRetryCondition(func(r *resty.Response, err error) bool {
-			return err != nil || r.StatusCode() >= 500
+			return err != nil || r.StatusCode() >= http.StatusInternalServerError
 		}).
 		OnBeforeRequest(func(client *resty.Client, req *resty.Request) error {
 			logger.Infof("Sending request to %s with body: %v", req.URL, req.Body)
@@ -60,15 +72,15 @@ func Handle(configs *config.Config, storage *repository.Repository, logger zap.S
 
 			metricCounterRequest = service.MetricsCounterRequest{
 				Delta: &delta,
-				ID:    "PollCount",
-				MType: "counter",
+				ID:    DefaultNameCounter,
+				MType: TypeCounter,
 			}
 
 			err := service.SendIncrement(client, metricCounterRequest)
 
 			counter = 0
 			if err != nil {
-				logger.Infoln(err.Error(), "handler", "send Increment")
+				logger.Infoln(err.Error(), NameError, "send Increment")
 				return fmt.Errorf("failed to send Increment %d to server: %w", counter, err)
 			}
 
@@ -79,12 +91,12 @@ func Handle(configs *config.Config, storage *repository.Repository, logger zap.S
 				MetricGaugeUpdateRequest = service.MetricsUpdateRequest{
 					Value: &valueFloat,
 					ID:    metric.Name,
-					MType: "gauge",
+					MType: TypeMetricName,
 				}
 
 				err := service.SendMetric(client, MetricGaugeUpdateRequest)
 				if err != nil {
-					logger.Infoln(err.Error(), "handler", "send metric")
+					logger.Infoln(err.Error(), NameError, "send metric")
 					return fmt.Errorf("failed to send metric %s to server: %w", metric.Name, err)
 				}
 			}

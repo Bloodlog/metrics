@@ -15,8 +15,7 @@ import (
 func GetHandler(memStorage repository.MetricStorage, logger zap.SugaredLogger) http.HandlerFunc {
 	return func(response http.ResponseWriter, request *http.Request) {
 		response.Header().Set("Content-Type", "text/plain; charset=utf-8")
-
-		const nameError = "error"
+		const nameError = "get handler"
 		var metricGetRequest service.MetricsGetRequest
 
 		metricNameRequest := chi.URLParam(request, "metricName")

@@ -15,7 +15,7 @@ func UpdateHandler(memStorage repository.MetricStorage, logger zap.SugaredLogger
 	return func(response http.ResponseWriter, request *http.Request) {
 		response.Header().Set("Content-Type", "text/plain; charset=utf-8")
 		var metricUpdateRequest service.MetricsUpdateRequest
-		const nameError = "error"
+		const nameError = "update handler"
 
 		metricValueRequest := chi.URLParam(request, "metricValue")
 		metricNameRequest := chi.URLParam(request, "metricName")
