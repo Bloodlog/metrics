@@ -14,7 +14,7 @@ func TestCounterService_SendIncrement(t *testing.T) {
 
 	httpmock.ActivateNonDefault(client.GetClient())
 
-	responder := httpmock.NewStringResponder(http.StatusOK, ``)
+	responder := httpmock.NewStringResponder(http.StatusOK, "")
 	url := "/update/"
 
 	httpmock.RegisterResponder("POST", url, responder)

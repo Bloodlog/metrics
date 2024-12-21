@@ -31,26 +31,7 @@ const NameError = "handler"
 
 func Handle(configs *config.Config, storage *repository.Repository, logger zap.SugaredLogger) error {
 	serverAddr := "http://" + net.JoinHostPort(configs.NetAddress.Host, configs.NetAddress.Port)
-	client := resty.New().
-		SetBaseURL(serverAddr).
-		SetRetryCount(maxNumberAttempts).
-		SetRetryWaitTime(retryWaitSecond * time.Second).
-		SetRetryMaxWaitTime(retryMaxWaitSecond * time.Second).
-		AddRetryCondition(func(r *resty.Response, err error) bool {
-			return err != nil || r.StatusCode() >= http.StatusInternalServerError
-		}).
-		OnBeforeRequest(func(client *resty.Client, req *resty.Request) error {
-			logger.Infof("Sending request to %s with body: %v", req.URL, req.Body)
-			return nil
-		}).
-		OnAfterResponse(func(client *resty.Client, resp *resty.Response) error {
-			logger.Infof("Received response from %s with status: %d, body: %v",
-				resp.Request.URL, resp.StatusCode(), resp.String())
-			return nil
-		}).
-		OnError(func(req *resty.Request, err error) {
-			logger.Infoln("Request to %s failed: %v", req.URL, err)
-		})
+	client := createClient(serverAddr, logger)
 
 	pollTicker := time.NewTicker(time.Duration(configs.PollInterval) * time.Second)
 	reportTicker := time.NewTicker(time.Duration(configs.ReportInterval) * time.Second)
@@ -102,4 +83,29 @@ func Handle(configs *config.Config, storage *repository.Repository, logger zap.S
 			}
 		}
 	}
+}
+
+func createClient(serverAddr string, logger zap.SugaredLogger) *resty.Client {
+	return resty.New().
+		SetBaseURL(serverAddr).
+		SetHeader("Content-Encoding", "gzip").
+		SetHeader("Content-Type", "application/json").
+		SetRetryCount(maxNumberAttempts).
+		SetRetryWaitTime(retryWaitSecond * time.Second).
+		SetRetryMaxWaitTime(retryMaxWaitSecond * time.Second).
+		AddRetryCondition(func(r *resty.Response, err error) bool {
+			return err != nil || r.StatusCode() >= http.StatusInternalServerError
+		}).
+		OnBeforeRequest(func(client *resty.Client, req *resty.Request) error {
+			logger.Infof("Sending request to %s with body: %v", req.URL, req.Body)
+			return nil
+		}).
+		OnAfterResponse(func(client *resty.Client, resp *resty.Response) error {
+			logger.Infof("Received response from %s with status: %d, body: %v",
+				resp.Request.URL, resp.StatusCode(), resp.String())
+			return nil
+		}).
+		OnError(func(req *resty.Request, err error) {
+			logger.Infoln("Request to %s failed: %v", req.URL, err)
+		})
 }
