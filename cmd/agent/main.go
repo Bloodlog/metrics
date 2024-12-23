@@ -10,8 +10,6 @@ import (
 	"go.uber.org/zap"
 )
 
-var sugar zap.SugaredLogger
-
 func main() {
 	if err := run(); err != nil {
 		log.Fatal(err)
@@ -19,6 +17,7 @@ func main() {
 }
 
 func run() error {
+	var sugar zap.SugaredLogger
 	logger, err := zap.NewDevelopment()
 	if err != nil {
 		return fmt.Errorf("logger failed: %w", err)
