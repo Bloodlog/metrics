@@ -26,15 +26,15 @@ func (g gzipResponseWriter) Write(b []byte) (int, error) {
 }
 
 const (
-	HeaderDefaultEncoding = "Content-Encoding"
-	AceptEncoding         = "Accept-Encoding"
-	DefaultEncoding       = "gzip"
+	ContentEncodingHeader = "Content-Encoding"
+	AcceptEncodingHeader  = "Accept-Encoding"
+	GzipEncoding          = "gzip"
 )
 
 func CompressionMiddleware(logger zap.SugaredLogger) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if strings.Contains(r.Header.Get(HeaderDefaultEncoding), DefaultEncoding) {
+			if strings.Contains(r.Header.Get(ContentEncodingHeader), GzipEncoding) {
 				gzr, err := gzip.NewReader(r.Body)
 				if err != nil {
 					logger.Infoln(nameError, "Failed to decompress request body", err)
@@ -52,7 +52,7 @@ func CompressionMiddleware(logger zap.SugaredLogger) func(next http.Handler) htt
 				r.Body = io.NopCloser(gzr)
 			}
 
-			if !strings.Contains(r.Header.Get(AceptEncoding), DefaultEncoding) {
+			if !strings.Contains(r.Header.Get(AcceptEncodingHeader), GzipEncoding) {
 				next.ServeHTTP(w, r)
 				return
 			}
@@ -72,7 +72,7 @@ func CompressionMiddleware(logger zap.SugaredLogger) func(next http.Handler) htt
 				}
 			}(gz)
 
-			w.Header().Set(HeaderDefaultEncoding, DefaultEncoding)
+			w.Header().Set(ContentEncodingHeader, GzipEncoding)
 
 			gzr := gzipResponseWriter{ResponseWriter: w, Writer: gz}
 			next.ServeHTTP(gzr, r)
