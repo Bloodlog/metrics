@@ -21,13 +21,13 @@ const (
 )
 
 const (
-	DefaultNameCounter = "PollCount"
-	TypeCounter        = "counter"
+	nameCounter = "PollCount"
+	typeCounter = "counter"
 )
 
-const TypeMetricName = "gauge"
+const typeMetricName = "gauge"
 
-const NameError = "handler"
+const nameError = "handler"
 
 func Handle(configs *config.Config, storage *repository.Repository, logger zap.SugaredLogger) error {
 	serverAddr := "http://" + net.JoinHostPort(configs.NetAddress.Host, configs.NetAddress.Port)
@@ -53,15 +53,15 @@ func Handle(configs *config.Config, storage *repository.Repository, logger zap.S
 
 			metricCounterRequest = service.MetricsCounterRequest{
 				Delta: &delta,
-				ID:    DefaultNameCounter,
-				MType: TypeCounter,
+				ID:    nameCounter,
+				MType: typeCounter,
 			}
 
 			err := service.SendIncrement(client, metricCounterRequest)
 
 			counter = 0
 			if err != nil {
-				logger.Infoln(err.Error(), NameError, "send Increment")
+				logger.Infoln(err.Error(), nameError, "send Increment")
 				return fmt.Errorf("failed to send Increment %d to server: %w", counter, err)
 			}
 
@@ -72,12 +72,12 @@ func Handle(configs *config.Config, storage *repository.Repository, logger zap.S
 				MetricGaugeUpdateRequest = service.MetricsUpdateRequest{
 					Value: &valueFloat,
 					ID:    metric.Name,
-					MType: TypeMetricName,
+					MType: typeMetricName,
 				}
 
 				err := service.SendMetric(client, MetricGaugeUpdateRequest)
 				if err != nil {
-					logger.Infoln(err.Error(), NameError, "send metric")
+					logger.Infoln(err.Error(), nameError, "send metric")
 					return fmt.Errorf("failed to send metric %s to server: %w", metric.Name, err)
 				}
 			}
