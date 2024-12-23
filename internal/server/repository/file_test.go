@@ -36,7 +36,8 @@ func TestSaveToFileAndLoadFromFile(t *testing.T) {
 
 	err = fileWrapper.SaveToFile()
 	if err != nil {
-		t.Fatalf("SaveToFile failed: %v", err)
+		t.Errorf("SaveToFile failed: %v", err)
+		return
 	}
 
 	memStorage = &MemStorage{
