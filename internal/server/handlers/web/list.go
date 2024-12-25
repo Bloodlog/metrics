@@ -13,7 +13,7 @@ type MetricsData struct {
 	Counters map[string]uint64
 }
 
-func ListHandler(memStorage repository.MetricStorage, logger zap.SugaredLogger) http.HandlerFunc {
+func ListHandler(memStorage repository.MetricStorage, logger *zap.SugaredLogger) http.HandlerFunc {
 	return func(response http.ResponseWriter, request *http.Request) {
 		response.Header().Set("Content-Type", "text/html; charset=utf-8")
 		const nameError = "list handler"

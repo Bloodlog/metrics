@@ -13,31 +13,31 @@ import (
 )
 
 const (
-	AddressFlag            = "a"
-	EnvAddress             = "ADDRESS"
-	DefaultAddress         = "http://localhost:8080"
-	AddressFlagDescription = "HTTP server address in the format host:port (default: localhost:8080)"
+	addressFlag            = "a"
+	envAddress             = "ADDRESS"
+	defaultAddress         = "http://localhost:8080"
+	addressFlagDescription = "HTTP server address in the format host:port (default: localhost:8080)"
 )
 
 const (
-	StoreIntervalFlg         = "i"
-	EnvStoreInterval         = "STORE_INTERVAL"
-	DefaultStoreInterval     = 300
-	StoreIntervalDescription = "Interval fo store server"
+	storeIntervalFlg         = "i"
+	envStoreInterval         = "STORE_INTERVAL"
+	defaultStoreInterval     = 300
+	storeIntervalDescription = "interval fo store server"
 )
 
 const (
-	RestoreFlag        = "r"
-	EnvRestore         = "RESTORE"
-	DefaultRestore     = true
-	RestoreDescription = "загружать ранее сохранённые значения из указанного файла при старте сервера"
+	restoreFlag        = "r"
+	envRestore         = "RESTORE"
+	defaultRestore     = true
+	restoreDescription = "загружать ранее сохранённые значения из указанного файла при старте сервера"
 )
 
 const (
-	FileStoragePathFlag        = "f"
-	EnvFileStoragePath         = "FILE_STORAGE_PATH"
-	DefaultFileStoragePath     = "metrics.json"
-	FileStoragePathDescription = "путь до файла, куда сохраняются текущие значения"
+	fileStoragePathFlag        = "f"
+	envFileStoragePath         = "FILE_STORAGE_PATH"
+	defaultFileStoragePath     = "metrics.json"
+	fileStoragePathDescription = "путь до файла, куда сохраняются текущие значения"
 )
 
 const (
@@ -56,11 +56,11 @@ type NetAddress struct {
 	Port string
 }
 
-func ParseFlags(logger zap.SugaredLogger) (*Config, error) {
-	addressFlag := flag.String(AddressFlag, DefaultAddress, AddressFlagDescription)
-	storeIntervalFlag := flag.Int(StoreIntervalFlg, DefaultStoreInterval, StoreIntervalDescription)
-	storagePathFlag := flag.String(FileStoragePathFlag, DefaultFileStoragePath, FileStoragePathDescription)
-	restoreFlag := flag.Bool(RestoreFlag, DefaultRestore, RestoreDescription)
+func ParseFlags(logger *zap.SugaredLogger) (*Config, error) {
+	addressFlag := flag.String(addressFlag, defaultAddress, addressFlagDescription)
+	storeIntervalFlag := flag.Int(storeIntervalFlg, defaultStoreInterval, storeIntervalDescription)
+	storagePathFlag := flag.String(fileStoragePathFlag, defaultFileStoragePath, fileStoragePathDescription)
+	restoreFlag := flag.Bool(restoreFlag, defaultRestore, restoreDescription)
 
 	flag.Parse()
 
@@ -70,7 +70,7 @@ func ParseFlags(logger zap.SugaredLogger) (*Config, error) {
 		return nil, err
 	}
 
-	finalAddress, err := getStringValue(*addressFlag, EnvAddress)
+	finalAddress, err := getStringValue(*addressFlag, envAddress)
 	if err != nil {
 		logger.Infoln(err.Error(), nameError, "read flag address")
 		return nil, err
@@ -82,19 +82,19 @@ func ParseFlags(logger zap.SugaredLogger) (*Config, error) {
 		return nil, err
 	}
 
-	storeInterval, err := getIntValue(*storeIntervalFlag, EnvStoreInterval)
+	storeInterval, err := getIntValue(*storeIntervalFlag, envStoreInterval)
 	if err != nil {
 		logger.Infoln(err.Error(), nameError, "read flag report interval")
 		return nil, err
 	}
 
-	storagePath, err := getStringValue(*storagePathFlag, EnvFileStoragePath)
+	storagePath, err := getStringValue(*storagePathFlag, envFileStoragePath)
 	if err != nil {
 		logger.Infoln(err.Error(), nameError, "read flag storage")
 		return nil, err
 	}
 
-	restore, err := getBoolValue(*restoreFlag, EnvRestore)
+	restore, err := getBoolValue(*restoreFlag, envRestore)
 	if err != nil {
 		logger.Infoln(err.Error(), nameError, "read flag restore")
 		return nil, err

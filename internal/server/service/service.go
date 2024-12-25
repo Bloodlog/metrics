@@ -66,7 +66,10 @@ func Update(req MetricsUpdateRequest, storage repository.MetricStorage) (*Metric
 		}
 		delta := *req.Delta
 		deltaValue := uint64(delta)
-		storage.SetCounter(req.ID, deltaValue)
+		err := storage.SetCounter(req.ID, deltaValue)
+		if err != nil {
+			return nil, errors.New("value cannot be save")
+		}
 
 		counter, err := storage.GetCounter(req.ID)
 		if err != nil {
@@ -87,7 +90,10 @@ func Update(req MetricsUpdateRequest, storage repository.MetricStorage) (*Metric
 			return nil, errors.New("value field cannot be nil for gauge type")
 		}
 		value := *req.Value
-		storage.SetGauge(req.ID, value)
+		err := storage.SetGauge(req.ID, value)
+		if err != nil {
+			return nil, errors.New("value cannot be save")
+		}
 
 		gauge, err := storage.GetGauge(req.ID)
 		if err != nil {

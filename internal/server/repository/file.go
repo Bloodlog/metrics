@@ -8,47 +8,50 @@ import (
 )
 
 type FileStorageWrapper struct {
-	Storage  MetricStorage
-	FilePath string
-	Interval int
+	storage  MetricStorage
+	filePath string
+	interval int
 }
 
 func NewFileStorageWrapper(storage MetricStorage, filePath string, saveInterval int) *FileStorageWrapper {
 	return &FileStorageWrapper{
-		Storage:  storage,
-		FilePath: filePath,
-		Interval: saveInterval,
+		storage:  storage,
+		filePath: filePath,
+		interval: saveInterval,
 	}
 }
 
-func (fw *FileStorageWrapper) SetGauge(name string, value float64) {
-	fw.Storage.SetGauge(name, value)
-	if fw.Interval > 0 {
+func (fw *FileStorageWrapper) SetGauge(name string, value float64) error {
+	_ = fw.storage.SetGauge(name, value)
+	if fw.interval > 0 {
 		if err := fw.SaveToFile(); err != nil {
-			fmt.Printf("Error saving metrics: %v\n", err)
+			return fmt.Errorf("error saving metrics: %w", err)
 		}
 	}
+	return nil
 }
 
 func (fw *FileStorageWrapper) GetGauge(name string) (float64, error) {
-	value, err := fw.Storage.GetGauge(name)
+	value, err := fw.storage.GetGauge(name)
 	if err != nil {
 		return 0, fmt.Errorf("failed to get gauge '%s': %w", name, err)
 	}
 	return value, nil
 }
 
-func (fw *FileStorageWrapper) SetCounter(name string, value uint64) {
-	fw.Storage.SetCounter(name, value)
-	if fw.Interval > 0 {
+func (fw *FileStorageWrapper) SetCounter(name string, value uint64) error {
+	_ = fw.storage.SetCounter(name, value)
+	if fw.interval > 0 {
 		if err := fw.SaveToFile(); err != nil {
-			fmt.Printf("Error saving metrics: %v\n", err)
+			return fmt.Errorf("error saving counter: %w", err)
 		}
 	}
+
+	return nil
 }
 
 func (fw *FileStorageWrapper) GetCounter(name string) (uint64, error) {
-	value, err := fw.Storage.GetCounter(name)
+	value, err := fw.storage.GetCounter(name)
 	if err != nil {
 		return 0, fmt.Errorf("failed to get counter '%s': %w", name, err)
 	}
@@ -56,11 +59,11 @@ func (fw *FileStorageWrapper) GetCounter(name string) (uint64, error) {
 }
 
 func (fw *FileStorageWrapper) Gauges() map[string]float64 {
-	return fw.Storage.Gauges()
+	return fw.storage.Gauges()
 }
 
 func (fw *FileStorageWrapper) Counters() map[string]uint64 {
-	return fw.Storage.Counters()
+	return fw.storage.Counters()
 }
 
 func (fw *FileStorageWrapper) SaveToFile() error {
@@ -68,17 +71,17 @@ func (fw *FileStorageWrapper) SaveToFile() error {
 		Gauges   map[string]float64 `json:"gauges"`
 		Counters map[string]uint64  `json:"counters"`
 	}{
-		Gauges:   fw.Storage.Gauges(),
-		Counters: fw.Storage.Counters(),
+		Gauges:   fw.storage.Gauges(),
+		Counters: fw.storage.Counters(),
 	}
 
-	file, err := os.Create(fw.FilePath)
+	file, err := os.Create(fw.filePath)
 	if err != nil {
 		return fmt.Errorf("failed to create file: %w", err)
 	}
 	defer func() {
-		if err := file.Close(); err != nil {
-			fmt.Printf("Error closing file: %v\n", err)
+		if closeErr := file.Close(); closeErr != nil {
+			err = fmt.Errorf("error closing file %s: %w", fw.filePath, closeErr)
 		}
 	}()
 
@@ -91,13 +94,17 @@ func (fw *FileStorageWrapper) SaveToFile() error {
 }
 
 func (fw *FileStorageWrapper) LoadFromFile() error {
-	file, err := os.Open(fw.FilePath)
+	file, err := os.Open(fw.filePath)
 	if err != nil {
-		return fmt.Errorf("failed to open file: %w", err)
+		if os.IsNotExist(err) {
+			return nil
+		}
+
+		return fmt.Errorf("error load file %s: %w", fw.filePath, err)
 	}
 	defer func() {
-		if err := file.Close(); err != nil {
-			fmt.Printf("Error closing file: %v\n", err)
+		if closeErr := file.Close(); closeErr != nil {
+			err = fmt.Errorf("error closing file %s: %w", fw.filePath, closeErr)
 		}
 	}()
 
@@ -112,28 +119,34 @@ func (fw *FileStorageWrapper) LoadFromFile() error {
 	}
 
 	for k, v := range data.Gauges {
-		fw.Storage.SetGauge(k, v)
+		err := fw.storage.SetGauge(k, v)
+		if err != nil {
+			return fmt.Errorf("error saving metrics: %w", err)
+		}
 	}
 	for k, v := range data.Counters {
-		fw.Storage.SetCounter(k, v)
+		err := fw.storage.SetCounter(k, v)
+		if err != nil {
+			return fmt.Errorf("error saving counter: %w", err)
+		}
 	}
 
 	return nil
 }
 
-func (fw *FileStorageWrapper) AutoSave() {
-	if fw.Interval <= 0 {
-		return
+func (fw *FileStorageWrapper) AutoSave() error {
+	if fw.interval <= 0 {
+		return nil
 	}
 
-	ticker := time.NewTicker(time.Duration(fw.Interval) * time.Second)
+	ticker := time.NewTicker(time.Duration(fw.interval) * time.Second)
 	defer ticker.Stop()
 
 	for range ticker.C {
 		if err := fw.SaveToFile(); err != nil {
-			fmt.Printf("Error saving metrics: %v\n", err)
-		} else {
-			fmt.Println("Metrics saved to file")
+			return fmt.Errorf("error saving: %w", err)
 		}
 	}
+
+	return nil
 }

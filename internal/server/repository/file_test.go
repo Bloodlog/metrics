@@ -7,28 +7,39 @@ import (
 )
 
 func TestSaveToFileAndLoadFromFile(t *testing.T) {
-	const CounterName = "NameCounter"
-	const CounterValue = 123
+	const tempFileName = "metrics_test_*.json"
+	const counterName = "NameCounter"
+	const counterValue = 123
 
-	const GaugeName = "NameGauge"
-	const GaugeValue = 123.123
+	const gaugeName = "NameGauge"
+	const gaugeValue = 123.123
 	memStorage := &MemStorage{
 		gauges:   make(map[string]float64),
 		counters: make(map[string]uint64),
 		mu:       &sync.RWMutex{},
 	}
 
-	memStorage.SetGauge(GaugeName, GaugeValue)
-	memStorage.SetCounter(CounterName, CounterValue)
+	err := memStorage.SetGauge(gaugeName, gaugeValue)
+	if err != nil {
+		t.Errorf("Failed to SetGauge: %v", err)
+		return
+	}
+	err = memStorage.SetCounter(counterName, counterValue)
+	if err != nil {
+		t.Errorf("Failed to SetCounter: %v", err)
+		return
+	}
 
-	tempFile, err := os.CreateTemp("", "metrics_test_*.json")
+	tempFile, err := os.CreateTemp("", tempFileName)
 	if err != nil {
 		t.Errorf("Failed to create temp file: %v", err)
+		return
 	}
 	defer func(name string) {
 		err := os.Remove(name)
 		if err != nil {
 			t.Errorf("Failed to remove temp file: %v", err)
+			return
 		}
 	}(tempFile.Name())
 
@@ -45,20 +56,21 @@ func TestSaveToFileAndLoadFromFile(t *testing.T) {
 		counters: make(map[string]uint64),
 		mu:       &sync.RWMutex{},
 	}
-	fileWrapper.Storage = memStorage
+	fileWrapper.storage = memStorage
 
 	err = fileWrapper.LoadFromFile()
 	if err != nil {
 		t.Errorf("LoadFromFile failed: %v", err)
+		return
 	}
 
-	gauge, err := memStorage.GetGauge(GaugeName)
-	if err != nil || gauge != GaugeValue {
-		t.Errorf("Expected gauge value %v, got %v (err: %v)", GaugeValue, gauge, err)
+	gauge, err := memStorage.GetGauge(gaugeName)
+	if err != nil || gauge != gaugeValue {
+		t.Errorf("Expected gauge value %v, got %v (err: %v)", gaugeValue, gauge, err)
 	}
 
-	counter, err := memStorage.GetCounter(CounterName)
-	if err != nil || counter != CounterValue {
-		t.Errorf("Expected counter value %v, got %v (err: %v)", CounterValue, counter, err)
+	counter, err := memStorage.GetCounter(counterName)
+	if err != nil || counter != counterValue {
+		t.Errorf("Expected counter value %v, got %v (err: %v)", counterValue, counter, err)
 	}
 }

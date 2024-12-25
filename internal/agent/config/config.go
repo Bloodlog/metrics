@@ -24,24 +24,24 @@ type Config struct {
 }
 
 const (
-	DefaultAddress        = "http://localhost:8080"
-	DefaultReportInterval = 10
-	DefaultPollInterval   = 2
+	defaultAddress        = "http://localhost:8080"
+	defaultReportInterval = 10
+	defaultPollInterval   = 2
 
-	EnvAddress        = "ADDRESS"
-	EnvReportInterval = "REPORT_INTERVAL"
-	EnvPollInterval   = "POLL_INTERVAL"
+	envAddress        = "ADDRESS"
+	envReportInterval = "REPORT_INTERVAL"
+	envPollInterval   = "POLL_INTERVAL"
 
-	AddressFlagDescription        = "HTTP server address in the format host:port (default: localhost:8080)"
-	ReportIntervalFlagDescription = "Overrides the metric reporting frequency to the server (default: 10 seconds)"
-	PollIntervalFlagDescription   = "Overrides the metric polling frequency (default: 2 seconds)"
+	addressFlagDescription        = "HTTP server address in the format host:port (default: localhost:8080)"
+	reportIntervalFlagDescription = "Overrides the metric reporting frequency to the server (default: 10 seconds)"
+	pollIntervalFlagDescription   = "Overrides the metric polling frequency (default: 2 seconds)"
 	nameError                     = "config"
 )
 
-func ParseFlags(logger zap.SugaredLogger) (*Config, error) {
-	addressFlag := flag.String("a", DefaultAddress, AddressFlagDescription)
-	reportIntervalFlag := flag.Int("r", DefaultReportInterval, ReportIntervalFlagDescription)
-	pollIntervalFlag := flag.Int("p", DefaultPollInterval, PollIntervalFlagDescription)
+func ParseFlags(logger *zap.SugaredLogger) (*Config, error) {
+	addressFlag := flag.String("a", defaultAddress, addressFlagDescription)
+	reportIntervalFlag := flag.Int("r", defaultReportInterval, reportIntervalFlagDescription)
+	pollIntervalFlag := flag.Int("p", defaultPollInterval, pollIntervalFlagDescription)
 	flag.Parse()
 
 	uknownArguments := flag.Args()
@@ -50,7 +50,7 @@ func ParseFlags(logger zap.SugaredLogger) (*Config, error) {
 		return nil, err
 	}
 
-	finalAddress, err := getStringValue(*addressFlag, EnvAddress)
+	finalAddress, err := getStringValue(*addressFlag, envAddress)
 	if err != nil {
 		logger.Infoln(err.Error(), nameError, "read flag address")
 		return nil, err
@@ -62,13 +62,13 @@ func ParseFlags(logger zap.SugaredLogger) (*Config, error) {
 		return nil, err
 	}
 
-	reportInterval, err := getIntValue(*reportIntervalFlag, EnvReportInterval)
+	reportInterval, err := getIntValue(*reportIntervalFlag, envReportInterval)
 	if err != nil {
 		logger.Infoln(err.Error(), nameError, "read flag report interval")
 		return nil, err
 	}
 
-	poolInterval, err := getIntValue(*pollIntervalFlag, EnvPollInterval)
+	poolInterval, err := getIntValue(*pollIntervalFlag, envPollInterval)
 	if err != nil {
 		logger.Infoln(err.Error(), nameError, "read flag pool interval")
 		return nil, err

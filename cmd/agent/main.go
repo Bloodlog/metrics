@@ -17,27 +17,36 @@ func main() {
 }
 
 func run() error {
-	var sugar zap.SugaredLogger
-	logger, err := zap.NewDevelopment()
+	logger, err := getLogger()
 	if err != nil {
-		return fmt.Errorf("logger failed: %w", err)
+		return fmt.Errorf("logger fail: %w", err)
 	}
-	defer func() {
-		if err := logger.Sync(); err != nil {
-			fmt.Printf("failed to sync logger: %v\n", err)
-		}
-	}()
-	sugar = *logger.Sugar()
+	logger.Info("Logger initialized successfully")
 
-	configs, err := config.ParseFlags(sugar)
+	configs, err := config.ParseFlags(logger)
 	if err != nil {
 		return fmt.Errorf("failed to parse flags: %w", err)
 	}
-	storage := repository.NewRepository()
+	logger.Info("Flags and env parsed")
 
-	if err := handlers.Handle(configs, storage, sugar); err != nil {
+	storage := repository.NewRepository()
+	logger.Info("Repository initialized successfully")
+
+	if err := handlers.Handle(configs, storage, logger); err != nil {
 		return fmt.Errorf("failed to handle configs and storage: %w", err)
 	}
 
 	return nil
+}
+
+func getLogger() (*zap.SugaredLogger, error) {
+	configLogger := zap.NewDevelopmentConfig()
+	configLogger.Level = zap.NewAtomicLevelAt(zap.InfoLevel)
+
+	logger, err := configLogger.Build()
+	if err != nil {
+		return nil, fmt.Errorf("logger initialization failed: %w", err)
+	}
+
+	return logger.Sugar(), err
 }

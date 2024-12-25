@@ -8,12 +8,15 @@ import (
 type MetricType string
 
 type MetricStorage interface {
-	SetGauge(name string, value float64)
+	SetGauge(name string, value float64) error
 	GetGauge(name string) (float64, error)
-	SetCounter(name string, value uint64)
+	SetCounter(name string, value uint64) error
 	GetCounter(name string) (uint64, error)
 	Gauges() map[string]float64
 	Counters() map[string]uint64
+	AutoSave() error
+	LoadFromFile() error
+	SaveToFile() error
 }
 
 type MemStorage struct {
@@ -30,10 +33,12 @@ func NewMemStorage() *MemStorage {
 	}
 }
 
-func (ms *MemStorage) SetGauge(name string, value float64) {
+func (ms *MemStorage) SetGauge(name string, value float64) error {
 	ms.mu.Lock()
 	defer ms.mu.Unlock()
 	ms.gauges[name] = value
+
+	return nil
 }
 
 func (ms *MemStorage) GetGauge(name string) (float64, error) {
@@ -46,10 +51,12 @@ func (ms *MemStorage) GetGauge(name string) (float64, error) {
 	return value, nil
 }
 
-func (ms *MemStorage) SetCounter(name string, value uint64) {
+func (ms *MemStorage) SetCounter(name string, value uint64) error {
 	ms.mu.Lock()
 	defer ms.mu.Unlock()
 	ms.counters[name] += value
+
+	return nil
 }
 
 func (ms *MemStorage) GetCounter(name string) (uint64, error) {
@@ -80,4 +87,16 @@ func (ms *MemStorage) Counters() map[string]uint64 {
 		result[k] = v
 	}
 	return result
+}
+
+func (ms *MemStorage) AutoSave() error {
+	return nil
+}
+
+func (ms *MemStorage) LoadFromFile() error {
+	return nil
+}
+
+func (ms *MemStorage) SaveToFile() error {
+	return nil
 }

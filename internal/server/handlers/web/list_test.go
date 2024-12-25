@@ -32,14 +32,22 @@ func TestListGaugeHandler(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.method, func(t *testing.T) {
 			logger := zap.NewNop()
-			sugar := *logger.Sugar()
+			sugar := logger.Sugar()
 
 			memStorage := repository.NewMemStorage()
 			metricName := "metricName"
-			memStorage.SetGauge(metricName, metricValue)
+			err := memStorage.SetGauge(metricName, metricValue)
+			if err != nil {
+				t.Errorf("Failed to SetGauge: %v", err)
+				return
+			}
 			counterValue := uint64(100)
 			counterName := "PollCount"
-			memStorage.SetCounter(counterName, counterValue)
+			err = memStorage.SetCounter(counterName, counterValue)
+			if err != nil {
+				t.Errorf("Failed to SetCounter: %v", err)
+				return
+			}
 			r := chi.NewRouter()
 			r.Get("/", ListHandler(memStorage, sugar))
 			srv := httptest.NewServer(r)
@@ -60,8 +68,8 @@ func TestListGaugeHandler(t *testing.T) {
 
 			metricValueStr := strconv.FormatFloat(metricValue, 'f', -1, 64)
 
-			assert.Contains(t, respBody, metricName, "metric Name is not exist on page")
-			assert.Contains(t, respBody, metricValueStr, "metric Value is not exist on page")
+			assert.Contains(t, respBody, metricName, "metric name is not exist on page")
+			assert.Contains(t, respBody, metricValueStr, "metric value is not exist on page")
 
 			counterNameMatch, _ := regexp.MatchString(counterName, respBody)
 

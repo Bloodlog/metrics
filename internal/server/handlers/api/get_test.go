@@ -30,7 +30,11 @@ func TestGetHandler(t *testing.T) {
 			name:        "Get Counter Successfully",
 			requestBody: `{"id": "PollCount", "type": "counter"}`,
 			setupStorage: func(memStorage *repository.MemStorage) {
-				memStorage.SetCounter("PollCount", counterValue)
+				err := memStorage.SetCounter("PollCount", counterValue)
+				if err != nil {
+					t.Errorf("Failed to SetCounter: %v", err)
+					return
+				}
 			},
 			expectedBody: `{"id":"PollCount","type":"counter","delta":100}`,
 			expectedCode: http.StatusOK,
@@ -39,7 +43,11 @@ func TestGetHandler(t *testing.T) {
 			name:        "Get Gauge Successfully",
 			requestBody: `{"id": "Allocate", "type": "gauge"}`,
 			setupStorage: func(memStorage *repository.MemStorage) {
-				memStorage.SetGauge("Allocate", gaugeValue)
+				err := memStorage.SetGauge("Allocate", gaugeValue)
+				if err != nil {
+					t.Errorf("Failed to SetCounter: %v", err)
+					return
+				}
 			},
 			expectedBody: `{"id":"Allocate","type":"gauge","value":1234.1234}`,
 			expectedCode: http.StatusOK,
@@ -67,7 +75,7 @@ func TestGetHandler(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			logger := zap.NewNop()
-			sugar := *logger.Sugar()
+			sugar := logger.Sugar()
 			memStorage := repository.NewMemStorage()
 			tc.setupStorage(memStorage)
 

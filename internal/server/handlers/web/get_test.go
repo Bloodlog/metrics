@@ -31,10 +31,14 @@ func TestGetCounterHandler(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.method, func(t *testing.T) {
 			logger := zap.NewNop()
-			sugar := *logger.Sugar()
+			sugar := logger.Sugar()
 
 			memStorage := repository.NewMemStorage()
-			memStorage.SetCounter("PollCount", counterValue)
+			err := memStorage.SetCounter("PollCount", counterValue)
+			if err != nil {
+				t.Errorf("Failed to SetCounter: %v", err)
+				return
+			}
 			r := chi.NewRouter()
 			r.Get("/value/{metricType}/{metricName}", GetHandler(memStorage, sugar))
 			srv := httptest.NewServer(r)
@@ -67,11 +71,15 @@ func TestGetCounterHandler(t *testing.T) {
 
 func TestGetCounterFailsHandler(t *testing.T) {
 	logger := zap.NewNop()
-	sugar := *logger.Sugar()
+	sugar := logger.Sugar()
 
 	memStorage := repository.NewMemStorage()
 	counterValue := uint64(100)
-	memStorage.SetCounter("PollCount", counterValue)
+	err := memStorage.SetCounter("PollCount", counterValue)
+	if err != nil {
+		t.Errorf("Failed to SetCounter: %v", err)
+		return
+	}
 	r := chi.NewRouter()
 	r.Get("/value/{metricType}/{metricName}", GetHandler(memStorage, sugar))
 	srv := httptest.NewServer(r)
@@ -114,10 +122,14 @@ func TestGetGaugeHandler(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.method, func(t *testing.T) {
 			logger := zap.NewNop()
-			sugar := *logger.Sugar()
+			sugar := logger.Sugar()
 
 			memStorage := repository.NewMemStorage()
-			memStorage.SetGauge("metricName", metricValue)
+			err := memStorage.SetGauge("metricName", metricValue)
+			if err != nil {
+				t.Errorf("Failed to SetGauge: %v", err)
+				return
+			}
 			r := chi.NewRouter()
 			r.Get("/value/{metricType}/{metricName}", GetHandler(memStorage, sugar))
 			srv := httptest.NewServer(r)
@@ -155,11 +167,15 @@ func TestGetGaugeFailHandler(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.method, func(t *testing.T) {
 			logger := zap.NewNop()
-			sugar := *logger.Sugar()
+			sugar := logger.Sugar()
 
 			memStorage := repository.NewMemStorage()
 			metricValue := 1234.1234
-			memStorage.SetGauge("metricName", metricValue)
+			err := memStorage.SetGauge("metricName", metricValue)
+			if err != nil {
+				t.Errorf("Failed to SetGauge: %v", err)
+				return
+			}
 			r := chi.NewRouter()
 			r.Get("/value/{metricType}/{metricName}", GetHandler(memStorage, sugar))
 			srv := httptest.NewServer(r)

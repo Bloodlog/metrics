@@ -9,7 +9,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func UpdateHandler(memStorage repository.MetricStorage, logger zap.SugaredLogger) http.HandlerFunc {
+func UpdateHandler(memStorage repository.MetricStorage, logger *zap.SugaredLogger) http.HandlerFunc {
 	return func(response http.ResponseWriter, request *http.Request) {
 		response.Header().Set("Content-Type", "application/json")
 		const nameError = "update handler"

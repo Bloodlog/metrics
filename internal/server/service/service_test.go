@@ -12,11 +12,19 @@ func TestGet(t *testing.T) {
 
 	counterID := "testCounter"
 	counterValue := uint64(42)
-	memStorage.SetCounter(counterID, counterValue)
+	err := memStorage.SetCounter(counterID, counterValue)
+	if err != nil {
+		t.Errorf("Failed to SetCounter: %v", err)
+		return
+	}
 
 	gaugeID := "testGauge"
 	gaugeValue := 123.45
-	memStorage.SetGauge(gaugeID, gaugeValue)
+	err = memStorage.SetGauge(gaugeID, gaugeValue)
+	if err != nil {
+		t.Errorf("Failed to SetCounter: %v", err)
+		return
+	}
 
 	t.Run("Get counter metric", func(t *testing.T) {
 		req := MetricsGetRequest{

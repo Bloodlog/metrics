@@ -29,7 +29,7 @@ const typeMetricName = "gauge"
 
 const nameError = "handler"
 
-func Handle(configs *config.Config, storage *repository.Repository, logger zap.SugaredLogger) error {
+func Handle(configs *config.Config, storage *repository.Repository, logger *zap.SugaredLogger) error {
 	serverAddr := "http://" + net.JoinHostPort(configs.NetAddress.Host, configs.NetAddress.Port)
 	client := createClient(serverAddr, logger)
 
@@ -85,7 +85,7 @@ func Handle(configs *config.Config, storage *repository.Repository, logger zap.S
 	}
 }
 
-func createClient(serverAddr string, logger zap.SugaredLogger) *resty.Client {
+func createClient(serverAddr string, logger *zap.SugaredLogger) *resty.Client {
 	return resty.New().
 		SetBaseURL(serverAddr).
 		SetHeader("Content-Encoding", "gzip").

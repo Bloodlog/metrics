@@ -12,10 +12,10 @@ import (
 	"go.uber.org/zap"
 )
 
-func GetHandler(memStorage repository.MetricStorage, logger zap.SugaredLogger) http.HandlerFunc {
+func GetHandler(memStorage repository.MetricStorage, logger *zap.SugaredLogger) http.HandlerFunc {
 	return func(response http.ResponseWriter, request *http.Request) {
 		response.Header().Set("Content-Type", "text/plain; charset=utf-8")
-		const nameError = "get handler"
+
 		var metricGetRequest service.MetricsGetRequest
 
 		metricNameRequest := chi.URLParam(request, "metricName")
@@ -32,7 +32,6 @@ func GetHandler(memStorage repository.MetricStorage, logger zap.SugaredLogger) h
 				response.WriteHeader(http.StatusNotFound)
 				return
 			}
-			logger.Infow("error in service", nameError, err)
 			response.WriteHeader(http.StatusBadRequest)
 
 			return

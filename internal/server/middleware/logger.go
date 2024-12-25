@@ -8,7 +8,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func LoggingMiddleware(logger zap.SugaredLogger) func(next http.Handler) http.Handler {
+func LoggingMiddleware(logger *zap.SugaredLogger) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ww := middleware.NewWrapResponseWriter(w, r.ProtoMajor)

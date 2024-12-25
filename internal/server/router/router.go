@@ -15,7 +15,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func Run(configs *config.Config, memStorage repository.MetricStorage, logger zap.SugaredLogger) error {
+func Run(configs *config.Config, memStorage repository.MetricStorage, logger *zap.SugaredLogger) error {
 	serverAddr := net.JoinHostPort(configs.NetAddress.Host, configs.NetAddress.Port)
 
 	router := chi.NewRouter()
@@ -34,7 +34,7 @@ func Run(configs *config.Config, memStorage repository.MetricStorage, logger zap
 	return nil
 }
 
-func register(r *chi.Mux, memStorage repository.MetricStorage, logger zap.SugaredLogger) {
+func register(r *chi.Mux, memStorage repository.MetricStorage, logger *zap.SugaredLogger) {
 	r.Use(middleware.LoggingMiddleware(logger), middleware.CompressionMiddleware(logger))
 
 	r.Route("/update", func(r chi.Router) {

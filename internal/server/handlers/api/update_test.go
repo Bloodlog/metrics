@@ -51,7 +51,7 @@ func TestUpdateHandler(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			logger := zap.NewNop()
-			sugar := *logger.Sugar()
+			sugar := logger.Sugar()
 
 			memStorage := repository.NewMemStorage()
 			r := chi.NewRouter()
