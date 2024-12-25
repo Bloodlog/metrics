@@ -8,8 +8,6 @@ import (
 	"os"
 	"strconv"
 	"strings"
-
-	"go.uber.org/zap"
 )
 
 type NetAddress struct {
@@ -35,10 +33,9 @@ const (
 	addressFlagDescription        = "HTTP server address in the format host:port (default: localhost:8080)"
 	reportIntervalFlagDescription = "Overrides the metric reporting frequency to the server (default: 10 seconds)"
 	pollIntervalFlagDescription   = "Overrides the metric polling frequency (default: 2 seconds)"
-	nameError                     = "config"
 )
 
-func ParseFlags(logger *zap.SugaredLogger) (*Config, error) {
+func ParseFlags() (*Config, error) {
 	addressFlag := flag.String("a", defaultAddress, addressFlagDescription)
 	reportIntervalFlag := flag.Int("r", defaultReportInterval, reportIntervalFlagDescription)
 	pollIntervalFlag := flag.Int("p", defaultPollInterval, pollIntervalFlagDescription)
@@ -46,32 +43,27 @@ func ParseFlags(logger *zap.SugaredLogger) (*Config, error) {
 
 	uknownArguments := flag.Args()
 	if err := validateUnknownArgs(uknownArguments); err != nil {
-		logger.Infoln(err.Error(), nameError, "read flag")
-		return nil, err
+		return nil, fmt.Errorf("read flags: %w", err)
 	}
 
 	finalAddress, err := getStringValue(*addressFlag, envAddress)
 	if err != nil {
-		logger.Infoln(err.Error(), nameError, "read flag address")
-		return nil, err
+		return nil, fmt.Errorf("read flag: %w", err)
 	}
 
 	host, port, err := parseAddress(finalAddress)
 	if err != nil {
-		logger.Infoln(err.Error(), nameError, "read flag address")
-		return nil, err
+		return nil, fmt.Errorf("read flag address: %w", err)
 	}
 
 	reportInterval, err := getIntValue(*reportIntervalFlag, envReportInterval)
 	if err != nil {
-		logger.Infoln(err.Error(), nameError, "read flag report interval")
-		return nil, err
+		return nil, fmt.Errorf("read flag report interval: %w", err)
 	}
 
 	poolInterval, err := getIntValue(*pollIntervalFlag, envPollInterval)
 	if err != nil {
-		logger.Infoln(err.Error(), nameError, "read flag pool interval")
-		return nil, err
+		return nil, fmt.Errorf("read flag pool interval: %w", err)
 	}
 
 	return &Config{

@@ -8,8 +8,6 @@ import (
 	"os"
 	"strconv"
 	"strings"
-
-	"go.uber.org/zap"
 )
 
 const (
@@ -40,10 +38,6 @@ const (
 	fileStoragePathDescription = "путь до файла, куда сохраняются текущие значения"
 )
 
-const (
-	nameError = "config"
-)
-
 type Config struct {
 	NetAddress      NetAddress
 	FileStoragePath string
@@ -56,7 +50,7 @@ type NetAddress struct {
 	Port string
 }
 
-func ParseFlags(logger *zap.SugaredLogger) (*Config, error) {
+func ParseFlags() (*Config, error) {
 	addressFlag := flag.String(addressFlag, defaultAddress, addressFlagDescription)
 	storeIntervalFlag := flag.Int(storeIntervalFlg, defaultStoreInterval, storeIntervalDescription)
 	storagePathFlag := flag.String(fileStoragePathFlag, defaultFileStoragePath, fileStoragePathDescription)
@@ -66,38 +60,32 @@ func ParseFlags(logger *zap.SugaredLogger) (*Config, error) {
 
 	uknownArguments := flag.Args()
 	if err := validateUnknownArgs(uknownArguments); err != nil {
-		logger.Infoln(err.Error(), nameError, "read flag UnknownArgs")
-		return nil, err
+		return nil, fmt.Errorf("read flag UnknownArgs: %w", err)
 	}
 
 	finalAddress, err := getStringValue(*addressFlag, envAddress)
 	if err != nil {
-		logger.Infoln(err.Error(), nameError, "read flag address")
-		return nil, err
+		return nil, fmt.Errorf("read flag address: %w", err)
 	}
 
 	host, port, err := parseAddress(finalAddress)
 	if err != nil {
-		logger.Infoln(err.Error(), nameError, "read flag address")
-		return nil, err
+		return nil, fmt.Errorf("read flag address: %w", err)
 	}
 
 	storeInterval, err := getIntValue(*storeIntervalFlag, envStoreInterval)
 	if err != nil {
-		logger.Infoln(err.Error(), nameError, "read flag report interval")
-		return nil, err
+		return nil, fmt.Errorf("read flag report interval: %w", err)
 	}
 
 	storagePath, err := getStringValue(*storagePathFlag, envFileStoragePath)
 	if err != nil {
-		logger.Infoln(err.Error(), nameError, "read flag storage")
-		return nil, err
+		return nil, fmt.Errorf("read flag storage: %w", err)
 	}
 
 	restore, err := getBoolValue(*restoreFlag, envRestore)
 	if err != nil {
-		logger.Infoln(err.Error(), nameError, "read flag restore")
-		return nil, err
+		return nil, fmt.Errorf("read flag restore: %w", err)
 	}
 
 	return &Config{

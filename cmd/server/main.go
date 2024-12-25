@@ -23,7 +23,7 @@ func run() error {
 	}
 	logger.Info("Logger initialized successfully")
 
-	configs, err := config.ParseFlags(logger)
+	configs, err := config.ParseFlags()
 	if err != nil {
 		logger.Info(err.Error(), "failed to parse flags")
 		return fmt.Errorf("failed to parse flags: %w", err)
