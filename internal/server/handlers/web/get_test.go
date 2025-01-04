@@ -40,7 +40,8 @@ func TestGetCounterHandler(t *testing.T) {
 				return
 			}
 			r := chi.NewRouter()
-			r.Get("/value/{metricType}/{metricName}", GetHandler(memStorage, sugar))
+			webHandler := NewHandler(memStorage, sugar)
+			r.Get("/value/{metricType}/{metricName}", webHandler.GetHandler())
 			srv := httptest.NewServer(r)
 			defer srv.Close()
 
@@ -81,7 +82,8 @@ func TestGetCounterFailsHandler(t *testing.T) {
 		return
 	}
 	r := chi.NewRouter()
-	r.Get("/value/{metricType}/{metricName}", GetHandler(memStorage, sugar))
+	webHandler := NewHandler(memStorage, sugar)
+	r.Get("/value/{metricType}/{metricName}", webHandler.GetHandler())
 	srv := httptest.NewServer(r)
 	defer srv.Close()
 
@@ -131,7 +133,8 @@ func TestGetGaugeHandler(t *testing.T) {
 				return
 			}
 			r := chi.NewRouter()
-			r.Get("/value/{metricType}/{metricName}", GetHandler(memStorage, sugar))
+			webHandler := NewHandler(memStorage, sugar)
+			r.Get("/value/{metricType}/{metricName}", webHandler.GetHandler())
 			srv := httptest.NewServer(r)
 			defer srv.Close()
 
@@ -177,7 +180,8 @@ func TestGetGaugeFailHandler(t *testing.T) {
 				return
 			}
 			r := chi.NewRouter()
-			r.Get("/value/{metricType}/{metricName}", GetHandler(memStorage, sugar))
+			webHandler := NewHandler(memStorage, sugar)
+			r.Get("/value/{metricType}/{metricName}", webHandler.GetHandler())
 			srv := httptest.NewServer(r)
 			defer srv.Close()
 

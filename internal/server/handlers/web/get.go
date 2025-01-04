@@ -2,17 +2,16 @@ package web
 
 import (
 	"errors"
-	"metrics/internal/server/repository"
 	"metrics/internal/server/service"
 	"net/http"
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
-
-	"go.uber.org/zap"
 )
 
-func GetHandler(memStorage repository.MetricStorage, logger *zap.SugaredLogger) http.HandlerFunc {
+func (h *Handler) GetHandler() http.HandlerFunc {
+	handlerLogger := h.logger.With("handler", "GetHandler")
+	const nameError = "error"
 	return func(response http.ResponseWriter, request *http.Request) {
 		response.Header().Set("Content-Type", "text/plain; charset=utf-8")
 
@@ -26,7 +25,7 @@ func GetHandler(memStorage repository.MetricStorage, logger *zap.SugaredLogger) 
 			MType: metricTypeRequest,
 		}
 
-		result, err := service.Get(metricGetRequest, memStorage)
+		result, err := service.Get(metricGetRequest, h.memStorage)
 		if err != nil {
 			if errors.Is(err, service.ErrMetricNotFound) {
 				response.WriteHeader(http.StatusNotFound)
@@ -47,7 +46,7 @@ func GetHandler(memStorage repository.MetricStorage, logger *zap.SugaredLogger) 
 		}
 
 		if err != nil {
-			logger.Infow("error parse response", "error", err)
+			handlerLogger.Infow("error parse response", nameError, err)
 			response.WriteHeader(http.StatusInternalServerError)
 			return
 		}

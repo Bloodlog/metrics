@@ -9,6 +9,7 @@ import (
 )
 
 func LoggingMiddleware(logger *zap.SugaredLogger) func(next http.Handler) http.Handler {
+	handlerLogger := logger.With("middleware", "LoggingMiddleware")
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ww := middleware.NewWrapResponseWriter(w, r.ProtoMajor)
@@ -18,7 +19,7 @@ func LoggingMiddleware(logger *zap.SugaredLogger) func(next http.Handler) http.H
 
 			duration := time.Since(start)
 
-			logger.Infoln(
+			handlerLogger.Infoln(
 				"method", r.Method,
 				"uri", r.RequestURI,
 				"status", ww.Status(),

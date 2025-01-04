@@ -27,14 +27,28 @@ const (
 
 const typeMetricName = "gauge"
 
-const nameError = "handler"
+type Handlers struct {
+	configs *config.Config
+	storage *repository.Repository
+	logger  *zap.SugaredLogger
+	client  *resty.Client
+}
 
-func Handle(configs *config.Config, storage *repository.Repository, logger *zap.SugaredLogger) error {
+func NewHandlers(configs *config.Config, storage *repository.Repository, logger *zap.SugaredLogger) *Handlers {
 	serverAddr := "http://" + net.JoinHostPort(configs.NetAddress.Host, configs.NetAddress.Port)
 	client := createClient(serverAddr, logger)
 
-	pollTicker := time.NewTicker(time.Duration(configs.PollInterval) * time.Second)
-	reportTicker := time.NewTicker(time.Duration(configs.ReportInterval) * time.Second)
+	return &Handlers{
+		configs: configs,
+		storage: storage,
+		logger:  logger,
+		client:  client,
+	}
+}
+
+func (h *Handlers) Handle() error {
+	pollTicker := time.NewTicker(time.Duration(h.configs.PollInterval) * time.Second)
+	reportTicker := time.NewTicker(time.Duration(h.configs.ReportInterval) * time.Second)
 	defer pollTicker.Stop()
 	defer reportTicker.Stop()
 
@@ -44,7 +58,7 @@ func Handle(configs *config.Config, storage *repository.Repository, logger *zap.
 	for {
 		select {
 		case <-pollTicker.C:
-			metrics = storage.GetMemoryMetrics()
+			metrics = h.storage.GetMemoryMetrics()
 			counter++
 
 		case <-reportTicker.C:
@@ -57,11 +71,10 @@ func Handle(configs *config.Config, storage *repository.Repository, logger *zap.
 				MType: typeCounter,
 			}
 
-			err := service.SendIncrement(client, metricCounterRequest)
+			err := service.SendIncrement(h.client, metricCounterRequest)
 
 			counter = 0
 			if err != nil {
-				logger.Infoln(err.Error(), nameError, "send Increment")
 				return fmt.Errorf("failed to send Increment %d to server: %w", counter, err)
 			}
 
@@ -75,9 +88,8 @@ func Handle(configs *config.Config, storage *repository.Repository, logger *zap.
 					MType: typeMetricName,
 				}
 
-				err := service.SendMetric(client, MetricGaugeUpdateRequest)
+				err := service.SendMetric(h.client, MetricGaugeUpdateRequest)
 				if err != nil {
-					logger.Infoln(err.Error(), nameError, "send metric")
 					return fmt.Errorf("failed to send metric %s to server: %w", metric.Name, err)
 				}
 			}
@@ -86,6 +98,7 @@ func Handle(configs *config.Config, storage *repository.Repository, logger *zap.
 }
 
 func createClient(serverAddr string, logger *zap.SugaredLogger) *resty.Client {
+	handlerLogger := logger.With("client", "send request")
 	return resty.New().
 		SetBaseURL(serverAddr).
 		SetHeader("Content-Encoding", "gzip").
@@ -97,15 +110,15 @@ func createClient(serverAddr string, logger *zap.SugaredLogger) *resty.Client {
 			return err != nil || r.StatusCode() >= http.StatusInternalServerError
 		}).
 		OnBeforeRequest(func(client *resty.Client, req *resty.Request) error {
-			logger.Infof("Sending request to %s with body: %v", req.URL, req.Body)
+			handlerLogger.Infof("Sending request to %s with body: %v", req.URL, req.Body)
 			return nil
 		}).
 		OnAfterResponse(func(client *resty.Client, resp *resty.Response) error {
-			logger.Infof("Received response from %s with status: %d, body: %v",
+			handlerLogger.Infof("Received response from %s with status: %d, body: %v",
 				resp.Request.URL, resp.StatusCode(), resp.String())
 			return nil
 		}).
 		OnError(func(req *resty.Request, err error) {
-			logger.Infoln("Request to %s failed: %v", req.URL, err)
+			handlerLogger.Infoln("Request to %s failed: %v", req.URL, err)
 		})
 }

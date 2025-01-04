@@ -80,7 +80,8 @@ func TestGetHandler(t *testing.T) {
 			tc.setupStorage(memStorage)
 
 			r := chi.NewRouter()
-			r.Post("/get", GetHandler(memStorage, sugar))
+			apiHandler := NewHandler(memStorage, sugar)
+			r.Post("/get", apiHandler.GetHandler())
 			srv := httptest.NewServer(r)
 			defer srv.Close()
 

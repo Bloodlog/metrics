@@ -16,34 +16,36 @@ import (
 )
 
 func Run(configs *config.Config, memStorage repository.MetricStorage, logger *zap.SugaredLogger) error {
+	handlerLogger := logger.With("router", "router")
 	serverAddr := net.JoinHostPort(configs.NetAddress.Host, configs.NetAddress.Port)
 
 	router := chi.NewRouter()
 
 	register(router, memStorage, logger)
 
-	logger.Infow(
+	handlerLogger.Infow(
 		"Starting server",
 		"addr", serverAddr,
 	)
 	err := http.ListenAndServe(serverAddr, router)
 	if err != nil {
-		logger.Info(err.Error(), "router", "start server")
 		return fmt.Errorf("failed to start server: %w", err)
 	}
 	return nil
 }
 
 func register(r *chi.Mux, memStorage repository.MetricStorage, logger *zap.SugaredLogger) {
+	apiHandler := api.NewHandler(memStorage, logger)
+	webHandler := web.NewHandler(memStorage, logger)
 	r.Use(middleware.LoggingMiddleware(logger), middleware.CompressionMiddleware(logger))
 
 	r.Route("/update", func(r chi.Router) {
-		r.Post("/", api.UpdateHandler(memStorage, logger))
-		r.Post("/{metricType}/{metricName}/{metricValue}", web.UpdateHandler(memStorage, logger))
+		r.Post("/", apiHandler.UpdateHandler())
+		r.Post("/{metricType}/{metricName}/{metricValue}", webHandler.UpdateHandler())
 	})
 	r.Route("/value", func(r chi.Router) {
-		r.Post("/", api.GetHandler(memStorage, logger))
-		r.Get("/{metricType}/{metricName}", web.GetHandler(memStorage, logger))
+		r.Post("/", apiHandler.GetHandler())
+		r.Get("/{metricType}/{metricName}", webHandler.GetHandler())
 	})
-	r.Get("/", web.ListHandler(memStorage, logger))
+	r.Get("/", webHandler.ListHandler())
 }

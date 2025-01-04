@@ -11,31 +11,27 @@ import (
 )
 
 func main() {
-	if err := run(); err != nil {
-		log.Fatal(err)
+	logger, err := getLogger()
+	if err != nil {
+		log.Fatalf("Failed to initialize logger: %v", err)
+	}
+
+	if err := run(logger); err != nil {
+		logger.Fatal("Application failed", zap.Error(err))
 	}
 }
 
-func run() error {
-	logger, err := getLogger()
-	if err != nil {
-		return fmt.Errorf("logger fail: %w", err)
-	}
-	logger.Info("Logger initialized successfully")
-
+func run(logger *zap.SugaredLogger) error {
 	configs, err := config.ParseFlags()
 	if err != nil {
 		logger.Info(err.Error(), "failed to parse flags")
 		return fmt.Errorf("failed to parse flags: %w", err)
 	}
-	logger.Info("Flags and env parsed")
 
 	storage, err := getRepository(configs.FileStoragePath, configs.StoreInterval, configs.Restore, logger)
 	if err != nil {
-		logger.Info(err.Error(), "repository error")
 		return fmt.Errorf("repository error: %w", err)
 	}
-	logger.Info("Repository initialized successfully")
 
 	if configs.StoreInterval > 0 && configs.FileStoragePath != "" {
 		go func() {
@@ -47,7 +43,6 @@ func run() error {
 	}
 
 	if err := router.Run(configs, storage, logger); err != nil {
-		logger.Info(err.Error(), "failed to run router")
 		return fmt.Errorf("failed to run router: %w", err)
 	}
 

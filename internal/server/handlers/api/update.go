@@ -2,43 +2,41 @@ package api
 
 import (
 	"encoding/json"
-	"metrics/internal/server/repository"
 	"metrics/internal/server/service"
 	"net/http"
-
-	"go.uber.org/zap"
 )
 
-func UpdateHandler(memStorage repository.MetricStorage, logger *zap.SugaredLogger) http.HandlerFunc {
+func (h *Handler) UpdateHandler() http.HandlerFunc {
+	handlerLogger := h.logger.With("handler", "UpdateHandler")
+	const nameError = "error"
 	return func(response http.ResponseWriter, request *http.Request) {
 		response.Header().Set("Content-Type", "application/json")
-		const nameError = "update handler"
 
 		var metricUpdateRequest service.MetricsUpdateRequest
 
 		if err := json.NewDecoder(request.Body).Decode(&metricUpdateRequest); err != nil {
-			logger.Infow("Invalid JSON", "error", err)
+			handlerLogger.Infow("Invalid JSON", nameError, err)
 			response.WriteHeader(http.StatusBadRequest)
 			return
 		}
 
-		result, err := service.Update(metricUpdateRequest, memStorage)
+		result, err := service.Update(metricUpdateRequest, h.memStorage)
 		if err != nil {
-			logger.Infow("error in service", nameError, err)
+			handlerLogger.Infow("error in service", nameError, err)
 			response.WriteHeader(http.StatusBadRequest)
 			return
 		}
 
 		resp, err := json.Marshal(result)
 		if err != nil {
-			logger.Infow("error marshal json", nameError, err)
+			handlerLogger.Infow("error marshal json", nameError, err)
 			response.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 
 		_, err = response.Write(resp)
 		if err != nil {
-			logger.Infow("error write response", nameError, err)
+			handlerLogger.Infow("error write response", nameError, err)
 			response.WriteHeader(http.StatusInternalServerError)
 			return
 		}

@@ -1,21 +1,18 @@
 package web
 
 import (
-	"metrics/internal/server/repository"
 	"metrics/internal/server/service"
 	"net/http"
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
-
-	"go.uber.org/zap"
 )
 
-func UpdateHandler(memStorage repository.MetricStorage, logger *zap.SugaredLogger) http.HandlerFunc {
+func (h *Handler) UpdateHandler() http.HandlerFunc {
+	handlerLogger := h.logger.With("handler", "UpdateHandler")
 	return func(response http.ResponseWriter, request *http.Request) {
 		response.Header().Set("Content-Type", "text/plain; charset=utf-8")
 		var metricUpdateRequest service.MetricsUpdateRequest
-		const nameError = "update handler"
 
 		metricValueRequest := chi.URLParam(request, "metricValue")
 		metricNameRequest := chi.URLParam(request, "metricName")
@@ -47,9 +44,9 @@ func UpdateHandler(memStorage repository.MetricStorage, logger *zap.SugaredLogge
 			}
 		}
 
-		_, err := service.Update(metricUpdateRequest, memStorage)
+		_, err := service.Update(metricUpdateRequest, h.memStorage)
 		if err != nil {
-			logger.Infow("error in service", nameError, err)
+			handlerLogger.Infow("error in service", "error", err)
 			response.WriteHeader(http.StatusBadRequest)
 
 			return

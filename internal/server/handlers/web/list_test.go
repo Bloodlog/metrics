@@ -49,7 +49,8 @@ func TestListGaugeHandler(t *testing.T) {
 				return
 			}
 			r := chi.NewRouter()
-			r.Get("/", ListHandler(memStorage, sugar))
+			webHandler := NewHandler(memStorage, sugar)
+			r.Get("/", webHandler.ListHandler())
 			srv := httptest.NewServer(r)
 			defer srv.Close()
 

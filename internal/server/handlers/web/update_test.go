@@ -36,7 +36,8 @@ func TestUpdateHandler(t *testing.T) {
 
 			memStorage := repository.NewMemStorage()
 			r := chi.NewRouter()
-			r.Post("/update/{metricType}/{metricName}/{metricValue}", UpdateHandler(memStorage, sugar))
+			webHandler := NewHandler(memStorage, sugar)
+			r.Post("/update/{metricType}/{metricName}/{metricValue}", webHandler.UpdateHandler())
 			srv := httptest.NewServer(r)
 			defer srv.Close()
 
