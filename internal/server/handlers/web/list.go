@@ -11,7 +11,7 @@ type MetricsData struct {
 }
 
 func (h *Handler) ListHandler() http.HandlerFunc {
-	handlerLogger := h.logger.With("handler", "ListHandler")
+	handlerLogger := h.logger.With(nameLogger, "web ListHandler")
 	return func(response http.ResponseWriter, request *http.Request) {
 		response.Header().Set("Content-Type", "text/html; charset=utf-8")
 

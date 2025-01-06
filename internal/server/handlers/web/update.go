@@ -9,7 +9,7 @@ import (
 )
 
 func (h *Handler) UpdateHandler() http.HandlerFunc {
-	handlerLogger := h.logger.With("handler", "UpdateHandler")
+	handlerLogger := h.logger.With(nameLogger, "web UpdateHandler")
 	return func(response http.ResponseWriter, request *http.Request) {
 		response.Header().Set("Content-Type", "text/plain; charset=utf-8")
 		var metricUpdateRequest service.MetricsUpdateRequest

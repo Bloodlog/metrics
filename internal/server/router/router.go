@@ -21,7 +21,7 @@ func Run(configs *config.Config, memStorage repository.MetricStorage, logger *za
 
 	router := chi.NewRouter()
 
-	register(router, memStorage, logger)
+	register(router, configs, memStorage, logger)
 
 	handlerLogger.Infow(
 		"Starting server",
@@ -34,7 +34,7 @@ func Run(configs *config.Config, memStorage repository.MetricStorage, logger *za
 	return nil
 }
 
-func register(r *chi.Mux, memStorage repository.MetricStorage, logger *zap.SugaredLogger) {
+func register(r *chi.Mux, configs *config.Config, memStorage repository.MetricStorage, logger *zap.SugaredLogger) {
 	apiHandler := api.NewHandler(memStorage, logger)
 	webHandler := web.NewHandler(memStorage, logger)
 	r.Use(middleware.LoggingMiddleware(logger), middleware.CompressionMiddleware(logger))
@@ -48,4 +48,5 @@ func register(r *chi.Mux, memStorage repository.MetricStorage, logger *zap.Sugar
 		r.Get("/{metricType}/{metricName}", webHandler.GetHandler())
 	})
 	r.Get("/", webHandler.ListHandler())
+	r.Get("/ping", webHandler.HealthHandler(configs.DatabaseDsn))
 }

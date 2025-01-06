@@ -10,8 +10,7 @@ import (
 )
 
 func (h *Handler) GetHandler() http.HandlerFunc {
-	handlerLogger := h.logger.With("handler", "GetHandler")
-	const nameError = "error"
+	handlerLogger := h.logger.With(nameLogger, "web GetHandler")
 	return func(response http.ResponseWriter, request *http.Request) {
 		response.Header().Set("Content-Type", "text/plain; charset=utf-8")
 

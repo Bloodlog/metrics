@@ -7,7 +7,7 @@ import (
 )
 
 func (h *Handler) UpdateHandler() http.HandlerFunc {
-	handlerLogger := h.logger.With("handler", "UpdateHandler")
+	handlerLogger := h.logger.With(nameLogger, "api UpdateHandler")
 	const nameError = "error"
 	return func(response http.ResponseWriter, request *http.Request) {
 		response.Header().Set("Content-Type", "application/json")

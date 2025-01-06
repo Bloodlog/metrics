@@ -8,8 +8,7 @@ import (
 )
 
 func (h *Handler) GetHandler() http.HandlerFunc {
-	handlerLogger := h.logger.With("handler", "GetHandler")
-	const nameError = "error"
+	handlerLogger := h.logger.With(nameLogger, "api GetHandler")
 	return func(response http.ResponseWriter, request *http.Request) {
 		response.Header().Set("Content-Type", "application/json")
 

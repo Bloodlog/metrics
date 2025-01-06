@@ -6,6 +6,9 @@ import (
 	"go.uber.org/zap"
 )
 
+const nameLogger = "handler"
+const nameError = "error"
+
 type Handler struct {
 	memStorage repository.MetricStorage
 	logger     *zap.SugaredLogger
