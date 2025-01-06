@@ -7,14 +7,20 @@ import (
 )
 
 func TestMemStorage_SetAndGetGauge(t *testing.T) {
+	const counterName string = "Allocate"
+	const counterValue float64 = 1333.333
 	ms := NewMemStorage()
 
-	ms.SetGauge("temperature", 25.5)
+	err := ms.SetGauge(counterName, counterValue)
+	if err != nil {
+		t.Errorf("Failed to SetCounter: %v", err)
+		return
+	}
 
-	value, err := ms.GetGauge("temperature")
+	value, err := ms.GetGauge(counterName)
 
 	assert.NoError(t, err, "ошибка не должна быть")
-	assert.Equal(t, 25.5, value, "значение gauge должно совпадать")
+	assert.Equal(t, counterValue, value, "значение gauge должно совпадать")
 }
 
 func TestMemStorage_GetGauge_NotFound(t *testing.T) {
@@ -29,8 +35,16 @@ func TestMemStorage_GetGauge_NotFound(t *testing.T) {
 func TestMemStorage_SetAndGetCounter(t *testing.T) {
 	ms := NewMemStorage()
 
-	ms.SetCounter("requests", 5)
-	ms.SetCounter("requests", 10)
+	err := ms.SetCounter("requests", 5)
+	if err != nil {
+		t.Errorf("Failed to SetCounter: %v", err)
+		return
+	}
+	err = ms.SetCounter("requests", 10)
+	if err != nil {
+		t.Errorf("Failed to SetCounter: %v", err)
+		return
+	}
 
 	value, err := ms.GetCounter("requests")
 

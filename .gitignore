@@ -27,3 +27,6 @@ vendor/
 internal/.DS_Store
 
 golangci-lint
+
+# Local db
+cmd/server/metrics.json

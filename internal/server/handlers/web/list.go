@@ -1,9 +1,7 @@
-package handlers
+package web
 
 import (
 	"html/template"
-	"log"
-	"metrics/internal/server/repository"
 	"net/http"
 )
 
@@ -12,13 +10,14 @@ type MetricsData struct {
 	Counters map[string]uint64
 }
 
-func ListHandler(memStorage *repository.MemStorage) http.HandlerFunc {
+func (h *Handler) ListHandler() http.HandlerFunc {
+	handlerLogger := h.logger.With("handler", "ListHandler")
 	return func(response http.ResponseWriter, request *http.Request) {
 		response.Header().Set("Content-Type", "text/html; charset=utf-8")
 
 		data := MetricsData{
-			Gauges:   memStorage.Gauges(),
-			Counters: memStorage.Counters(),
+			Gauges:   h.memStorage.Gauges(),
+			Counters: h.memStorage.Counters(),
 		}
 
 		tmpl, err := template.New("metrics").Parse(`
@@ -39,14 +38,14 @@ func ListHandler(memStorage *repository.MemStorage) http.HandlerFunc {
 		`)
 
 		if err != nil {
-			log.Printf("error parse metrics: %v", err)
+			handlerLogger.Infow("error parse metrics", "error", err)
 			response.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 
 		err = tmpl.Execute(response, data)
 		if err != nil {
-			log.Printf("error parse metrics: %v", err)
+			handlerLogger.Infow("error parse metrics", "error", err)
 			response.WriteHeader(http.StatusInternalServerError)
 			return
 		}

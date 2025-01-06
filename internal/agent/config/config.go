@@ -4,7 +4,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"log"
 	"net/url"
 	"os"
 	"strconv"
@@ -20,64 +19,57 @@ type Config struct {
 	NetAddress     NetAddress
 	ReportInterval int
 	PollInterval   int
-	Debug          bool
 }
 
 const (
-	DefaultAddress        = "http://localhost:8080"
-	DefaultReportInterval = 10
-	DefaultPollInterval   = 2
+	defaultAddress        = "http://localhost:8080"
+	defaultReportInterval = 10
+	defaultPollInterval   = 2
 
-	EnvAddress        = "ADDRESS"
-	EnvReportInterval = "REPORT_INTERVAL"
-	EnvPollInterval   = "POLL_INTERVAL"
+	envAddress        = "ADDRESS"
+	envReportInterval = "REPORT_INTERVAL"
+	envPollInterval   = "POLL_INTERVAL"
 
-	AddressFlagDescription        = "HTTP server address in the format host:port (default: localhost:8080)"
-	ReportIntervalFlagDescription = "Overrides the metric reporting frequency to the server (default: 10 seconds)"
-	PollIntervalFlagDescription   = "Overrides the metric polling frequency (default: 2 seconds)"
+	addressFlagDescription        = "HTTP server address in the format host:port (default: localhost:8080)"
+	reportIntervalFlagDescription = "Overrides the metric reporting frequency to the server (default: 10 seconds)"
+	pollIntervalFlagDescription   = "Overrides the metric polling frequency (default: 2 seconds)"
 )
 
 func ParseFlags() (*Config, error) {
-	addressFlag := flag.String("a", DefaultAddress, AddressFlagDescription)
-	reportIntervalFlag := flag.Int("r", DefaultReportInterval, ReportIntervalFlagDescription)
-	pollIntervalFlag := flag.Int("p", DefaultPollInterval, PollIntervalFlagDescription)
+	addressFlag := flag.String("a", defaultAddress, addressFlagDescription)
+	reportIntervalFlag := flag.Int("r", defaultReportInterval, reportIntervalFlagDescription)
+	pollIntervalFlag := flag.Int("p", defaultPollInterval, pollIntervalFlagDescription)
 	flag.Parse()
 
 	uknownArguments := flag.Args()
 	if err := validateUnknownArgs(uknownArguments); err != nil {
-		log.Printf("error: unknown flags or arguments detected: %v", uknownArguments)
-		return nil, err
+		return nil, fmt.Errorf("read flags: %w", err)
 	}
 
-	finalAddress, err := getStringValue(*addressFlag, EnvAddress)
+	finalAddress, err := getStringValue(*addressFlag, envAddress)
 	if err != nil {
-		log.Printf("error: invalid address: %v", err)
-		return nil, err
+		return nil, fmt.Errorf("read flag: %w", err)
 	}
 
 	host, port, err := parseAddress(finalAddress)
 	if err != nil {
-		log.Printf("error: invalid address: %v", err)
-		return nil, err
+		return nil, fmt.Errorf("read flag address: %w", err)
 	}
 
-	reportInterval, err := getIntValue(*reportIntervalFlag, EnvReportInterval)
+	reportInterval, err := getIntValue(*reportIntervalFlag, envReportInterval)
 	if err != nil {
-		log.Printf("Warning: invalid value for %s", EnvReportInterval)
-		return nil, err
+		return nil, fmt.Errorf("read flag report interval: %w", err)
 	}
 
-	poolInterval, err := getIntValue(*pollIntervalFlag, EnvPollInterval)
+	poolInterval, err := getIntValue(*pollIntervalFlag, envPollInterval)
 	if err != nil {
-		log.Printf("Warning: invalid value for %s", EnvPollInterval)
-		return nil, err
+		return nil, fmt.Errorf("read flag pool interval: %w", err)
 	}
 
 	return &Config{
 		NetAddress:     NetAddress{Host: host, Port: port},
 		ReportInterval: reportInterval,
 		PollInterval:   poolInterval,
-		Debug:          false,
 	}, nil
 }
 
@@ -102,7 +94,7 @@ func parseAddress(address string) (string, string, error) {
 
 func validateUnknownArgs(unknownArgs []string) error {
 	if len(unknownArgs) > 0 {
-		return errors.New("unknown flags or arguments detected")
+		return fmt.Errorf("unknown flags or arguments detected: %v", unknownArgs)
 	}
 	return nil
 }

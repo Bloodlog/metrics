@@ -14,12 +14,22 @@ func TestCounterService_SendIncrement(t *testing.T) {
 
 	httpmock.ActivateNonDefault(client.GetClient())
 
-	responder := httpmock.NewStringResponder(http.StatusOK, ``)
-	url := "/update/counter/PollCount/42"
+	responder := httpmock.NewStringResponder(http.StatusOK, "")
+	url := "/update/"
 
 	httpmock.RegisterResponder("POST", url, responder)
 
-	err := SendIncrement(client, 42)
+	counter := 42
+	var metricCounterRequest MetricsCounterRequest
+	delta := int64(counter)
+
+	metricCounterRequest = MetricsCounterRequest{
+		Delta: &delta,
+		ID:    "PoolCounter",
+		MType: "counter",
+	}
+
+	err := SendIncrement(client, metricCounterRequest)
 
 	assert.NoError(t, err)
 }
