@@ -37,7 +37,10 @@ type MetricsResponse struct {
 
 var ErrMetricNotFound = errors.New("metric not found")
 
-func (s *MetricService) Get(ctx context.Context, req MetricsGetRequest, storage repository.MetricStorage) (*MetricsResponse, error) {
+func (s *MetricService) Get(
+	ctx context.Context,
+	req MetricsGetRequest,
+	storage repository.MetricStorage) (*MetricsResponse, error) {
 	if req.MType == "counter" {
 		counter, err := storage.GetCounter(ctx, req.ID)
 		if err != nil {
@@ -70,7 +73,10 @@ func (s *MetricService) Get(ctx context.Context, req MetricsGetRequest, storage 
 	return nil, ErrMetricNotFound
 }
 
-func (s *MetricService) Update(ctx context.Context, req MetricsUpdateRequest, storage repository.MetricStorage) (*MetricsResponse, error) {
+func (s *MetricService) Update(
+	ctx context.Context,
+	req MetricsUpdateRequest,
+	storage repository.MetricStorage) (*MetricsResponse, error) {
 	handlerLogger := s.logger.With("service", "Update")
 	if req.MType == "counter" {
 		if req.Delta == nil {
@@ -80,7 +86,7 @@ func (s *MetricService) Update(ctx context.Context, req MetricsUpdateRequest, st
 		deltaValue := uint64(delta)
 		err := storage.SetCounter(ctx, req.ID, deltaValue)
 		if err != nil {
-			handlerLogger.Infow("value cannot be save", err)
+			handlerLogger.Infow("error: value cannot be save", "error", err)
 			return nil, errors.New("value cannot be save")
 		}
 
@@ -105,7 +111,7 @@ func (s *MetricService) Update(ctx context.Context, req MetricsUpdateRequest, st
 		value := *req.Value
 		err := storage.SetGauge(ctx, req.ID, value)
 		if err != nil {
-			handlerLogger.Infow("value cannot be save", err)
+			handlerLogger.Infow("error: value cannot be save", "error", err)
 			return nil, errors.New("value cannot be save")
 		}
 
