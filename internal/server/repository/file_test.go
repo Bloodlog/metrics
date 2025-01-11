@@ -1,12 +1,14 @@
 package repository
 
 import (
+	"context"
 	"os"
 	"sync"
 	"testing"
 )
 
 func TestSaveToFileAndLoadFromFile(t *testing.T) {
+	ctx := context.Background()
 	const tempFileName = "metrics_test_*.json"
 	const counterName = "NameCounter"
 	const counterValue = 123
@@ -19,12 +21,12 @@ func TestSaveToFileAndLoadFromFile(t *testing.T) {
 		mu:       &sync.RWMutex{},
 	}
 
-	err := memStorage.SetGauge(gaugeName, gaugeValue)
+	err := memStorage.SetGauge(ctx, gaugeName, gaugeValue)
 	if err != nil {
 		t.Errorf("Failed to SetGauge: %v", err)
 		return
 	}
-	err = memStorage.SetCounter(counterName, counterValue)
+	err = memStorage.SetCounter(ctx, counterName, counterValue)
 	if err != nil {
 		t.Errorf("Failed to SetCounter: %v", err)
 		return
@@ -45,7 +47,7 @@ func TestSaveToFileAndLoadFromFile(t *testing.T) {
 
 	fileWrapper := NewFileStorageWrapper(memStorage, tempFile.Name(), 0)
 
-	err = fileWrapper.SaveToFile()
+	err = fileWrapper.SaveToFile(ctx)
 	if err != nil {
 		t.Errorf("SaveToFile failed: %v", err)
 		return
@@ -58,18 +60,18 @@ func TestSaveToFileAndLoadFromFile(t *testing.T) {
 	}
 	fileWrapper.storage = memStorage
 
-	err = fileWrapper.LoadFromFile()
+	err = fileWrapper.LoadFromFile(ctx)
 	if err != nil {
 		t.Errorf("LoadFromFile failed: %v", err)
 		return
 	}
 
-	gauge, err := memStorage.GetGauge(gaugeName)
+	gauge, err := memStorage.GetGauge(ctx, gaugeName)
 	if err != nil || gauge != gaugeValue {
 		t.Errorf("Expected gauge value %v, got %v (err: %v)", gaugeValue, gauge, err)
 	}
 
-	counter, err := memStorage.GetCounter(counterName)
+	counter, err := memStorage.GetCounter(ctx, counterName)
 	if err != nil || counter != counterValue {
 		t.Errorf("Expected counter value %v, got %v (err: %v)", counterValue, counter, err)
 	}

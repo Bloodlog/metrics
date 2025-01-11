@@ -10,6 +10,7 @@ import (
 func (h *Handler) GetHandler() http.HandlerFunc {
 	handlerLogger := h.logger.With(nameLogger, "api GetHandler")
 	return func(response http.ResponseWriter, request *http.Request) {
+		ctx := request.Context()
 		response.Header().Set("Content-Type", "application/json")
 
 		var metricGetRequest service.MetricsGetRequest
@@ -27,7 +28,8 @@ func (h *Handler) GetHandler() http.HandlerFunc {
 			return
 		}
 
-		result, err := service.Get(metricGetRequest, h.memStorage)
+		metricService := service.NewMetricService(handlerLogger)
+		result, err := metricService.Get(ctx, metricGetRequest, h.memStorage)
 		if err != nil {
 			if errors.Is(err, service.ErrMetricNotFound) {
 				response.WriteHeader(http.StatusNotFound)

@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -16,6 +17,7 @@ import (
 )
 
 func TestGetHandler(t *testing.T) {
+	ctx := context.Background()
 	counterValue := uint64(100)
 	gaugeValue := 1234.1234
 
@@ -30,7 +32,7 @@ func TestGetHandler(t *testing.T) {
 			name:        "Get Counter Successfully",
 			requestBody: `{"id": "PollCount", "type": "counter"}`,
 			setupStorage: func(memStorage *repository.MemStorage) {
-				err := memStorage.SetCounter("PollCount", counterValue)
+				err := memStorage.SetCounter(ctx, "PollCount", counterValue)
 				if err != nil {
 					t.Errorf("Failed to SetCounter: %v", err)
 					return
@@ -43,7 +45,7 @@ func TestGetHandler(t *testing.T) {
 			name:        "Get Gauge Successfully",
 			requestBody: `{"id": "Allocate", "type": "gauge"}`,
 			setupStorage: func(memStorage *repository.MemStorage) {
-				err := memStorage.SetGauge("Allocate", gaugeValue)
+				err := memStorage.SetGauge(ctx, "Allocate", gaugeValue)
 				if err != nil {
 					t.Errorf("Failed to SetCounter: %v", err)
 					return

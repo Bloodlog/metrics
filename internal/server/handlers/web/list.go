@@ -13,11 +13,12 @@ type MetricsData struct {
 func (h *Handler) ListHandler() http.HandlerFunc {
 	handlerLogger := h.logger.With(nameLogger, "web ListHandler")
 	return func(response http.ResponseWriter, request *http.Request) {
+		ctx := request.Context()
 		response.Header().Set("Content-Type", "text/html; charset=utf-8")
 
 		data := MetricsData{
-			Gauges:   h.memStorage.Gauges(),
-			Counters: h.memStorage.Counters(),
+			Gauges:   h.memStorage.Gauges(ctx),
+			Counters: h.memStorage.Counters(ctx),
 		}
 
 		tmpl, err := template.New("metrics").Parse(`

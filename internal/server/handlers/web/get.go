@@ -12,6 +12,7 @@ import (
 func (h *Handler) GetHandler() http.HandlerFunc {
 	handlerLogger := h.logger.With(nameLogger, "web GetHandler")
 	return func(response http.ResponseWriter, request *http.Request) {
+		ctx := request.Context()
 		response.Header().Set("Content-Type", "text/plain; charset=utf-8")
 
 		var metricGetRequest service.MetricsGetRequest
@@ -24,7 +25,8 @@ func (h *Handler) GetHandler() http.HandlerFunc {
 			MType: metricTypeRequest,
 		}
 
-		result, err := service.Get(metricGetRequest, h.memStorage)
+		metricService := service.NewMetricService(handlerLogger)
+		result, err := metricService.Get(ctx, metricGetRequest, h.memStorage)
 		if err != nil {
 			if errors.Is(err, service.ErrMetricNotFound) {
 				response.WriteHeader(http.StatusNotFound)

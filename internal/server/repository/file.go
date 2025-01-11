@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -21,28 +22,28 @@ func NewFileStorageWrapper(storage MetricStorage, filePath string, saveInterval 
 	}
 }
 
-func (fw *FileStorageWrapper) SetGauge(name string, value float64) error {
-	_ = fw.storage.SetGauge(name, value)
+func (fw *FileStorageWrapper) SetGauge(ctx context.Context, name string, value float64) error {
+	_ = fw.storage.SetGauge(ctx, name, value)
 	if fw.interval > 0 {
-		if err := fw.SaveToFile(); err != nil {
+		if err := fw.SaveToFile(ctx); err != nil {
 			return fmt.Errorf("error saving metrics: %w", err)
 		}
 	}
 	return nil
 }
 
-func (fw *FileStorageWrapper) GetGauge(name string) (float64, error) {
-	value, err := fw.storage.GetGauge(name)
+func (fw *FileStorageWrapper) GetGauge(ctx context.Context, name string) (float64, error) {
+	value, err := fw.storage.GetGauge(ctx, name)
 	if err != nil {
 		return 0, fmt.Errorf("failed to get gauge '%s': %w", name, err)
 	}
 	return value, nil
 }
 
-func (fw *FileStorageWrapper) SetCounter(name string, value uint64) error {
-	_ = fw.storage.SetCounter(name, value)
+func (fw *FileStorageWrapper) SetCounter(ctx context.Context, name string, value uint64) error {
+	_ = fw.storage.SetCounter(ctx, name, value)
 	if fw.interval > 0 {
-		if err := fw.SaveToFile(); err != nil {
+		if err := fw.SaveToFile(ctx); err != nil {
 			return fmt.Errorf("error saving counter: %w", err)
 		}
 	}
@@ -50,29 +51,29 @@ func (fw *FileStorageWrapper) SetCounter(name string, value uint64) error {
 	return nil
 }
 
-func (fw *FileStorageWrapper) GetCounter(name string) (uint64, error) {
-	value, err := fw.storage.GetCounter(name)
+func (fw *FileStorageWrapper) GetCounter(ctx context.Context, name string) (uint64, error) {
+	value, err := fw.storage.GetCounter(ctx, name)
 	if err != nil {
 		return 0, fmt.Errorf("failed to get counter '%s': %w", name, err)
 	}
 	return value, nil
 }
 
-func (fw *FileStorageWrapper) Gauges() map[string]float64 {
-	return fw.storage.Gauges()
+func (fw *FileStorageWrapper) Gauges(ctx context.Context) map[string]float64 {
+	return fw.storage.Gauges(ctx)
 }
 
-func (fw *FileStorageWrapper) Counters() map[string]uint64 {
-	return fw.storage.Counters()
+func (fw *FileStorageWrapper) Counters(ctx context.Context) map[string]uint64 {
+	return fw.storage.Counters(ctx)
 }
 
-func (fw *FileStorageWrapper) SaveToFile() error {
+func (fw *FileStorageWrapper) SaveToFile(ctx context.Context) error {
 	data := struct {
 		Gauges   map[string]float64 `json:"gauges"`
 		Counters map[string]uint64  `json:"counters"`
 	}{
-		Gauges:   fw.storage.Gauges(),
-		Counters: fw.storage.Counters(),
+		Gauges:   fw.storage.Gauges(ctx),
+		Counters: fw.storage.Counters(ctx),
 	}
 
 	file, err := os.Create(fw.filePath)
@@ -93,7 +94,7 @@ func (fw *FileStorageWrapper) SaveToFile() error {
 	return nil
 }
 
-func (fw *FileStorageWrapper) LoadFromFile() error {
+func (fw *FileStorageWrapper) LoadFromFile(ctx context.Context) error {
 	file, err := os.Open(fw.filePath)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -119,13 +120,13 @@ func (fw *FileStorageWrapper) LoadFromFile() error {
 	}
 
 	for k, v := range data.Gauges {
-		err := fw.storage.SetGauge(k, v)
+		err := fw.storage.SetGauge(ctx, k, v)
 		if err != nil {
 			return fmt.Errorf("error saving metrics: %w", err)
 		}
 	}
 	for k, v := range data.Counters {
-		err := fw.storage.SetCounter(k, v)
+		err := fw.storage.SetCounter(ctx, k, v)
 		if err != nil {
 			return fmt.Errorf("error saving counter: %w", err)
 		}
@@ -134,7 +135,7 @@ func (fw *FileStorageWrapper) LoadFromFile() error {
 	return nil
 }
 
-func (fw *FileStorageWrapper) AutoSave() error {
+func (fw *FileStorageWrapper) AutoSave(ctx context.Context) error {
 	if fw.interval <= 0 {
 		return nil
 	}
@@ -143,7 +144,7 @@ func (fw *FileStorageWrapper) AutoSave() error {
 	defer ticker.Stop()
 
 	for range ticker.C {
-		if err := fw.SaveToFile(); err != nil {
+		if err := fw.SaveToFile(ctx); err != nil {
 			return fmt.Errorf("error saving: %w", err)
 		}
 	}

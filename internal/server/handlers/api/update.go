@@ -10,6 +10,7 @@ func (h *Handler) UpdateHandler() http.HandlerFunc {
 	handlerLogger := h.logger.With(nameLogger, "api UpdateHandler")
 	const nameError = "error"
 	return func(response http.ResponseWriter, request *http.Request) {
+		ctx := request.Context()
 		response.Header().Set("Content-Type", "application/json")
 
 		var metricUpdateRequest service.MetricsUpdateRequest
@@ -20,7 +21,8 @@ func (h *Handler) UpdateHandler() http.HandlerFunc {
 			return
 		}
 
-		result, err := service.Update(metricUpdateRequest, h.memStorage)
+		metricService := service.NewMetricService(handlerLogger)
+		result, err := metricService.Update(ctx, metricUpdateRequest, h.memStorage)
 		if err != nil {
 			handlerLogger.Infow("error in service", nameError, err)
 			response.WriteHeader(http.StatusBadRequest)

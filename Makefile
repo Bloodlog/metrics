@@ -31,7 +31,7 @@ golangci-lint-clean:
 	sudo rm -rf ./golangci-lint
 
 style:
+	go mod tidy
 	go fmt ./...
 	go vet ./...
-	go mod tidy
 	goimports -w .

@@ -1,6 +1,7 @@
 package web
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"regexp"
@@ -18,6 +19,7 @@ import (
 )
 
 func TestListGaugeHandler(t *testing.T) {
+	ctx := context.Background()
 	metricValue := 1234.1234
 
 	testCases := []struct {
@@ -36,14 +38,14 @@ func TestListGaugeHandler(t *testing.T) {
 
 			memStorage := repository.NewMemStorage()
 			metricName := "metricName"
-			err := memStorage.SetGauge(metricName, metricValue)
+			err := memStorage.SetGauge(ctx, metricName, metricValue)
 			if err != nil {
 				t.Errorf("Failed to SetGauge: %v", err)
 				return
 			}
 			counterValue := uint64(100)
 			counterName := "PollCount"
-			err = memStorage.SetCounter(counterName, counterValue)
+			err = memStorage.SetCounter(ctx, counterName, counterValue)
 			if err != nil {
 				t.Errorf("Failed to SetCounter: %v", err)
 				return

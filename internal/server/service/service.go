@@ -1,9 +1,20 @@
 package service
 
 import (
+	"context"
 	"errors"
 	"metrics/internal/server/repository"
+
+	"go.uber.org/zap"
 )
+
+type MetricService struct {
+	logger *zap.SugaredLogger
+}
+
+func NewMetricService(logger *zap.SugaredLogger) *MetricService {
+	return &MetricService{logger: logger}
+}
 
 type MetricsGetRequest struct {
 	ID    string `json:"id"`
@@ -26,9 +37,9 @@ type MetricsResponse struct {
 
 var ErrMetricNotFound = errors.New("metric not found")
 
-func Get(req MetricsGetRequest, storage repository.MetricStorage) (*MetricsResponse, error) {
+func (s *MetricService) Get(ctx context.Context, req MetricsGetRequest, storage repository.MetricStorage) (*MetricsResponse, error) {
 	if req.MType == "counter" {
-		counter, err := storage.GetCounter(req.ID)
+		counter, err := storage.GetCounter(ctx, req.ID)
 		if err != nil {
 			return nil, ErrMetricNotFound
 		}
@@ -43,7 +54,7 @@ func Get(req MetricsGetRequest, storage repository.MetricStorage) (*MetricsRespo
 	}
 
 	if req.MType == "gauge" {
-		gauge, err := storage.GetGauge(req.ID)
+		gauge, err := storage.GetGauge(ctx, req.ID)
 		if err != nil {
 			return nil, ErrMetricNotFound
 		}
@@ -59,19 +70,21 @@ func Get(req MetricsGetRequest, storage repository.MetricStorage) (*MetricsRespo
 	return nil, ErrMetricNotFound
 }
 
-func Update(req MetricsUpdateRequest, storage repository.MetricStorage) (*MetricsResponse, error) {
+func (s *MetricService) Update(ctx context.Context, req MetricsUpdateRequest, storage repository.MetricStorage) (*MetricsResponse, error) {
+	handlerLogger := s.logger.With("service", "Update")
 	if req.MType == "counter" {
 		if req.Delta == nil {
 			return nil, errors.New("delta field cannot be nil for counter type")
 		}
 		delta := *req.Delta
 		deltaValue := uint64(delta)
-		err := storage.SetCounter(req.ID, deltaValue)
+		err := storage.SetCounter(ctx, req.ID, deltaValue)
 		if err != nil {
+			handlerLogger.Infow("value cannot be save", err)
 			return nil, errors.New("value cannot be save")
 		}
 
-		counter, err := storage.GetCounter(req.ID)
+		counter, err := storage.GetCounter(ctx, req.ID)
 		if err != nil {
 			return nil, ErrMetricNotFound
 		}
@@ -90,12 +103,13 @@ func Update(req MetricsUpdateRequest, storage repository.MetricStorage) (*Metric
 			return nil, errors.New("value field cannot be nil for gauge type")
 		}
 		value := *req.Value
-		err := storage.SetGauge(req.ID, value)
+		err := storage.SetGauge(ctx, req.ID, value)
 		if err != nil {
+			handlerLogger.Infow("value cannot be save", err)
 			return nil, errors.New("value cannot be save")
 		}
 
-		gauge, err := storage.GetGauge(req.ID)
+		gauge, err := storage.GetGauge(ctx, req.ID)
 		if err != nil {
 			return nil, ErrMetricNotFound
 		}
