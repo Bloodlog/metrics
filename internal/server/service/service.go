@@ -3,7 +3,10 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
 	"metrics/internal/server/repository"
+
+	"github.com/jackc/pgx/v5"
 
 	"go.uber.org/zap"
 )
@@ -26,6 +29,10 @@ type MetricsUpdateRequest struct {
 	Value *float64 `json:"value,omitempty"`
 	ID    string   `json:"id"`
 	MType string   `json:"type"`
+}
+
+type MetricsUpdateRequests struct {
+	Metrics []MetricsUpdateRequest `json:"metrics"`
 }
 
 type MetricsResponse struct {
@@ -130,4 +137,24 @@ func (s *MetricService) Update(
 	}
 
 	return nil, ErrMetricNotFound
+}
+
+func (s *MetricService) UpdateMultiple(
+	ctx context.Context,
+	metrics []MetricsUpdateRequest,
+	storage repository.MetricStorage) error {
+	err := storage.WithTransaction(ctx, func(tx pgx.Tx) error {
+		for _, metric := range metrics {
+			_, err := s.Update(ctx, metric, storage)
+			if err != nil {
+				return fmt.Errorf("failed to update gauge : %w", err)
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return fmt.Errorf("failed to complete transaction in service: %w", err)
+	}
+
+	return nil
 }

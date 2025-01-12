@@ -1,6 +1,10 @@
 package repository
 
-import "context"
+import (
+	"context"
+
+	"github.com/jackc/pgx/v5"
+)
 
 type MetricType string
 
@@ -14,4 +18,5 @@ type MetricStorage interface {
 	AutoSave(ctx context.Context) error
 	LoadFromFile(ctx context.Context) error
 	SaveToFile(ctx context.Context) error
+	WithTransaction(ctx context.Context, fn func(tx pgx.Tx) error) error
 }

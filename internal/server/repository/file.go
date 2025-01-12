@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"os"
 	"time"
+
+	"github.com/jackc/pgx/v5"
 )
 
 type FileStorageWrapper struct {
@@ -149,5 +151,9 @@ func (fw *FileStorageWrapper) AutoSave(ctx context.Context) error {
 		}
 	}
 
+	return nil
+}
+
+func (fw *FileStorageWrapper) WithTransaction(ctx context.Context, fn func(tx pgx.Tx) error) error {
 	return nil
 }

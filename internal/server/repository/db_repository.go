@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/jackc/pgx/v5"
+
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -138,5 +140,30 @@ func (r *DBRepository) LoadFromFile(ctx context.Context) error {
 }
 
 func (r *DBRepository) SaveToFile(ctx context.Context) error {
+	return nil
+}
+
+func (r *DBRepository) WithTransaction(ctx context.Context, fn func(tx pgx.Tx) error) error {
+	tx, err := r.pool.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer func() {
+		if p := recover(); p != nil {
+			_ = tx.Rollback(ctx)
+			err = fmt.Errorf("panic recovered during transaction: %v", p)
+		} else if err != nil {
+			_ = tx.Rollback(ctx)
+		}
+	}()
+
+	err = fn(tx)
+	if err != nil {
+		return fmt.Errorf("transaction function execution failed: %w", err)
+	}
+
+	if err = tx.Commit(ctx); err != nil {
+		return fmt.Errorf("failed to commit transaction: %w", err)
+	}
 	return nil
 }

@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"sync"
+
+	"github.com/jackc/pgx/v5"
 )
 
 type MemStorage struct {
@@ -85,5 +87,9 @@ func (ms *MemStorage) LoadFromFile(ctx context.Context) error {
 }
 
 func (ms *MemStorage) SaveToFile(ctx context.Context) error {
+	return nil
+}
+
+func (ms *MemStorage) WithTransaction(ctx context.Context, fn func(tx pgx.Tx) error) error {
 	return nil
 }

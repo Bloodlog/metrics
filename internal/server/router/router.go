@@ -39,6 +39,7 @@ func register(r *chi.Mux, configs *config.Config, memStorage repository.MetricSt
 	webHandler := web.NewHandler(memStorage, logger)
 	r.Use(middleware.LoggingMiddleware(logger), middleware.CompressionMiddleware(logger))
 
+	r.Post("/updates", apiHandler.UpdatesHandler())
 	r.Route("/update", func(r chi.Router) {
 		r.Post("/", apiHandler.UpdateHandler())
 		r.Post("/{metricType}/{metricName}/{metricValue}", webHandler.UpdateHandler())

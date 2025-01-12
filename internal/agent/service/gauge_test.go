@@ -19,10 +19,10 @@ func TestCounterService_SendGauge(t *testing.T) {
 	responder := httpmock.NewStringResponder(http.StatusOK, "")
 	httpmock.RegisterResponder("POST", url, responder)
 
-	var MetricGaugeUpdateRequest MetricsUpdateRequest
+	var MetricGaugeUpdateRequest MetricsGaugeUpdateRequest
 	valueFloat := float64(metricValue)
 
-	MetricGaugeUpdateRequest = MetricsUpdateRequest{
+	MetricGaugeUpdateRequest = MetricsGaugeUpdateRequest{
 		Value: &valueFloat,
 		ID:    metricName,
 		MType: "gauge",
