@@ -2,7 +2,7 @@ package repository
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"sync"
 
 	"github.com/jackc/pgx/v5"
@@ -35,7 +35,7 @@ func (ms *MemStorage) GetGauge(ctx context.Context, name string) (float64, error
 	defer ms.mu.RUnlock()
 	value, exists := ms.gauges[name]
 	if !exists {
-		return 0, errors.New("gauge metric not found")
+		return 0, fmt.Errorf("gauge metric '%s' not found", name)
 	}
 	return value, nil
 }
@@ -53,7 +53,7 @@ func (ms *MemStorage) GetCounter(ctx context.Context, name string) (uint64, erro
 	defer ms.mu.RUnlock()
 	value, exists := ms.counters[name]
 	if !exists {
-		return 0, errors.New("counter metric not found")
+		return 0, fmt.Errorf("counter metric '%s' not found", name)
 	}
 	return value, nil
 }
