@@ -61,7 +61,7 @@ func (h *Handlers) Handle() error {
 			if h.configs.Batch {
 				err = h.sendBatch(metrics, delta)
 			} else {
-				err = h.sendApi(metrics, delta)
+				err = h.sendAPI(metrics, delta)
 			}
 			if err != nil {
 				return fmt.Errorf("failed to send metric to server: %w", err)
