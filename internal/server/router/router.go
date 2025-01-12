@@ -50,4 +50,12 @@ func register(r *chi.Mux, configs *config.Config, memStorage repository.MetricSt
 	})
 	r.Get("/", webHandler.ListHandler())
 	r.Get("/ping", webHandler.HealthHandler(configs.DatabaseDsn))
+	r.NotFound(func(w http.ResponseWriter, r *http.Request) {
+		handlerLogger := logger.With("router", "NotFound")
+		handlerLogger.Info("Route not found",
+			"method", r.Method,
+			"uri", r.RequestURI,
+		)
+		w.WriteHeader(http.StatusNotFound)
+	})
 }
