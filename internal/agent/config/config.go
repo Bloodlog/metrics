@@ -19,6 +19,7 @@ type Config struct {
 	NetAddress     NetAddress
 	ReportInterval int
 	PollInterval   int
+	Batch          bool
 }
 
 const (
@@ -70,6 +71,7 @@ func ParseFlags() (*Config, error) {
 		NetAddress:     NetAddress{Host: host, Port: port},
 		ReportInterval: reportInterval,
 		PollInterval:   poolInterval,
+		Batch:          false,
 	}, nil
 }
 
