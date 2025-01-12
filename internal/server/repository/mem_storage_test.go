@@ -33,7 +33,7 @@ func TestMemStorage_GetGauge_NotFound(t *testing.T) {
 	_, err := ms.GetGauge(ctx, nameMetric)
 
 	assert.Error(t, err, "ожидалась ошибка для несуществующего gauge")
-	assert.EqualError(t, err, "gauge metric '" + nameMetric + "' not found")
+	assert.EqualError(t, err, "gauge metric '"+nameMetric+"' not found")
 }
 
 func TestMemStorage_SetAndGetCounter(t *testing.T) {
@@ -65,5 +65,5 @@ func TestMemStorage_GetCounter_NotFound(t *testing.T) {
 	_, err := ms.GetCounter(ctx, nameMetric)
 
 	assert.Error(t, err, "ожидалась ошибка для несуществующего counter")
-	assert.EqualError(t, err, "counter metric '" + nameMetric + "' not found")
+	assert.EqualError(t, err, "counter metric '"+nameMetric+"' not found")
 }
