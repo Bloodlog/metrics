@@ -98,7 +98,7 @@ func (h *Handlers) sendBatch(metrics []repository.Metric, counter int64) error {
 	return nil
 }
 
-func (h *Handlers) sendApi(metrics []repository.Metric, counter int64) error {
+func (h *Handlers) sendAPI(metrics []repository.Metric, counter int64) error {
 	metricCounterRequest := service.MetricsCounterRequest{
 		Delta: &counter,
 		ID:    nameCounter,
