@@ -1,6 +1,7 @@
 package clients
 
 import (
+	"metrics/internal/agent/config"
 	"net/http"
 	"time"
 
@@ -8,20 +9,15 @@ import (
 	"go.uber.org/zap"
 )
 
-func CreateClient(serverAddr string, logger *zap.SugaredLogger) *resty.Client {
-	const (
-		maxNumberAttempts  = 3
-		retryWaitSecond    = 2
-		retryMaxWaitSecond = 5
-	)
+func CreateClient(serverAddr string, configs config.ClientSetting, logger *zap.SugaredLogger) *resty.Client {
 	handlerLogger := logger.With("client", "send request")
 	return resty.New().
 		SetBaseURL(serverAddr).
 		SetHeader("Content-Encoding", "gzip").
 		SetHeader("Content-Type", "application/json").
-		SetRetryCount(maxNumberAttempts).
-		SetRetryWaitTime(retryWaitSecond * time.Second).
-		SetRetryMaxWaitTime(retryMaxWaitSecond * time.Second).
+		SetRetryCount(configs.MaxNumberAttempts).
+		SetRetryWaitTime(time.Duration(configs.RetryWaitSecond) * time.Second).
+		SetRetryMaxWaitTime(time.Duration(configs.RetryMaxWaitSecond) * time.Second).
 		AddRetryCondition(func(r *resty.Response, err error) bool {
 			return err != nil || r.StatusCode() >= http.StatusInternalServerError
 		}).
