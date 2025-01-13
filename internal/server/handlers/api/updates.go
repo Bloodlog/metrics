@@ -13,8 +13,8 @@ func (h *Handler) UpdatesHandler() http.HandlerFunc {
 		ctx := request.Context()
 		response.Header().Set("Content-Type", "application/json")
 
-		var metricUpdateRequest service.MetricsUpdateRequests
-		if err := json.NewDecoder(request.Body).Decode(&metricUpdateRequest); err != nil {
+		var metrics []service.MetricsUpdateRequest
+		if err := json.NewDecoder(request.Body).Decode(&metrics); err != nil {
 			handlerLogger.Infow("Invalid JSON", nameError, err)
 			response.WriteHeader(http.StatusBadRequest)
 			return
@@ -22,7 +22,7 @@ func (h *Handler) UpdatesHandler() http.HandlerFunc {
 
 		metricService := service.NewMetricService(handlerLogger)
 
-		err := metricService.UpdateMultiple(ctx, metricUpdateRequest.Metrics, h.memStorage)
+		err := metricService.UpdateMultiple(ctx, metrics, h.memStorage)
 		if err != nil {
 			handlerLogger.Infow("error in service", nameError, err)
 			response.WriteHeader(http.StatusBadRequest)
