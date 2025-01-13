@@ -32,6 +32,7 @@ func (h *Handler) GetHandler() http.HandlerFunc {
 		result, err := metricService.Get(ctx, metricGetRequest, h.memStorage)
 		if err != nil {
 			if errors.Is(err, service.ErrMetricNotFound) {
+				handlerLogger.Infoln("Metric not found", err)
 				response.WriteHeader(http.StatusNotFound)
 				return
 			}

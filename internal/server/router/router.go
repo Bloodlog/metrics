@@ -39,7 +39,9 @@ func register(r *chi.Mux, configs *config.Config, memStorage repository.MetricSt
 	webHandler := web.NewHandler(memStorage, logger)
 	r.Use(middleware.LoggingMiddleware(logger), middleware.CompressionMiddleware(logger))
 
-	r.Post("/updates", apiHandler.UpdatesHandler())
+	r.Route("/updates", func(r chi.Router) {
+		r.Post("/", apiHandler.UpdatesHandler())
+	})
 	r.Route("/update", func(r chi.Router) {
 		r.Post("/", apiHandler.UpdateHandler())
 		r.Post("/{metricType}/{metricName}/{metricValue}", webHandler.UpdateHandler())
@@ -52,7 +54,7 @@ func register(r *chi.Mux, configs *config.Config, memStorage repository.MetricSt
 	r.Get("/ping", webHandler.HealthHandler(configs.DatabaseDsn))
 	r.NotFound(func(w http.ResponseWriter, r *http.Request) {
 		handlerLogger := logger.With("router", "NotFound")
-		handlerLogger.Info("Route not found",
+		handlerLogger.Infoln("Route not found",
 			"method", r.Method,
 			"uri", r.RequestURI,
 		)
