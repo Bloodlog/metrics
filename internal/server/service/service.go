@@ -85,6 +85,9 @@ func (s *MetricService) Update(
 	req MetricsUpdateRequest,
 	storage repository.MetricStorage) (*MetricsResponse, error) {
 	handlerLogger := s.logger.With("service", "Update")
+	if req.Delta == nil && req.Value == nil {
+		return nil, nil
+	}
 	if req.MType == "counter" {
 		if req.Delta == nil {
 			return nil, errors.New("delta field cannot be nil for counter type")
@@ -145,6 +148,9 @@ func (s *MetricService) UpdateMultiple(
 	storage repository.MetricStorage) error {
 	err := storage.WithTransaction(ctx, func(tx pgx.Tx) error {
 		for _, metric := range metrics {
+			if metric.Delta == nil && metric.Value == nil {
+				continue
+			}
 			_, err := s.Update(ctx, metric, storage)
 			if err != nil {
 				return fmt.Errorf("failed to update gauge : %w", err)
