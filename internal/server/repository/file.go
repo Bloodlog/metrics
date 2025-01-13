@@ -155,5 +155,15 @@ func (fw *FileStorageWrapper) AutoSave(ctx context.Context) error {
 }
 
 func (fw *FileStorageWrapper) WithTransaction(ctx context.Context, fn func(tx pgx.Tx) error) error {
+	if err := fn(nil); err != nil {
+		return fmt.Errorf("file storage transaction function execution failed: %w", err)
+	}
+
+	if fw.interval > 0 {
+		if err := fw.SaveToFile(ctx); err != nil {
+			return fmt.Errorf("error saving metrics: %w", err)
+		}
+	}
+
 	return nil
 }

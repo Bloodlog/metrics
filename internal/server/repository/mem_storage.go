@@ -91,5 +91,8 @@ func (ms *MemStorage) SaveToFile(ctx context.Context) error {
 }
 
 func (ms *MemStorage) WithTransaction(ctx context.Context, fn func(tx pgx.Tx) error) error {
-	return nil
+	ms.mu.RLock()
+	defer ms.mu.RUnlock()
+
+	return fn(nil)
 }
