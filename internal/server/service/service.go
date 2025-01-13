@@ -86,7 +86,7 @@ func (s *MetricService) Update(
 	storage repository.MetricStorage) (*MetricsResponse, error) {
 	handlerLogger := s.logger.With("service", "Update")
 	if req.Delta == nil && req.Value == nil {
-		return nil, nil
+		return nil, errors.New("value cannot be save")
 	}
 	if req.MType == "counter" {
 		if req.Delta == nil {
