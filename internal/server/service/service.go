@@ -48,11 +48,9 @@ func (s *MetricService) Get(
 	ctx context.Context,
 	req MetricsGetRequest,
 	storage repository.MetricStorage) (*MetricsResponse, error) {
-	handlerLogger := s.logger.With("service", "Get")
 	if req.MType == "counter" {
 		counter, err := storage.GetCounter(ctx, req.ID)
 		if err != nil {
-			handlerLogger.Infoln(err)
 			return nil, ErrMetricNotFound
 		}
 
@@ -68,7 +66,6 @@ func (s *MetricService) Get(
 	if req.MType == "gauge" {
 		gauge, err := storage.GetGauge(ctx, req.ID)
 		if err != nil {
-			handlerLogger.Infoln(err)
 			return nil, ErrMetricNotFound
 		}
 		gaugeValue := gauge
@@ -87,7 +84,6 @@ func (s *MetricService) Update(
 	ctx context.Context,
 	req MetricsUpdateRequest,
 	storage repository.MetricStorage) (*MetricsResponse, error) {
-	handlerLogger := s.logger.With("service", "Update")
 	if req.MType == "counter" {
 		if req.Delta == nil {
 			return nil, errors.New("delta field cannot be nil for counter type")
@@ -96,7 +92,6 @@ func (s *MetricService) Update(
 		deltaValue := uint64(delta)
 		err := storage.SetCounter(ctx, req.ID, deltaValue)
 		if err != nil {
-			handlerLogger.Infow("error: value cannot be save", "error", err)
 			return nil, errors.New("value cannot be save")
 		}
 
@@ -121,13 +116,11 @@ func (s *MetricService) Update(
 		value := *req.Value
 		err := storage.SetGauge(ctx, req.ID, value)
 		if err != nil {
-			handlerLogger.Infow("error: value cannot be save", "error", err)
 			return nil, errors.New("value cannot be save")
 		}
 
 		gauge, err := storage.GetGauge(ctx, req.ID)
 		if err != nil {
-			handlerLogger.Infoln(err)
 			return nil, ErrMetricNotFound
 		}
 		gaugeValue := gauge
