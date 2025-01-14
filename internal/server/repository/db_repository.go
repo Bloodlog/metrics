@@ -91,7 +91,6 @@ func (r *DBRepository) Gauges(ctx context.Context) map[string]float64 {
 	query := `SELECT name, value FROM metrics`
 	rows, err := r.pool.Query(ctx, query)
 	if err != nil {
-		fmt.Printf("error retrieving gauges: %v\n", err)
 		return nil
 	}
 	defer rows.Close()
@@ -101,7 +100,6 @@ func (r *DBRepository) Gauges(ctx context.Context) map[string]float64 {
 		var name string
 		var value float64
 		if err := rows.Scan(&name, &value); err != nil {
-			fmt.Printf("error scanning row: %v\n", err)
 			continue
 		}
 		gauges[name] = value
@@ -113,7 +111,6 @@ func (r *DBRepository) Counters(ctx context.Context) map[string]uint64 {
 	query := `SELECT name, value FROM metrics`
 	rows, err := r.pool.Query(ctx, query)
 	if err != nil {
-		fmt.Printf("error retrieving counters: %v\n", err)
 		return nil
 	}
 	defer rows.Close()
