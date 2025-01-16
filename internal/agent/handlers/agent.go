@@ -30,7 +30,7 @@ type Handlers struct {
 
 func NewHandlers(configs *config.Config, storage *repository.Repository, logger *zap.SugaredLogger) *Handlers {
 	serverAddr := "http://" + net.JoinHostPort(configs.NetAddress.Host, configs.NetAddress.Port)
-	client := clients.CreateClient(serverAddr, configs.ClientSetting, logger)
+	client := clients.CreateClient(serverAddr, logger)
 
 	return &Handlers{
 		configs: configs,
