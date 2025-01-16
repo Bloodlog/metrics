@@ -26,7 +26,7 @@ func InitializeRepository(
 			return nil, fmt.Errorf("failed to create pool: %w", err)
 		}
 
-		handlerLogger.Info("Successfully connected to the database. Running migrations...")
+		handlerLogger.Info("Running migrations...")
 		err = migrations.Migrate(ctx, pool, logger)
 		if err != nil {
 			return nil, fmt.Errorf("error migrate: %w", err)

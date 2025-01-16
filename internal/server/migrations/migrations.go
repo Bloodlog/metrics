@@ -32,7 +32,7 @@ func Migrate(ctx context.Context, conn *pgxpool.Pool, logger *zap.SugaredLogger)
 	createTableQuery := `
 		CREATE TABLE metrics (
 			id SERIAL PRIMARY KEY,
-			name TEXT NOT NULL,
+			name TEXT NOT NULL UNIQUE,
 			value DOUBLE PRECISION NOT NULL
 		)
 	`

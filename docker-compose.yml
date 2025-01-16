@@ -26,5 +26,17 @@ services:
       DATABASE_DSN: postgres://username:password@postgres:5432/database_name
       ADDRESS: http://0.0.0.0:8080
 
+  agent:
+    build:
+      context: .
+      dockerfile: docker/agent.Dockerfile
+    container_name: agent_container
+    depends_on:
+      - app
+    environment:
+      ADDRESS: http://app:8080
+      REPORT_INTERVAL: 10
+      POLL_INTERVAL: 2
+
 volumes:
   postgres_data:
