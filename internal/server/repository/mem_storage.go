@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 	"sync"
-
-	"github.com/jackc/pgx/v5"
 )
 
 type MemStorage struct {
@@ -14,12 +12,14 @@ type MemStorage struct {
 	mu       *sync.RWMutex
 }
 
-func NewMemStorage() *MemStorage {
-	return &MemStorage{
+func NewMemStorage(ctx context.Context) (MetricStorage, error) {
+	memStorage := &MemStorage{
 		mu:       &sync.RWMutex{},
 		gauges:   make(map[string]float64),
 		counters: make(map[string]uint64),
 	}
+
+	return memStorage, nil
 }
 
 func (ms *MemStorage) SetGauge(ctx context.Context, name string, value float64) error {
@@ -58,41 +58,45 @@ func (ms *MemStorage) GetCounter(ctx context.Context, name string) (uint64, erro
 	return value, nil
 }
 
-func (ms *MemStorage) Gauges(ctx context.Context) map[string]float64 {
+func (ms *MemStorage) Gauges(ctx context.Context) (map[string]float64, error) {
 	ms.mu.RLock()
 	defer ms.mu.RUnlock()
 	result := make(map[string]float64, len(ms.gauges))
 	for k, v := range ms.gauges {
 		result[k] = v
 	}
-	return result
+	return result, nil
 }
 
-func (ms *MemStorage) Counters(ctx context.Context) map[string]uint64 {
+func (ms *MemStorage) Counters(ctx context.Context) (map[string]uint64, error) {
 	ms.mu.RLock()
 	defer ms.mu.RUnlock()
 	result := make(map[string]uint64, len(ms.counters))
 	for k, v := range ms.counters {
 		result[k] = v
 	}
-	return result
+	return result, nil
 }
 
-func (ms *MemStorage) AutoSave(ctx context.Context) error {
+func (ms *MemStorage) UpdateCounterAndGauges(
+	ctx context.Context,
+	name string,
+	value uint64,
+	gauges map[string]float64,
+) error {
+	ms.mu.Lock()
+	defer ms.mu.Unlock()
+	err := ms.SetCounter(ctx, name, value)
+	if err != nil {
+		return fmt.Errorf("error saving counter: %w", err)
+	}
+
+	for gaugeName, gaugeValue := range gauges {
+		err := ms.SetGauge(ctx, gaugeName, gaugeValue)
+		if err != nil {
+			return fmt.Errorf("error saving metrics: %w", err)
+		}
+	}
+
 	return nil
-}
-
-func (ms *MemStorage) LoadFromFile(ctx context.Context) error {
-	return nil
-}
-
-func (ms *MemStorage) SaveToFile(ctx context.Context) error {
-	return nil
-}
-
-func (ms *MemStorage) WithTransaction(ctx context.Context, fn func(tx pgx.Tx) error) error {
-	ms.mu.RLock()
-	defer ms.mu.RUnlock()
-
-	return fn(nil)
 }

@@ -12,7 +12,7 @@ import (
 
 func TestGet(t *testing.T) {
 	ctx := context.Background()
-	memStorage := repository.NewMemStorage()
+	memStorage, _ := repository.NewMemStorage(ctx)
 	logger := zap.NewNop()
 	sugar := logger.Sugar()
 

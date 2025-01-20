@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"metrics/internal/server/repository"
 
-	"github.com/jackc/pgx/v5"
-
 	"go.uber.org/zap"
 )
 
@@ -47,7 +45,8 @@ var ErrMetricNotFound = errors.New("metric not found")
 func (s *MetricService) Get(
 	ctx context.Context,
 	req MetricsGetRequest,
-	storage repository.MetricStorage) (*MetricsResponse, error) {
+	storage repository.MetricStorage,
+) (*MetricsResponse, error) {
 	if req.MType == "counter" {
 		counter, err := storage.GetCounter(ctx, req.ID)
 		if err != nil {
@@ -83,7 +82,8 @@ func (s *MetricService) Get(
 func (s *MetricService) Update(
 	ctx context.Context,
 	req MetricsUpdateRequest,
-	storage repository.MetricStorage) (*MetricsResponse, error) {
+	storage repository.MetricStorage,
+) (*MetricsResponse, error) {
 	if req.MType == "counter" {
 		if req.Delta == nil {
 			return nil, errors.New("delta field cannot be nil for counter type")
@@ -139,21 +139,29 @@ func (s *MetricService) Update(
 func (s *MetricService) UpdateMultiple(
 	ctx context.Context,
 	metrics []MetricsUpdateRequest,
-	storage repository.MetricStorage) error {
-	err := storage.WithTransaction(ctx, func(tx pgx.Tx) error {
-		for _, metric := range metrics {
-			if metric.Delta == nil && metric.Value == nil {
-				continue
-			}
-			_, err := s.Update(ctx, metric, storage)
-			if err != nil {
-				return fmt.Errorf("failed to update gauge : %w", err)
-			}
+	storage repository.MetricStorage,
+) error {
+	gauges := make(map[string]float64)
+	var nameCounter string
+	var valueCounter uint64
+
+	for _, metric := range metrics {
+		if metric.Delta == nil && metric.Value == nil {
+			continue
 		}
-		return nil
-	})
+		if metric.Delta != nil {
+			nameCounter = metric.ID
+			valueCounter = uint64(*metric.Delta)
+		}
+
+		if metric.Value != nil {
+			gauges[metric.ID] = *metric.Value
+		}
+	}
+
+	err := storage.UpdateCounterAndGauges(ctx, nameCounter, valueCounter, gauges)
 	if err != nil {
-		return fmt.Errorf("failed to complete transaction in service: %w", err)
+		return fmt.Errorf("failed UpdateCounterAndGauges in service: %w", err)
 	}
 
 	return nil

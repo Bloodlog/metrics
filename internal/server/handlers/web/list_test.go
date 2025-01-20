@@ -36,7 +36,7 @@ func TestListGaugeHandler(t *testing.T) {
 			logger := zap.NewNop()
 			sugar := logger.Sugar()
 
-			memStorage := repository.NewMemStorage()
+			memStorage, _ := repository.NewMemStorage(ctx)
 			metricName := "metricName"
 			err := memStorage.SetGauge(ctx, metricName, metricValue)
 			if err != nil {

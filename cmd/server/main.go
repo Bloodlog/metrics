@@ -24,24 +24,18 @@ func main() {
 }
 
 func run(loggerZap *zap.SugaredLogger) error {
-	configs, err := config.ParseFlags()
+	cfg, err := config.ParseFlags()
 	if err != nil {
 		loggerZap.Info(err.Error(), "failed to parse flags")
 		return fmt.Errorf("failed to parse flags: %w", err)
 	}
 	ctx := context.Background()
-	rep, err := repository.InitializeRepository(
-		ctx,
-		loggerZap,
-		configs.DatabaseDsn,
-		configs.FileStoragePath,
-		configs.StoreInterval,
-		configs.Restore)
+	rep, err := repository.NewMetricStorage(ctx, cfg, loggerZap)
 	if err != nil {
 		return fmt.Errorf("repository error: %w", err)
 	}
 
-	if err := router.Run(configs, rep, loggerZap); err != nil {
+	if err := router.Run(cfg, rep, loggerZap); err != nil {
 		return fmt.Errorf("failed to run router: %w", err)
 	}
 

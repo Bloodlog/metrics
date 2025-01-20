@@ -16,9 +16,12 @@ func (h *Handler) ListHandler() http.HandlerFunc {
 		ctx := request.Context()
 		response.Header().Set("Content-Type", "text/html; charset=utf-8")
 
+		gauges, _ := h.memStorage.Gauges(ctx)
+		counters, _ := h.memStorage.Counters(ctx)
+
 		data := MetricsData{
-			Gauges:   h.memStorage.Gauges(ctx),
-			Counters: h.memStorage.Counters(ctx),
+			Gauges:   gauges,
+			Counters: counters,
 		}
 
 		tmpl, err := template.New("metrics").Parse(`
