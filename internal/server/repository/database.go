@@ -165,7 +165,7 @@ func (r *DBRepository) UpdateCounterAndGauges(
 		INSERT INTO metrics (name, delta, mtype)
 		VALUES ($1, $2, 'counter')
 		ON CONFLICT (name) DO UPDATE SET delta = metrics.delta + $2, mtype = 'counter'`
-	_, err = tx.Exec(ctx, upsertCounterQuery, name, float64(value))
+	_, err = tx.Exec(ctx, upsertCounterQuery, name, value)
 	if err != nil {
 		return fmt.Errorf("error updating or inserting counter '%s': %w", name, err)
 	}
