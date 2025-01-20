@@ -17,7 +17,7 @@ func Migrate(ctx context.Context, conn *pgxpool.Pool, logger *zap.SugaredLogger)
 			id INTEGER PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
 			name VARCHAR(200) NOT NULL UNIQUE,
 			value DOUBLE PRECISION NULL,
-			delta INTEGER NULL,
+			delta BIGINT NULL,
 			mtype VARCHAR(200) NOT NULL
 		)
 	`
