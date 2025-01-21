@@ -45,7 +45,6 @@ func CreateClient(serverAddr string, logger *zap.SugaredLogger) *resty.Client {
 			}
 		}
 
-		handlerLogger.Infoln("Client", "CheckRetry", "retryable", false)
 		return false, nil
 	}
 
