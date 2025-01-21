@@ -150,7 +150,7 @@ func (r *DBRepository) UpdateCounterAndGauges(
 	value uint64,
 	gauges map[string]float64,
 ) error {
-	batch := &pgx.Batch{}
+	batch := new(pgx.Batch)
 
 	upsertCounterQuery := `
 		INSERT INTO metrics (name, delta, mtype)
@@ -166,21 +166,13 @@ func (r *DBRepository) UpdateCounterAndGauges(
 		batch.Queue(upsertGaugesQuery, gaugeName, gaugeValue)
 	}
 
-	br := r.pool.SendBatch(ctx, batch)
-	defer func(br pgx.BatchResults) {
-		err := br.Close()
+	results := r.pool.SendBatch(ctx, batch)
+	defer func(results pgx.BatchResults) {
+		err := results.Close()
 		if err != nil {
 			r.logger.Infoln("Error send batch", err)
-			return
 		}
-	}(br)
-
-	for i := 0; i < batch.Len(); i++ {
-		_, err := br.Exec()
-		if err != nil {
-			return fmt.Errorf("error executing batch query at index %d: %w", i, err)
-		}
-	}
+	}(results)
 
 	return nil
 }
