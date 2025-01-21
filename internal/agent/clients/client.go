@@ -26,6 +26,10 @@ func CreateClient(serverAddr string, logger *zap.SugaredLogger) *resty.Client {
 			if errors.As(err, &DNSError) {
 				return true, nil
 			}
+
+			if err.Error() == "EOF" {
+				return true, nil
+			}
 		}
 		return false, nil
 	}
