@@ -3,6 +3,7 @@ package clients
 import (
 	"context"
 	"errors"
+	"net"
 	"net/http"
 	"syscall"
 	"time"
@@ -19,6 +20,10 @@ func CreateClient(serverAddr string, logger *zap.SugaredLogger) *resty.Client {
 	retryClient.CheckRetry = func(ctx context.Context, resp *http.Response, err error) (bool, error) {
 		if err != nil {
 			if errors.Is(err, syscall.ECONNREFUSED) || errors.Is(err, syscall.ETIMEDOUT) {
+				return true, nil
+			}
+			var DNSError *net.DNSError
+			if errors.As(err, &DNSError) {
 				return true, nil
 			}
 		}
