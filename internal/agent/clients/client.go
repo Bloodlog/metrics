@@ -22,9 +22,9 @@ func CreateClient(serverAddr string, logger *zap.SugaredLogger) *resty.Client {
 		if err != nil {
 			var DNSError *net.DNSError
 			retry := errors.Is(err, syscall.ECONNREFUSED) ||
-                 errors.Is(err, syscall.ETIMEDOUT) ||
-                 err.Error() == "EOF" ||
-                 errors.As(err, &DNSError)
+				errors.Is(err, syscall.ETIMEDOUT) ||
+				err.Error() == "EOF" ||
+				errors.As(err, &DNSError)
 
 			if retry {
 				handlerLogger.Infoln("Connect problem", "retryable", true)
@@ -32,12 +32,12 @@ func CreateClient(serverAddr string, logger *zap.SugaredLogger) *resty.Client {
 			}
 
 			if resp != nil && resp.StatusCode >= 500 {
-		        handlerLogger.Infoln(
-		            "status_code", resp.StatusCode,
-		            "retryable", true,
-		        )
-		        return true, nil
-		    }
+				handlerLogger.Infoln(
+					"status_code", resp.StatusCode,
+					"retryable", true,
+				)
+				return true, nil
+			}
 		}
 		return false, nil
 	}
