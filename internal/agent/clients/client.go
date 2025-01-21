@@ -19,7 +19,6 @@ func CreateClient(serverAddr string, logger *zap.SugaredLogger) *resty.Client {
 	retryClient.RetryMax = 3
 	retryClient.Backoff = customBackoff
 	retryClient.CheckRetry = func(ctx context.Context, resp *http.Response, err error) (bool, error) {
-		handlerLogger.Infoln("Client", "CheckRetry", resp.Request.URL)
 		if err != nil {
 			var DNSError *net.DNSError
 			retry := errors.Is(err, syscall.ECONNREFUSED) ||
