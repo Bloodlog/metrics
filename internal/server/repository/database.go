@@ -150,39 +150,36 @@ func (r *DBRepository) UpdateCounterAndGauges(
 	value uint64,
 	gauges map[string]float64,
 ) error {
-	tx, err := r.pool.Begin(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to begin transaction: %w", err)
-	}
-	defer func(tx pgx.Tx, ctx context.Context) {
-		err := tx.Rollback(ctx)
-		if err != nil {
-			r.logger.Infoln("Failed to rollback transaction: %v", err)
-		}
-	}(tx, ctx)
+	batch := &pgx.Batch{}
 
 	upsertCounterQuery := `
 		INSERT INTO metrics (name, delta, mtype)
 		VALUES ($1, $2, 'counter')
 		ON CONFLICT (name) DO UPDATE SET delta = metrics.delta + $2, mtype = 'counter'`
-	_, err = tx.Exec(ctx, upsertCounterQuery, name, value)
-	if err != nil {
-		return fmt.Errorf("error updating or inserting counter '%s': %w", name, err)
-	}
+	batch.Queue(upsertCounterQuery, name, value)
 
 	upsertGaugesQuery := `
 		INSERT INTO metrics (name, value, mtype)
 		VALUES ($1, $2, 'gauge')
 		ON CONFLICT (name) DO UPDATE SET value = EXCLUDED.value, mtype = 'gauge'`
 	for gaugeName, gaugeValue := range gauges {
-		_, err := tx.Exec(ctx, upsertGaugesQuery, gaugeName, gaugeValue)
-		if err != nil {
-			return fmt.Errorf("error updating or inserting gauge '%s': %w", gaugeName, err)
-		}
+		batch.Queue(upsertGaugesQuery, gaugeName, gaugeValue)
 	}
 
-	if err := tx.Commit(ctx); err != nil {
-		return fmt.Errorf("failed to commit transaction: %w", err)
+	br := r.pool.SendBatch(ctx, batch)
+	defer func(br pgx.BatchResults) {
+		err := br.Close()
+		if err != nil {
+			r.logger.Infoln("Error send batch", err)
+			return
+		}
+	}(br)
+
+	for i := 0; i < batch.Len(); i++ {
+		_, err := br.Exec()
+		if err != nil {
+			return fmt.Errorf("error executing batch query at index %d: %w", i, err)
+		}
 	}
 
 	return nil
