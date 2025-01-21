@@ -106,11 +106,10 @@ func (h *Handlers) sendAPI(metrics []repository.Metric, counter int64) error {
 	}
 
 	err := service.SendIncrement(h.client, metricCounterRequest)
-
-	counter = 0
 	if err != nil {
 		return fmt.Errorf("failed to send Increment %d to server: %w", counter, err)
 	}
+	counter = 0
 
 	for _, metric := range metrics {
 		valueFloat := float64(metric.Value)
@@ -121,7 +120,7 @@ func (h *Handlers) sendAPI(metrics []repository.Metric, counter int64) error {
 			MType: typeMetricName,
 		}
 
-		err := service.SendMetric(h.client, MetricGaugeUpdateRequest)
+		err = service.SendMetric(h.client, MetricGaugeUpdateRequest)
 		if err != nil {
 			return fmt.Errorf("failed to send metric %s to server: %w", metric.Name, err)
 		}
