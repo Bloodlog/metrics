@@ -1,7 +1,10 @@
 package clients
 
 import (
+	"context"
+	"errors"
 	"net/http"
+	"syscall"
 	"time"
 
 	"github.com/go-resty/resty/v2"
@@ -13,12 +16,19 @@ func CreateClient(serverAddr string, logger *zap.SugaredLogger) *resty.Client {
 	retryClient := retryablehttp.NewClient()
 	retryClient.RetryMax = 3
 	retryClient.Backoff = customBackoff
+	retryClient.CheckRetry = func(ctx context.Context, resp *http.Response, err error) (bool, error) {
+		if err != nil {
+			if errors.Is(err, syscall.ECONNREFUSED) || errors.Is(err, syscall.ETIMEDOUT) {
+				return true, nil
+			}
+		}
+		return false, nil
+	}
 
-	restyClient := resty.New().
+	restyClient := resty.NewWithClient(retryClient.StandardClient()).
 		SetBaseURL(serverAddr).
 		SetHeader("Content-Encoding", "gzip").
 		SetHeader("Content-Type", "application/json")
-	restyClient.SetTransport(retryClient.StandardClient().Transport)
 
 	return restyClient
 }
