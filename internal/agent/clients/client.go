@@ -25,7 +25,7 @@ func CreateClient(serverAddr string, logger *zap.SugaredLogger) *resty.Client {
 
 func customBackoff(min, max time.Duration, attemptNum int, resp *http.Response) time.Duration {
 	backoffIntervals := []time.Duration{1 * time.Second, 3 * time.Second, 5 * time.Second}
-	if attemptNum-1 < len(backoffIntervals) {
+	if attemptNum-1 >= 0 && attemptNum-1 < len(backoffIntervals) {
 		return backoffIntervals[attemptNum-1]
 	}
 	return max
