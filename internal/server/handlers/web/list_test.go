@@ -38,14 +38,14 @@ func TestListGaugeHandler(t *testing.T) {
 
 			memStorage, _ := repository.NewMemStorage(ctx)
 			metricName := "metricName"
-			err := memStorage.SetGauge(ctx, metricName, metricValue)
+			_, err := memStorage.SetGauge(ctx, metricName, metricValue)
 			if err != nil {
 				t.Errorf("Failed to SetGauge: %v", err)
 				return
 			}
 			counterValue := uint64(100)
 			counterName := "PollCount"
-			err = memStorage.SetCounter(ctx, counterName, counterValue)
+			_, err = memStorage.SetCounter(ctx, counterName, counterValue)
 			if err != nil {
 				t.Errorf("Failed to SetCounter: %v", err)
 				return

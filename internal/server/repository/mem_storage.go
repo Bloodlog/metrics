@@ -22,12 +22,12 @@ func NewMemStorage(ctx context.Context) (MetricStorage, error) {
 	return memStorage, nil
 }
 
-func (ms *MemStorage) SetGauge(ctx context.Context, name string, value float64) error {
+func (ms *MemStorage) SetGauge(ctx context.Context, name string, value float64) (float64, error) {
 	ms.mu.Lock()
 	defer ms.mu.Unlock()
 	ms.gauges[name] = value
 
-	return nil
+	return ms.gauges[name], nil
 }
 
 func (ms *MemStorage) GetGauge(ctx context.Context, name string) (float64, error) {
@@ -40,12 +40,12 @@ func (ms *MemStorage) GetGauge(ctx context.Context, name string) (float64, error
 	return value, nil
 }
 
-func (ms *MemStorage) SetCounter(ctx context.Context, name string, value uint64) error {
+func (ms *MemStorage) SetCounter(ctx context.Context, name string, value uint64) (uint64, error) {
 	ms.mu.Lock()
 	defer ms.mu.Unlock()
 	ms.counters[name] += value
 
-	return nil
+	return ms.counters[name], nil
 }
 
 func (ms *MemStorage) GetCounter(ctx context.Context, name string) (uint64, error) {
@@ -86,13 +86,13 @@ func (ms *MemStorage) UpdateCounterAndGauges(
 ) error {
 	ms.mu.Lock()
 	defer ms.mu.Unlock()
-	err := ms.SetCounter(ctx, name, value)
+	_, err := ms.SetCounter(ctx, name, value)
 	if err != nil {
 		return fmt.Errorf("error saving counter: %w", err)
 	}
 
 	for gaugeName, gaugeValue := range gauges {
-		err := ms.SetGauge(ctx, gaugeName, gaugeValue)
+		_, err := ms.SetGauge(ctx, gaugeName, gaugeValue)
 		if err != nil {
 			return fmt.Errorf("error saving metrics: %w", err)
 		}

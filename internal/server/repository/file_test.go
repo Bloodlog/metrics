@@ -48,13 +48,13 @@ func TestSaveToFileAndLoadFromFile(t *testing.T) {
 	}
 
 	for name, value := range expectedGauges {
-		if err := fileWrapper.SetGauge(ctx, name, value); err != nil {
+		if _, err := fileWrapper.SetGauge(ctx, name, value); err != nil {
 			t.Errorf("Failed to set gauge '%s': %v", name, err)
 			return
 		}
 	}
 	for name, value := range expectedCounters {
-		if err := fileWrapper.SetCounter(ctx, name, value); err != nil {
+		if _, err := fileWrapper.SetCounter(ctx, name, value); err != nil {
 			t.Errorf("Failed to set counter '%s': %v", name, err)
 			return
 		}

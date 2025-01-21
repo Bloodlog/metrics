@@ -51,14 +51,14 @@ func NewFileStorageWrapper(
 	return fileStorage, nil
 }
 
-func (fw *FileStorageWrapper) SetGauge(ctx context.Context, name string, value float64) error {
-	_ = fw.storage.SetGauge(ctx, name, value)
+func (fw *FileStorageWrapper) SetGauge(ctx context.Context, name string, value float64) (float64, error) {
+	value, _ = fw.storage.SetGauge(ctx, name, value)
 	if fw.isEnableAutoSave() {
 		if err := fw.saveToFile(ctx); err != nil {
-			return fmt.Errorf("error set gauge: %w", err)
+			return 0, fmt.Errorf("error set gauge: %w", err)
 		}
 	}
-	return nil
+	return value, nil
 }
 
 func (fw *FileStorageWrapper) GetGauge(ctx context.Context, name string) (float64, error) {
@@ -69,15 +69,15 @@ func (fw *FileStorageWrapper) GetGauge(ctx context.Context, name string) (float6
 	return value, nil
 }
 
-func (fw *FileStorageWrapper) SetCounter(ctx context.Context, name string, value uint64) error {
-	_ = fw.storage.SetCounter(ctx, name, value)
+func (fw *FileStorageWrapper) SetCounter(ctx context.Context, name string, value uint64) (uint64, error) {
+	value, _ = fw.storage.SetCounter(ctx, name, value)
 	if fw.isEnableAutoSave() {
 		if err := fw.saveToFile(ctx); err != nil {
-			return fmt.Errorf("error set counter: %w", err)
+			return 0, fmt.Errorf("error set counter: %w", err)
 		}
 	}
 
-	return nil
+	return value, nil
 }
 
 func (fw *FileStorageWrapper) GetCounter(ctx context.Context, name string) (uint64, error) {
@@ -147,13 +147,13 @@ func (fw *FileStorageWrapper) UpdateCounterAndGauges(
 	value uint64,
 	gauges map[string]float64,
 ) error {
-	err := fw.storage.SetCounter(ctx, name, value)
+	_, err := fw.storage.SetCounter(ctx, name, value)
 	if err != nil {
 		return fmt.Errorf("error set counter: %w", err)
 	}
 
 	for gaugeName, gaugeValue := range gauges {
-		err := fw.storage.SetGauge(ctx, gaugeName, gaugeValue)
+		_, err := fw.storage.SetGauge(ctx, gaugeName, gaugeValue)
 		if err != nil {
 			return fmt.Errorf("error set gauge: %w", err)
 		}
@@ -199,13 +199,13 @@ func (fw *FileStorageWrapper) loadFromFile(ctx context.Context) error {
 	}
 
 	for k, v := range data.Gauges {
-		err := fw.storage.SetGauge(ctx, k, v)
+		_, err := fw.storage.SetGauge(ctx, k, v)
 		if err != nil {
 			return fmt.Errorf("error set gauges: %w", err)
 		}
 	}
 	for k, v := range data.Counters {
-		err := fw.storage.SetCounter(ctx, k, v)
+		_, err := fw.storage.SetCounter(ctx, k, v)
 		if err != nil {
 			return fmt.Errorf("error set counters: %w", err)
 		}

@@ -13,7 +13,7 @@ func TestMemStorage_SetAndGetGauge(t *testing.T) {
 	const counterValue float64 = 1333.333
 	ms, _ := NewMemStorage(ctx)
 
-	err := ms.SetGauge(ctx, counterName, counterValue)
+	_, err := ms.SetGauge(ctx, counterName, counterValue)
 	if err != nil {
 		t.Errorf("Failed to SetCounter: %v", err)
 		return
@@ -40,12 +40,12 @@ func TestMemStorage_SetAndGetCounter(t *testing.T) {
 	ctx := context.Background()
 	ms, _ := NewMemStorage(ctx)
 
-	err := ms.SetCounter(ctx, "requests", 5)
+	_, err := ms.SetCounter(ctx, "requests", 5)
 	if err != nil {
 		t.Errorf("Failed to SetCounter: %v", err)
 		return
 	}
-	err = ms.SetCounter(ctx, "requests", 10)
+	_, err = ms.SetCounter(ctx, "requests", 10)
 	if err != nil {
 		t.Errorf("Failed to SetCounter: %v", err)
 		return

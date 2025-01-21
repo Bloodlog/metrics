@@ -35,7 +35,7 @@ func TestGetCounterHandler(t *testing.T) {
 			sugar := logger.Sugar()
 			ctx := context.Background()
 			memStorage, _ := repository.NewMemStorage(ctx)
-			err := memStorage.SetCounter(ctx, "PollCount", counterValue)
+			_, err := memStorage.SetCounter(ctx, "PollCount", counterValue)
 			if err != nil {
 				t.Errorf("Failed to SetCounter: %v", err)
 				return
@@ -77,7 +77,7 @@ func TestGetCounterFailsHandler(t *testing.T) {
 	ctx := context.Background()
 	memStorage, _ := repository.NewMemStorage(ctx)
 	counterValue := uint64(100)
-	err := memStorage.SetCounter(ctx, "PollCount", counterValue)
+	_, err := memStorage.SetCounter(ctx, "PollCount", counterValue)
 	if err != nil {
 		t.Errorf("Failed to SetCounter: %v", err)
 		return
@@ -128,7 +128,7 @@ func TestGetGaugeHandler(t *testing.T) {
 			sugar := logger.Sugar()
 			ctx := context.Background()
 			memStorage, _ := repository.NewMemStorage(ctx)
-			err := memStorage.SetGauge(ctx, "metricName", metricValue)
+			_, err := memStorage.SetGauge(ctx, "metricName", metricValue)
 			if err != nil {
 				t.Errorf("Failed to SetGauge: %v", err)
 				return
@@ -176,7 +176,7 @@ func TestGetGaugeFailHandler(t *testing.T) {
 			ctx := context.Background()
 			memStorage, _ := repository.NewMemStorage(ctx)
 			metricValue := 1234.1234
-			err := memStorage.SetGauge(ctx, "metricName", metricValue)
+			_, err := memStorage.SetGauge(ctx, "metricName", metricValue)
 			if err != nil {
 				t.Errorf("Failed to SetGauge: %v", err)
 				return

@@ -43,10 +43,14 @@ func NewRetryBRepository(
 	return dbRetryRepository, nil
 }
 
-func (r *RetryDBRepository) SetGauge(ctx context.Context, name string, value float64) error {
-	return retry(ctx, func() error {
-		return r.storage.SetGauge(ctx, name, value)
+func (r *RetryDBRepository) SetGauge(ctx context.Context, name string, value float64) (float64, error) {
+	var result float64
+	err := retry(ctx, func() error {
+		var err error
+		result, err = r.storage.SetGauge(ctx, name, value)
+		return err
 	})
+	return result, err
 }
 
 func (r *RetryDBRepository) GetGauge(ctx context.Context, name string) (float64, error) {
@@ -59,10 +63,14 @@ func (r *RetryDBRepository) GetGauge(ctx context.Context, name string) (float64,
 	return result, err
 }
 
-func (r *RetryDBRepository) SetCounter(ctx context.Context, name string, value uint64) error {
-	return retry(ctx, func() error {
-		return r.storage.SetCounter(ctx, name, value)
+func (r *RetryDBRepository) SetCounter(ctx context.Context, name string, value uint64) (uint64, error) {
+	var result uint64
+	err := retry(ctx, func() error {
+		var err error
+		result, err = r.storage.SetCounter(ctx, name, value)
+		return err
 	})
+	return result, err
 }
 
 func (r *RetryDBRepository) GetCounter(ctx context.Context, name string) (uint64, error) {

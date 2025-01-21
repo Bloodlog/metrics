@@ -56,18 +56,20 @@ func initPool(ctx context.Context, cfg *config.Config) (*pgxpool.Pool, error) {
 	return pool, nil
 }
 
-func (r *DBRepository) SetGauge(ctx context.Context, name string, value float64) error {
+func (r *DBRepository) SetGauge(ctx context.Context, name string, value float64) (float64, error) {
 	query := `
 		INSERT INTO metrics (name, value, mtype)
 		VALUES ($1, $2, 'gauge')
 		ON CONFLICT (name) DO UPDATE SET value = $2, mtype = 'gauge'
+		RETURNING value
 	`
-	_, err := r.pool.Exec(ctx, query, name, value)
+	var newValue float64
+	err := r.pool.QueryRow(ctx, query, name, value).Scan(&newValue)
 	if err != nil {
-		return fmt.Errorf("error setting gauge '%s': %w", name, err)
+		return 0, fmt.Errorf("error setting gauge '%s': %w", name, err)
 	}
 
-	return nil
+	return newValue, nil
 }
 
 func (r *DBRepository) GetGauge(ctx context.Context, name string) (float64, error) {
@@ -80,17 +82,20 @@ func (r *DBRepository) GetGauge(ctx context.Context, name string) (float64, erro
 	return value, nil
 }
 
-func (r *DBRepository) SetCounter(ctx context.Context, name string, value uint64) error {
+func (r *DBRepository) SetCounter(ctx context.Context, name string, value uint64) (uint64, error) {
 	query := `
 		INSERT INTO metrics (name, delta, mtype)
 		VALUES ($1, $2, 'counter')
 		ON CONFLICT (name) DO UPDATE SET delta = metrics.delta + $2, mtype = 'counter'
+		RETURNING delta
 	`
-	_, err := r.pool.Exec(ctx, query, name, value)
+	var newValue uint64
+	err := r.pool.QueryRow(ctx, query, name, value).Scan(&newValue)
 	if err != nil {
-		return fmt.Errorf("error setting counter '%s': %w", name, err)
+		return 0, fmt.Errorf("error setting gauge '%s': %w", name, err)
 	}
-	return nil
+
+	return newValue, nil
 }
 
 func (r *DBRepository) GetCounter(ctx context.Context, name string) (uint64, error) {

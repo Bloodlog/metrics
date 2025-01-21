@@ -18,7 +18,7 @@ func TestGet(t *testing.T) {
 
 	counterID := "testCounter"
 	counterValue := uint64(42)
-	err := memStorage.SetCounter(ctx, counterID, counterValue)
+	_, err := memStorage.SetCounter(ctx, counterID, counterValue)
 	if err != nil {
 		t.Errorf("Failed to SetCounter: %v", err)
 		return
@@ -26,7 +26,7 @@ func TestGet(t *testing.T) {
 
 	gaugeID := "testGauge"
 	gaugeValue := 123.45
-	err = memStorage.SetGauge(ctx, gaugeID, gaugeValue)
+	_, err = memStorage.SetGauge(ctx, gaugeID, gaugeValue)
 	if err != nil {
 		t.Errorf("Failed to SetCounter: %v", err)
 		return

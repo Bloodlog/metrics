@@ -32,7 +32,7 @@ func TestGetHandler(t *testing.T) {
 			name:        "Get Counter Successfully",
 			requestBody: `{"id": "PollCount", "type": "counter"}`,
 			setupStorage: func(memStorage repository.MetricStorage) {
-				err := memStorage.SetCounter(ctx, "PollCount", counterValue)
+				_, err := memStorage.SetCounter(ctx, "PollCount", counterValue)
 				if err != nil {
 					t.Errorf("Failed to SetCounter: %v", err)
 					return
@@ -45,7 +45,7 @@ func TestGetHandler(t *testing.T) {
 			name:        "Get Gauge Successfully",
 			requestBody: `{"id": "Allocate", "type": "gauge"}`,
 			setupStorage: func(memStorage repository.MetricStorage) {
-				err := memStorage.SetGauge(ctx, "Allocate", gaugeValue)
+				_, err := memStorage.SetGauge(ctx, "Allocate", gaugeValue)
 				if err != nil {
 					t.Errorf("Failed to SetCounter: %v", err)
 					return

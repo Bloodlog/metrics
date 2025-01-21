@@ -44,14 +44,18 @@ func NewRetryFileStorage(
 	return fileRetryrepo, nil
 }
 
-func (fr *FileRetryStorageWrapper) SetGauge(ctx context.Context, name string, value float64) error {
-	return retry(ctx, func() error {
-		err := fr.fileStorage.SetGauge(ctx, name, value)
+func (fr *FileRetryStorageWrapper) SetGauge(ctx context.Context, name string, value float64) (float64, error) {
+	var result float64
+	err := retry(ctx, func() error {
+		var err error
+		result, err = fr.fileStorage.SetGauge(ctx, name, value)
 		if err != nil {
 			return &RetriableError{Err: err}
 		}
 		return nil
 	})
+
+	return result, err
 }
 
 func (fr *FileRetryStorageWrapper) GetGauge(ctx context.Context, name string) (float64, error) {
@@ -67,14 +71,17 @@ func (fr *FileRetryStorageWrapper) GetGauge(ctx context.Context, name string) (f
 	return result, err
 }
 
-func (fr *FileRetryStorageWrapper) SetCounter(ctx context.Context, name string, value uint64) error {
-	return retry(ctx, func() error {
-		err := fr.fileStorage.SetCounter(ctx, name, value)
+func (fr *FileRetryStorageWrapper) SetCounter(ctx context.Context, name string, value uint64) (uint64, error) {
+	var result uint64
+	err := retry(ctx, func() error {
+		var err error
+		result, err = fr.fileStorage.SetCounter(ctx, name, value)
 		if err != nil {
 			return &RetriableError{Err: err}
 		}
 		return nil
 	})
+	return result, err
 }
 
 func (fr *FileRetryStorageWrapper) GetCounter(ctx context.Context, name string) (uint64, error) {
