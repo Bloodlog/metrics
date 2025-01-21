@@ -38,6 +38,11 @@ func CreateClient(serverAddr string, logger *zap.SugaredLogger) *resty.Client {
 				handlerLogger.Infoln("Connect problem", "retryable", true)
 				return true, nil
 			}
+
+			if resp == nil {
+				handlerLogger.Infoln("Connect problem and response == nil and EOF", "retryable", true)
+				return true, nil
+			}
 		}
 
 		handlerLogger.Infoln("Client", "CheckRetry", "retryable", false)
