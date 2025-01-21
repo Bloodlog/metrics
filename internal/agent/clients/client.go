@@ -20,6 +20,14 @@ func CreateClient(serverAddr string, logger *zap.SugaredLogger) *resty.Client {
 	retryClient.Backoff = customBackoff
 	retryClient.CheckRetry = func(ctx context.Context, resp *http.Response, err error) (bool, error) {
 		if err != nil {
+			if resp != nil && resp.StatusCode >= http.StatusInternalServerError {
+				handlerLogger.Infoln(
+					"status_code", resp.StatusCode,
+					"retryable", true,
+				)
+				return true, nil
+			}
+
 			var DNSError *net.DNSError
 			retry := errors.Is(err, syscall.ECONNREFUSED) ||
 				errors.Is(err, syscall.ETIMEDOUT) ||
@@ -28,14 +36,6 @@ func CreateClient(serverAddr string, logger *zap.SugaredLogger) *resty.Client {
 
 			if retry {
 				handlerLogger.Infoln("Connect problem", "retryable", true)
-				return true, nil
-			}
-
-			if resp != nil && resp.StatusCode >= http.StatusInternalServerError {
-				handlerLogger.Infoln(
-					"status_code", resp.StatusCode,
-					"retryable", true,
-				)
 				return true, nil
 			}
 		}
