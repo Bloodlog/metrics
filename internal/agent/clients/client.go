@@ -14,20 +14,20 @@ import (
 )
 
 func CreateClient(serverAddr string, logger *zap.SugaredLogger) *resty.Client {
+	handlerLogger := logger.With("agent", "client")
 	retryClient := retryablehttp.NewClient()
 	retryClient.RetryMax = 3
 	retryClient.Backoff = customBackoff
 	retryClient.CheckRetry = func(ctx context.Context, resp *http.Response, err error) (bool, error) {
 		if err != nil {
-			if errors.Is(err, syscall.ECONNREFUSED) || errors.Is(err, syscall.ETIMEDOUT) {
+			handlerLogger.Infoln("error", err.Error(), "status_code", resp.StatusCode)
+			if errors.Is(err, syscall.ECONNREFUSED) || errors.Is(err, syscall.ETIMEDOUT) || err.Error() == "EOF" {
+				handlerLogger.Infoln("retryable", true)
 				return true, nil
 			}
 			var DNSError *net.DNSError
 			if errors.As(err, &DNSError) {
-				return true, nil
-			}
-
-			if err.Error() == "EOF" {
+				handlerLogger.Infoln("retryable", true)
 				return true, nil
 			}
 		}
