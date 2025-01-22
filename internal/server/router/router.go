@@ -21,7 +21,7 @@ func Run(configs *config.Config, memStorage repository.MetricStorage, logger *za
 
 	router := chi.NewRouter()
 
-	register(router, memStorage, logger)
+	register(router, configs, memStorage, logger)
 
 	handlerLogger.Infow(
 		"Starting server",
@@ -34,11 +34,14 @@ func Run(configs *config.Config, memStorage repository.MetricStorage, logger *za
 	return nil
 }
 
-func register(r *chi.Mux, memStorage repository.MetricStorage, logger *zap.SugaredLogger) {
+func register(r *chi.Mux, configs *config.Config, memStorage repository.MetricStorage, logger *zap.SugaredLogger) {
 	apiHandler := api.NewHandler(memStorage, logger)
 	webHandler := web.NewHandler(memStorage, logger)
 	r.Use(middleware.LoggingMiddleware(logger), middleware.CompressionMiddleware(logger))
 
+	r.Route("/updates", func(r chi.Router) {
+		r.Post("/", apiHandler.UpdatesHandler())
+	})
 	r.Route("/update", func(r chi.Router) {
 		r.Post("/", apiHandler.UpdateHandler())
 		r.Post("/{metricType}/{metricName}/{metricValue}", webHandler.UpdateHandler())
@@ -48,4 +51,13 @@ func register(r *chi.Mux, memStorage repository.MetricStorage, logger *zap.Sugar
 		r.Get("/{metricType}/{metricName}", webHandler.GetHandler())
 	})
 	r.Get("/", webHandler.ListHandler())
+	r.Get("/ping", webHandler.HealthHandler(configs.DatabaseDsn))
+	r.NotFound(func(w http.ResponseWriter, r *http.Request) {
+		handlerLogger := logger.With("router", "NotFound")
+		handlerLogger.Infoln("Route not found",
+			"method", r.Method,
+			"uri", r.RequestURI,
+		)
+		w.WriteHeader(http.StatusNotFound)
+	})
 }

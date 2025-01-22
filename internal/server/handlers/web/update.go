@@ -9,8 +9,9 @@ import (
 )
 
 func (h *Handler) UpdateHandler() http.HandlerFunc {
-	handlerLogger := h.logger.With("handler", "UpdateHandler")
+	handlerLogger := h.logger.With(nameLogger, "web UpdateHandler")
 	return func(response http.ResponseWriter, request *http.Request) {
+		ctx := request.Context()
 		response.Header().Set("Content-Type", "text/plain; charset=utf-8")
 		var metricUpdateRequest service.MetricsUpdateRequest
 
@@ -43,8 +44,8 @@ func (h *Handler) UpdateHandler() http.HandlerFunc {
 				Value: &metricValue,
 			}
 		}
-
-		_, err := service.Update(metricUpdateRequest, h.memStorage)
+		metricService := service.NewMetricService(handlerLogger)
+		_, err := metricService.Update(ctx, metricUpdateRequest, h.memStorage)
 		if err != nil {
 			handlerLogger.Infow("error in service", "error", err)
 			response.WriteHeader(http.StatusBadRequest)
