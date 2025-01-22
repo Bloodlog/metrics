@@ -80,15 +80,16 @@ func (ms *MemStorage) Counters(ctx context.Context) (map[string]uint64, error) {
 
 func (ms *MemStorage) UpdateCounterAndGauges(
 	ctx context.Context,
-	name string,
-	value uint64,
+	counters map[string]uint64,
 	gauges map[string]float64,
 ) error {
 	ms.mu.Lock()
 	defer ms.mu.Unlock()
-	_, err := ms.SetCounter(ctx, name, value)
-	if err != nil {
-		return fmt.Errorf("error saving counter: %w", err)
+	for counterName, counterValue := range counters {
+		_, err := ms.SetCounter(ctx, counterName, counterValue)
+		if err != nil {
+			return fmt.Errorf("error saving counter: %w", err)
+		}
 	}
 
 	for gaugeName, gaugeValue := range gauges {

@@ -36,7 +36,7 @@ type MetricStorage interface {
 	GetCounter(ctx context.Context, name string) (uint64, error)
 	Gauges(ctx context.Context) (map[string]float64, error)
 	Counters(ctx context.Context) (map[string]uint64, error)
-	UpdateCounterAndGauges(ctx context.Context, name string, value uint64, gauges map[string]float64) error
+	UpdateCounterAndGauges(ctx context.Context, counters map[string]uint64, gauges map[string]float64) error
 }
 
 func NewMetricStorage(ctx context.Context, cfg *config.Config, logger *zap.SugaredLogger) (MetricStorage, error) {

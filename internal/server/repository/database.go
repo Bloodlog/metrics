@@ -151,8 +151,7 @@ func (r *DBRepository) Counters(ctx context.Context) (map[string]uint64, error) 
 
 func (r *DBRepository) UpdateCounterAndGauges(
 	ctx context.Context,
-	name string,
-	value uint64,
+	counters map[string]uint64,
 	gauges map[string]float64,
 ) error {
 	batch := new(pgx.Batch)
@@ -161,7 +160,10 @@ func (r *DBRepository) UpdateCounterAndGauges(
 		INSERT INTO metrics (name, delta, mtype)
 		VALUES ($1, $2, 'counter')
 		ON CONFLICT (name) DO UPDATE SET delta = metrics.delta + $2, mtype = 'counter'`
-	batch.Queue(upsertCounterQuery, name, value)
+
+	for counterName, counterValue := range counters {
+		batch.Queue(upsertCounterQuery, counterName, counterValue)
+	}
 
 	upsertGaugesQuery := `
 		INSERT INTO metrics (name, value, mtype)

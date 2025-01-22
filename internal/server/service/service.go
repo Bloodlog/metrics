@@ -133,16 +133,14 @@ func (s *MetricService) UpdateMultiple(
 	storage repository.MetricStorage,
 ) error {
 	gauges := make(map[string]float64)
-	var nameCounter string
-	var valueCounter uint64
+	counters := make(map[string]uint64)
 
 	for _, metric := range metrics {
 		if metric.Delta == nil && metric.Value == nil {
 			continue
 		}
 		if metric.Delta != nil {
-			nameCounter = metric.ID
-			valueCounter = uint64(*metric.Delta)
+			counters[metric.ID] += uint64(*metric.Delta)
 		}
 
 		if metric.Value != nil {
@@ -150,7 +148,7 @@ func (s *MetricService) UpdateMultiple(
 		}
 	}
 
-	err := storage.UpdateCounterAndGauges(ctx, nameCounter, valueCounter, gauges)
+	err := storage.UpdateCounterAndGauges(ctx, counters, gauges)
 	if err != nil {
 		return fmt.Errorf("failed UpdateCounterAndGauges in service: %w", err)
 	}

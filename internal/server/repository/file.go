@@ -143,13 +143,14 @@ func (fw *FileStorageWrapper) saveToFile(ctx context.Context) error {
 
 func (fw *FileStorageWrapper) UpdateCounterAndGauges(
 	ctx context.Context,
-	name string,
-	value uint64,
+	counters map[string]uint64,
 	gauges map[string]float64,
 ) error {
-	_, err := fw.storage.SetCounter(ctx, name, value)
-	if err != nil {
-		return fmt.Errorf("error set counter: %w", err)
+	for counterName, counterValue := range counters {
+		_, err := fw.storage.SetCounter(ctx, counterName, counterValue)
+		if err != nil {
+			return fmt.Errorf("error set counter: %w", err)
+		}
 	}
 
 	for gaugeName, gaugeValue := range gauges {

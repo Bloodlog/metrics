@@ -125,12 +125,11 @@ func (fr *FileRetryStorageWrapper) Counters(ctx context.Context) (map[string]uin
 
 func (fr *FileRetryStorageWrapper) UpdateCounterAndGauges(
 	ctx context.Context,
-	name string,
-	value uint64,
+	counters map[string]uint64,
 	gauges map[string]float64,
 ) error {
 	return retry(ctx, func() error {
-		err := fr.fileStorage.UpdateCounterAndGauges(ctx, name, value, gauges)
+		err := fr.fileStorage.UpdateCounterAndGauges(ctx, counters, gauges)
 		if err != nil {
 			return &RetriableError{Err: err}
 		}

@@ -105,11 +105,10 @@ func (r *RetryDBRepository) Counters(ctx context.Context) (map[string]uint64, er
 
 func (r *RetryDBRepository) UpdateCounterAndGauges(
 	ctx context.Context,
-	name string,
-	value uint64,
+	counters map[string]uint64,
 	gauges map[string]float64,
 ) error {
 	return retry(ctx, func() error {
-		return r.storage.UpdateCounterAndGauges(ctx, name, value, gauges)
+		return r.storage.UpdateCounterAndGauges(ctx, counters, gauges)
 	})
 }
