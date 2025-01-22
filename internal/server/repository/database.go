@@ -100,12 +100,12 @@ func (r *DBRepository) SetCounter(ctx context.Context, name string, value uint64
 
 func (r *DBRepository) GetCounter(ctx context.Context, name string) (uint64, error) {
 	query := `SELECT delta FROM metrics WHERE name = $1 AND mtype = 'counter'`
-	var value float64
+	var value uint64
 	err := r.pool.QueryRow(ctx, query, name).Scan(&value)
 	if err != nil {
 		return 0, fmt.Errorf("error getting counter '%s': %w", name, err)
 	}
-	return uint64(value), nil
+	return value, nil
 }
 
 func (r *DBRepository) Gauges(ctx context.Context) (map[string]float64, error) {
