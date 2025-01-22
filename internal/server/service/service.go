@@ -147,11 +147,10 @@ func (s *MetricService) UpdateMultiple(
 
 		if metric.Value != nil {
 			if _, exists := gauges[metric.ID]; exists {
-				s.logger.Infoln("error: dublicate metric ID")
-				continue
+				gauges[metric.ID] += *metric.Value
+			} else {
+				gauges[metric.ID] = *metric.Value
 			}
-
-			gauges[metric.ID] = *metric.Value
 		}
 	}
 
