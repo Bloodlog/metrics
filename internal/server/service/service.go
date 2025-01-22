@@ -146,11 +146,7 @@ func (s *MetricService) UpdateMultiple(
 		}
 
 		if metric.Value != nil {
-			if _, exists := gauges[metric.ID]; exists {
-				gauges[metric.ID] += *metric.Value
-			} else {
-				gauges[metric.ID] = *metric.Value
-			}
+			gauges[metric.ID] += *metric.Value
 		}
 	}
 
