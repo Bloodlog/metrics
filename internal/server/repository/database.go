@@ -161,7 +161,6 @@ func (r *DBRepository) UpdateCounterAndGauges(
 		VALUES ($1, $2, 'counter')
 		ON CONFLICT (name) DO UPDATE SET delta = metrics.delta + EXCLUDED.delta, mtype = 'counter'`
 	for counterName, counterValue := range counters {
-		r.logger.Infof("Counter update: name=%s, value=%d", counterName, counterValue)
 		batch.Queue(upsertCounterQuery, counterName, counterValue)
 	}
 
@@ -170,7 +169,6 @@ func (r *DBRepository) UpdateCounterAndGauges(
 		VALUES ($1, $2, 'gauge')
 		ON CONFLICT (name) DO UPDATE SET value = $2, mtype = 'gauge'`
 	for gaugeName, gaugeValue := range gauges {
-		r.logger.Infof("Metric update: name=%s, value=%d", gaugeName, gaugeValue)
 		batch.Queue(upsertGaugesQuery, gaugeName, gaugeValue)
 	}
 
