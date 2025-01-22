@@ -168,7 +168,7 @@ func (r *DBRepository) UpdateCounterAndGauges(
 	upsertGaugesQuery := `
 		INSERT INTO metrics (name, value, mtype)
 		VALUES ($1, $2, 'gauge')
-		ON CONFLICT (name) DO UPDATE SET value = EXCLUDED.value, mtype = 'gauge'`
+		ON CONFLICT (name) DO UPDATE SET value = $2, mtype = 'gauge'`
 	for gaugeName, gaugeValue := range gauges {
 		batch.Queue(upsertGaugesQuery, gaugeName, gaugeValue)
 	}
