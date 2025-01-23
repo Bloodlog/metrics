@@ -1,65 +1,78 @@
 package clients
 
 import (
-	"context"
-	"errors"
-	"net"
-	"net/http"
-	"syscall"
-	"time"
+	"fmt"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hashicorp/go-retryablehttp"
 	"go.uber.org/zap"
 )
 
-func CreateClient(serverAddr string, logger *zap.SugaredLogger) *resty.Client {
+type Client struct {
+	RestyClient *resty.Client
+	logger      *zap.SugaredLogger
+	key         string
+}
+
+func NewClient(serverAddr, key string, logger *zap.SugaredLogger) *Client {
 	handlerLogger := logger.With("agent", "client")
 	retryClient := retryablehttp.NewClient()
 	retryClient.RetryMax = 3
 	retryClient.Backoff = customBackoff
-	retryClient.CheckRetry = func(ctx context.Context, resp *http.Response, err error) (bool, error) {
-		if err != nil {
-			if resp != nil && resp.StatusCode >= http.StatusInternalServerError {
-				handlerLogger.Infoln(
-					"status_code", resp.StatusCode,
-					"retryable", true,
-				)
-				return true, nil
-			}
-
-			var DNSError *net.DNSError
-			retry := errors.Is(err, syscall.ECONNREFUSED) ||
-				errors.Is(err, syscall.ETIMEDOUT) ||
-				err.Error() == "EOF" ||
-				errors.As(err, &DNSError)
-
-			if retry {
-				handlerLogger.Infoln("Connect problem", "retryable", true)
-				return true, nil
-			}
-
-			if resp == nil {
-				handlerLogger.Infoln("Connect problem and response == nil and EOF", "retryable", true)
-				return true, nil
-			}
-		}
-
-		return false, nil
-	}
+	retryClient.CheckRetry = createRetryPolicy(handlerLogger)
 
 	restyClient := resty.NewWithClient(retryClient.StandardClient()).
 		SetBaseURL(serverAddr).
 		SetHeader("Content-Encoding", "gzip").
 		SetHeader("Content-Type", "application/json")
 
-	return restyClient
+	client := &Client{
+		RestyClient: restyClient,
+		logger:      logger,
+		key:         key,
+	}
+
+	client.RestyClient.OnBeforeRequest(func(c *resty.Client, r *resty.Request) error {
+		return client.processRequest(r)
+	})
+
+	return client
 }
 
-func customBackoff(min, max time.Duration, attemptNum int, resp *http.Response) time.Duration {
-	backoffIntervals := []time.Duration{1 * time.Second, 3 * time.Second, 5 * time.Second}
-	if attemptNum-1 >= 0 && attemptNum-1 < len(backoffIntervals) {
-		return backoffIntervals[attemptNum-1]
+func (c *Client) processRequest(r *resty.Request) error {
+	if c.key == "" {
+		return nil
 	}
-	return max
+
+	body := r.Body
+	if body != nil {
+		requestBody, err := readBody(body)
+		if err != nil {
+			return fmt.Errorf("failed to read request body: %w", err)
+		}
+
+		hashHex, err := c.hash(requestBody)
+		if err != nil {
+			return fmt.Errorf("failed to hash request body: %w", err)
+		}
+		r.SetHeader("HashSHA256", hashHex)
+
+		compressedData, err := c.compress(requestBody)
+		if err != nil {
+			return fmt.Errorf("failed to compress request body: %w", err)
+		}
+		r.SetBody(compressedData)
+	}
+	return nil
+}
+
+func readBody(body interface{}) ([]byte, error) {
+	switch b := body.(type) {
+	case []byte:
+		return b, nil
+	case string:
+		return []byte(b), nil
+	default:
+		return nil, fmt.Errorf("unsupported body type: %T", body)
+	}
 }
