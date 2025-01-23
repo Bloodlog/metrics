@@ -4,6 +4,7 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
+	"fmt"
 	"net/http"
 )
 
@@ -36,7 +37,11 @@ type hashResponseWriter struct {
 func (w *hashResponseWriter) Write(data []byte) (int, error) {
 	w.body = append(w.body, data...)
 
-	return w.ResponseWriter.Write(data)
+	n, err := w.ResponseWriter.Write(data)
+	if err != nil {
+		return n, fmt.Errorf("failed to write response data: %w", err)
+	}
+	return n, nil
 }
 
 func (w *hashResponseWriter) WriteHeader(statusCode int) {

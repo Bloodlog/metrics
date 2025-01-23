@@ -16,10 +16,10 @@ type NetAddress struct {
 }
 
 type Config struct {
+	Key            string
 	NetAddress     NetAddress
 	ReportInterval int
 	PollInterval   int
-	Key            string
 	Batch          bool
 }
 
@@ -73,10 +73,7 @@ func ParseFlags() (*Config, error) {
 		return nil, fmt.Errorf("read flag pool interval: %w", err)
 	}
 
-	key, err := getStringValue(*keyFlag, envKey)
-	if err != nil {
-		return nil, fmt.Errorf("read flag key: %w", err)
-	}
+	key, _ := getStringValue(*keyFlag, envKey)
 
 	return &Config{
 		NetAddress:     NetAddress{Host: host, Port: port},

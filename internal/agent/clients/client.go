@@ -51,10 +51,7 @@ func (c *Client) processRequest(r *resty.Request) error {
 			return fmt.Errorf("failed to read request body: %w", err)
 		}
 
-		hashHex, err := c.hash(requestBody)
-		if err != nil {
-			return fmt.Errorf("failed to hash request body: %w", err)
-		}
+		hashHex := c.hash(requestBody)
 		r.SetHeader("HashSHA256", hashHex)
 
 		compressedData, err := c.compress(requestBody)

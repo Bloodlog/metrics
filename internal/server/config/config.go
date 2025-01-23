@@ -52,12 +52,12 @@ const (
 )
 
 type Config struct {
+	Key             string
 	NetAddress      NetAddress
 	FileStoragePath string
 	DatabaseDsn     string
 	StoreInterval   int
 	Restore         bool
-	Key             string
 }
 
 type NetAddress struct {
@@ -110,10 +110,7 @@ func ParseFlags() (*Config, error) {
 		databaseDsn = ""
 	}
 
-	key, err := getStringValue(*keyFlag, envKey)
-	if err != nil {
-		return nil, fmt.Errorf("read flag key: %w", err)
-	}
+	key, _ := getStringValue(*keyFlag, envKey)
 
 	return &Config{
 		NetAddress:      NetAddress{Host: host, Port: port},
