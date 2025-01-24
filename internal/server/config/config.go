@@ -110,7 +110,10 @@ func ParseFlags() (*Config, error) {
 		databaseDsn = ""
 	}
 
-	key, _ := getStringValue(*keyFlag, envKey)
+	key, err := getStringValue(*keyFlag, envKey)
+	if err != nil {
+		key = ""
+	}
 
 	return &Config{
 		NetAddress:      NetAddress{Host: host, Port: port},

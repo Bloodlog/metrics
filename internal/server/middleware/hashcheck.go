@@ -51,6 +51,8 @@ func CheckHashMiddleware(logger *zap.SugaredLogger, key string) func(next http.H
 				)
 				return
 			}
+
+			next.ServeHTTP(w, r)
 		})
 	}
 }

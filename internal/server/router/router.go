@@ -40,8 +40,8 @@ func register(r *chi.Mux, configs *config.Config, memStorage repository.MetricSt
 	r.Use(
 		middleware.LoggingMiddleware(logger),
 		middleware.DecompressionMiddleware(logger),
-		//	middleware.CheckHashMiddleware(logger, configs.Key),
-		//	middleware.ResponseHashMiddleware(configs.Key),
+		middleware.CheckHashMiddleware(logger, configs.Key),
+		middleware.ResponseHashMiddleware(configs.Key),
 		middleware.ResponseCompressionMiddleware(logger),
 	)
 

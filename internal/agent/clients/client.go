@@ -40,26 +40,26 @@ func NewClient(serverAddr, key string, logger *zap.SugaredLogger) *Client {
 }
 
 func (c *Client) processRequest(r *resty.Request) error {
-	if c.key == "" {
+	body := r.Body
+	if body == nil {
 		return nil
 	}
 
-	body := r.Body
-	if body != nil {
-		requestBody, err := readBody(body)
-		if err != nil {
-			return fmt.Errorf("failed to read request body: %w", err)
-		}
-
+	requestBody, err := readBody(body)
+	if err != nil {
+		return fmt.Errorf("failed to read request body: %w", err)
+	}
+	if c.key != "" {
 		hashHex := c.hash(requestBody)
 		r.SetHeader("HashSHA256", hashHex)
-
-		compressedData, err := c.compress(requestBody)
-		if err != nil {
-			return fmt.Errorf("failed to compress request body: %w", err)
-		}
-		r.SetBody(compressedData)
 	}
+
+	compressedData, err := c.compress(requestBody)
+	if err != nil {
+		return fmt.Errorf("failed to compress request body: %w", err)
+	}
+	r.SetBody(compressedData)
+
 	return nil
 }
 
