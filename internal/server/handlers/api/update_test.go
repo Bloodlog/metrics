@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -52,8 +53,9 @@ func TestUpdateHandler(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			logger := zap.NewNop()
 			sugar := logger.Sugar()
+			ctx := context.Background()
 
-			memStorage := repository.NewMemStorage()
+			memStorage, _ := repository.NewMemStorage(ctx)
 			r := chi.NewRouter()
 			apiHandler := NewHandler(memStorage, sugar)
 			r.Post("/update", apiHandler.UpdateHandler())

@@ -1,102 +1,117 @@
 package repository
 
 import (
+	"context"
 	"errors"
-	"sync"
+	"fmt"
+	"metrics/internal/server/config"
+	"time"
+
+	"go.uber.org/zap"
 )
 
 type MetricType string
 
+type RetriableError struct {
+	Err error
+}
+
+func (e *RetriableError) Error() string {
+	return e.Err.Error()
+}
+
+func (e *RetriableError) Unwrap() error {
+	return e.Err
+}
+
+func IsRetriableError(err error) bool {
+	var retriableErr *RetriableError
+	return errors.As(err, &retriableErr)
+}
+
 type MetricStorage interface {
-	SetGauge(name string, value float64) error
-	GetGauge(name string) (float64, error)
-	SetCounter(name string, value uint64) error
-	GetCounter(name string) (uint64, error)
-	Gauges() map[string]float64
-	Counters() map[string]uint64
-	AutoSave() error
-	LoadFromFile() error
-	SaveToFile() error
+	SetGauge(ctx context.Context, name string, value float64) (float64, error)
+	GetGauge(ctx context.Context, name string) (float64, error)
+	SetCounter(ctx context.Context, name string, value uint64) (uint64, error)
+	GetCounter(ctx context.Context, name string) (uint64, error)
+	Gauges(ctx context.Context) (map[string]float64, error)
+	Counters(ctx context.Context) (map[string]uint64, error)
+	UpdateCounterAndGauges(ctx context.Context, counters map[string]uint64, gauges map[string]float64) error
 }
 
-type MemStorage struct {
-	gauges   map[string]float64
-	counters map[string]uint64
-	mu       *sync.RWMutex
-}
+func NewMetricStorage(ctx context.Context, cfg *config.Config, logger *zap.SugaredLogger) (MetricStorage, error) {
+	storageType := resolve(cfg)
 
-func NewMemStorage() *MemStorage {
-	return &MemStorage{
-		mu:       &sync.RWMutex{},
-		gauges:   make(map[string]float64),
-		counters: make(map[string]uint64),
+	switch storageType {
+	case "memory":
+		storage, _ := NewMemStorage(ctx)
+
+		return storage, nil
+	case "file":
+		storage, _ := NewFileStorageWrapper(ctx, cfg, logger)
+
+		return storage, nil
+	case "file-retry":
+		storage, _ := NewRetryFileStorage(ctx, cfg, logger)
+
+		return storage, nil
+	case "database":
+		storage, _ := NewDBRepository(ctx, cfg, logger)
+
+		return storage, nil
+	case "database-retry":
+		storage, _ := NewRetryBRepository(ctx, cfg, logger)
+
+		return storage, nil
+	default:
+		return nil, fmt.Errorf("unknown storage type: %s", storageType)
 	}
 }
 
-func (ms *MemStorage) SetGauge(name string, value float64) error {
-	ms.mu.Lock()
-	defer ms.mu.Unlock()
-	ms.gauges[name] = value
-
-	return nil
-}
-
-func (ms *MemStorage) GetGauge(name string) (float64, error) {
-	ms.mu.RLock()
-	defer ms.mu.RUnlock()
-	value, exists := ms.gauges[name]
-	if !exists {
-		return 0, errors.New("gauge metric not found")
+func resolve(cfg *config.Config) string {
+	if cfg.DatabaseDsn != "" {
+		return "database-retry"
 	}
-	return value, nil
-}
-
-func (ms *MemStorage) SetCounter(name string, value uint64) error {
-	ms.mu.Lock()
-	defer ms.mu.Unlock()
-	ms.counters[name] += value
-
-	return nil
-}
-
-func (ms *MemStorage) GetCounter(name string) (uint64, error) {
-	ms.mu.RLock()
-	defer ms.mu.RUnlock()
-	value, exists := ms.counters[name]
-	if !exists {
-		return 0, errors.New("counter metric not found")
+	if cfg.FileStoragePath != "" {
+		return "file-retry"
 	}
-	return value, nil
+
+	return "memory"
 }
 
-func (ms *MemStorage) Gauges() map[string]float64 {
-	ms.mu.RLock()
-	defer ms.mu.RUnlock()
-	result := make(map[string]float64, len(ms.gauges))
-	for k, v := range ms.gauges {
-		result[k] = v
+func retry(ctx context.Context, operation func() error) error {
+	retryIntervals := []time.Duration{1 * time.Second, 3 * time.Second, 5 * time.Second}
+
+	var lastError error
+	lastError = operation()
+	if lastError == nil {
+		return nil
 	}
-	return result
-}
 
-func (ms *MemStorage) Counters() map[string]uint64 {
-	ms.mu.RLock()
-	defer ms.mu.RUnlock()
-	result := make(map[string]uint64, len(ms.counters))
-	for k, v := range ms.counters {
-		result[k] = v
+	var retriableErr *RetriableError
+	if !errors.As(lastError, &retriableErr) {
+		return fmt.Errorf("operation failed: %w", lastError)
 	}
-	return result
-}
 
-func (ms *MemStorage) AutoSave() error {
-	return nil
-}
+	for i, interval := range retryIntervals {
+		select {
+		case <-ctx.Done():
+			return fmt.Errorf("operation canceled: %w", ctx.Err())
+		default:
+			if i > 0 {
+				time.Sleep(interval)
+			}
 
-func (ms *MemStorage) LoadFromFile() error {
-	return nil
-}
+			lastError = operation()
+			if lastError == nil {
+				return nil
+			}
 
-func (ms *MemStorage) SaveToFile() error {
-	return nil
+			if !errors.As(lastError, &retriableErr) {
+				return fmt.Errorf("operation failed: %w", lastError)
+			}
+		}
+	}
+
+	return fmt.Errorf("operation failed after retries: %w", lastError)
 }

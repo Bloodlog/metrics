@@ -16,9 +16,11 @@ type NetAddress struct {
 }
 
 type Config struct {
+	Key            string
 	NetAddress     NetAddress
 	ReportInterval int
 	PollInterval   int
+	Batch          bool
 }
 
 const (
@@ -33,12 +35,17 @@ const (
 	addressFlagDescription        = "HTTP server address in the format host:port (default: localhost:8080)"
 	reportIntervalFlagDescription = "Overrides the metric reporting frequency to the server (default: 10 seconds)"
 	pollIntervalFlagDescription   = "Overrides the metric polling frequency (default: 2 seconds)"
+
+	flagKey        = "k"
+	envKey         = "KEY"
+	keyDescription = "Agent adds a HashSHA256 header with the computed hash"
 )
 
 func ParseFlags() (*Config, error) {
 	addressFlag := flag.String("a", defaultAddress, addressFlagDescription)
 	reportIntervalFlag := flag.Int("r", defaultReportInterval, reportIntervalFlagDescription)
 	pollIntervalFlag := flag.Int("p", defaultPollInterval, pollIntervalFlagDescription)
+	keyFlag := flag.String(flagKey, "", keyDescription)
 	flag.Parse()
 
 	uknownArguments := flag.Args()
@@ -66,10 +73,17 @@ func ParseFlags() (*Config, error) {
 		return nil, fmt.Errorf("read flag pool interval: %w", err)
 	}
 
+	key, err := getStringValue(*keyFlag, envKey)
+	if err != nil {
+		key = ""
+	}
+
 	return &Config{
 		NetAddress:     NetAddress{Host: host, Port: port},
 		ReportInterval: reportInterval,
 		PollInterval:   poolInterval,
+		Batch:          false,
+		Key:            key,
 	}, nil
 }
 

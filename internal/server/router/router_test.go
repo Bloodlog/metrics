@@ -1,6 +1,8 @@
 package router
 
 import (
+	"context"
+	"metrics/internal/server/config"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -26,12 +28,14 @@ func TestRouter(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.method, func(t *testing.T) {
+			configs := config.Config{}
 			logger := zap.NewNop()
 			sugar := logger.Sugar()
+			ctx := context.Background()
 
-			memStorage := repository.NewMemStorage()
+			memStorage, _ := repository.NewMemStorage(ctx)
 			router := chi.NewRouter()
-			register(router, memStorage, sugar)
+			register(router, &configs, memStorage, sugar)
 			srv := httptest.NewServer(router)
 			defer srv.Close()
 
