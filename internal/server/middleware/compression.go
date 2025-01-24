@@ -33,30 +33,30 @@ func ResponseCompressionMiddleware(logger *zap.SugaredLogger) func(next http.Han
 	handlerLogger := logger.With("middleware", "ResponseCompressionMiddleware")
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if strings.Contains(r.Header.Get(acceptEncodingHeader), gzipEncoding) {
-				gz, err := gzip.NewWriterLevel(w, gzip.BestSpeed)
+			contentEncoding := r.Header.Get(contentEncodingHeader)
+			if !strings.Contains(contentEncoding, gzipEncoding) {
+				next.ServeHTTP(w, r)
+				return
+			}
+			gz, err := gzip.NewWriterLevel(w, gzip.BestSpeed)
+			if err != nil {
+				handlerLogger.Infoln("Failed to compress response", err)
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+			defer func(gz *gzip.Writer) {
+				err := gz.Close()
 				if err != nil {
 					handlerLogger.Infoln("Failed to compress response", err)
 					w.WriteHeader(http.StatusInternalServerError)
 					return
 				}
-				defer func(gz *gzip.Writer) {
-					err := gz.Close()
-					if err != nil {
-						handlerLogger.Infoln("Failed to compress response", err)
-						w.WriteHeader(http.StatusInternalServerError)
-						return
-					}
-				}(gz)
+			}(gz)
 
-				w.Header().Set(contentEncodingHeader, gzipEncoding)
+			w.Header().Set(contentEncodingHeader, gzipEncoding)
 
-				gzr := gzipResponseWriter{ResponseWriter: w, Writer: gz}
-				next.ServeHTTP(gzr, r)
-				return
-			}
-
-			next.ServeHTTP(w, r)
+			gzr := gzipResponseWriter{ResponseWriter: w, Writer: gz}
+			next.ServeHTTP(gzr, r)
 		})
 	}
 }
