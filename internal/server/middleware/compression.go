@@ -33,7 +33,7 @@ func ResponseCompressionMiddleware(logger *zap.SugaredLogger) func(next http.Han
 	handlerLogger := logger.With("middleware", "ResponseCompressionMiddleware")
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			contentEncoding := r.Header.Get(contentEncodingHeader)
+			contentEncoding := r.Header.Get(acceptEncodingHeader)
 			if !strings.Contains(contentEncoding, gzipEncoding) {
 				next.ServeHTTP(w, r)
 				return

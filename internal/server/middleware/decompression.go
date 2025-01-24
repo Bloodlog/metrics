@@ -13,7 +13,7 @@ func DecompressionMiddleware(logger *zap.SugaredLogger) func(next http.Handler) 
 	handlerLogger := logger.With("middleware", "DecompressionMiddleware")
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			acceptEncoding := r.Header.Get(acceptEncodingHeader)
+			acceptEncoding := r.Header.Get(contentEncodingHeader)
 			if !strings.Contains(acceptEncoding, gzipEncoding) {
 				next.ServeHTTP(w, r)
 				return
