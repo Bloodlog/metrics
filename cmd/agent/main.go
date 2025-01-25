@@ -28,7 +28,7 @@ func run(loggerZap *zap.SugaredLogger) error {
 		return fmt.Errorf("failed to parse flags: %w", err)
 	}
 
-	storage := repository.NewRepository()
+	storage := repository.NewMemoryRepository()
 
 	applicationHandlers := handlers.NewHandlers(configs, storage, loggerZap)
 	if err := applicationHandlers.Handle(); err != nil {

@@ -23,12 +23,12 @@ const typeMetricName = "gauge"
 
 type Handlers struct {
 	configs *config.Config
-	storage *repository.Repository
+	storage *repository.MemoryRepository
 	logger  *zap.SugaredLogger
 	client  *resty.Client
 }
 
-func NewHandlers(configs *config.Config, storage *repository.Repository, logger *zap.SugaredLogger) *Handlers {
+func NewHandlers(configs *config.Config, storage *repository.MemoryRepository, logger *zap.SugaredLogger) *Handlers {
 	serverAddr := "http://" + net.JoinHostPort(configs.NetAddress.Host, configs.NetAddress.Port)
 	client := clients.NewClient(serverAddr, configs.Key, logger)
 
@@ -52,7 +52,7 @@ func (h *Handlers) Handle() error {
 	for {
 		select {
 		case <-pollTicker.C:
-			metrics = h.storage.GetMemoryMetrics()
+			metrics = h.storage.GetMetrics()
 			counter++
 
 		case <-reportTicker.C:

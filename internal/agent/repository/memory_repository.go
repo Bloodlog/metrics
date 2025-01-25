@@ -5,19 +5,14 @@ import (
 	"runtime"
 )
 
-type Metric struct {
-	Name  string
-	Value uint64
+type MemoryRepository struct {
 }
 
-type Repository struct {
+func NewMemoryRepository() *MemoryRepository {
+	return &MemoryRepository{}
 }
 
-func NewRepository() *Repository {
-	return &Repository{}
-}
-
-func (r *Repository) GetMemoryMetrics() []Metric {
+func (r *MemoryRepository) GetMetrics() []Metric {
 	var memStats runtime.MemStats
 	runtime.ReadMemStats(&memStats)
 
