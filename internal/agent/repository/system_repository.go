@@ -15,6 +15,7 @@ type SystemRepository struct {
 }
 
 func (r *SystemRepository) GetMetrics() []Metric {
+	const percent = 100
 	var metrics []Metric
 
 	virtualMemory, err := mem.VirtualMemory()
@@ -29,7 +30,7 @@ func (r *SystemRepository) GetMetrics() []Metric {
 		for i, usage := range cpuUsages {
 			metrics = append(metrics, Metric{
 				Name:  "CPUutilization" + strconv.Itoa(i+1),
-				Value: uint64(usage * 100),
+				Value: uint64(usage * percent),
 			})
 		}
 	}

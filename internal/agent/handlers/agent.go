@@ -35,7 +35,12 @@ type Handlers struct {
 	sendQueue        chan MetricsPayload
 }
 
-func NewHandlers(configs *config.Config, memoryRepository *repository.MemoryRepository, systemRepository *repository.SystemRepository, logger *zap.SugaredLogger) *Handlers {
+func NewHandlers(
+	configs *config.Config,
+	memoryRepository *repository.MemoryRepository,
+	systemRepository *repository.SystemRepository,
+	logger *zap.SugaredLogger,
+) *Handlers {
 	serverAddr := "http://" + net.JoinHostPort(configs.NetAddress.Host, configs.NetAddress.Port)
 	client := clients.NewClient(serverAddr, configs.Key, logger)
 
@@ -57,7 +62,7 @@ func (h *Handlers) Handle() error {
 	h.sendQueue = make(chan MetricsPayload, h.configs.RateLimit)
 
 	var wg sync.WaitGroup
-	for i := 0; i < h.configs.RateLimit; i++ {
+	for range make([]struct{}, h.configs.RateLimit) {
 		wg.Add(1)
 		go h.worker(&wg)
 	}
@@ -80,13 +85,10 @@ func (h *Handlers) Handle() error {
 	}()
 
 	for range reportTicker.C {
-		allMetrics := append(runtimeMetrics, systemMetrics...)
-
 		h.sendQueue <- MetricsPayload{
-			Metrics:   allMetrics,
+			Metrics:   append(runtimeMetrics, systemMetrics...),
 			PollCount: int64(counter),
 		}
-
 	}
 
 	close(h.sendQueue)
