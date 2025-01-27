@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -16,21 +17,22 @@ import (
 )
 
 func TestGetHandler(t *testing.T) {
+	ctx := context.Background()
 	counterValue := uint64(100)
 	gaugeValue := 1234.1234
 
 	testCases := []struct {
 		name         string
 		requestBody  string
-		setupStorage func(memStorage *repository.MemStorage)
+		setupStorage func(memStorage repository.MetricStorage)
 		expectedBody string
 		expectedCode int
 	}{
 		{
 			name:        "Get Counter Successfully",
 			requestBody: `{"id": "PollCount", "type": "counter"}`,
-			setupStorage: func(memStorage *repository.MemStorage) {
-				err := memStorage.SetCounter("PollCount", counterValue)
+			setupStorage: func(memStorage repository.MetricStorage) {
+				_, err := memStorage.SetCounter(ctx, "PollCount", counterValue)
 				if err != nil {
 					t.Errorf("Failed to SetCounter: %v", err)
 					return
@@ -42,8 +44,8 @@ func TestGetHandler(t *testing.T) {
 		{
 			name:        "Get Gauge Successfully",
 			requestBody: `{"id": "Allocate", "type": "gauge"}`,
-			setupStorage: func(memStorage *repository.MemStorage) {
-				err := memStorage.SetGauge("Allocate", gaugeValue)
+			setupStorage: func(memStorage repository.MetricStorage) {
+				_, err := memStorage.SetGauge(ctx, "Allocate", gaugeValue)
 				if err != nil {
 					t.Errorf("Failed to SetCounter: %v", err)
 					return
@@ -55,19 +57,19 @@ func TestGetHandler(t *testing.T) {
 		{
 			name:         "Invalid Metric Type",
 			requestBody:  `{"id": "Unknown", "type": "invalid"}`,
-			setupStorage: func(memStorage *repository.MemStorage) {},
+			setupStorage: func(memStorage repository.MetricStorage) {},
 			expectedCode: http.StatusBadRequest,
 		},
 		{
 			name:         "Metric Not Found",
 			requestBody:  `{"id": "Unknown", "type": "counter"}`,
-			setupStorage: func(memStorage *repository.MemStorage) {},
+			setupStorage: func(memStorage repository.MetricStorage) {},
 			expectedCode: http.StatusNotFound,
 		},
 		{
 			name:         "Invalid JSON",
 			requestBody:  `{"id": nil, "type": "counter", "delta": "invalid"}`,
-			setupStorage: func(memStorage *repository.MemStorage) {},
+			setupStorage: func(memStorage repository.MetricStorage) {},
 			expectedCode: http.StatusBadRequest,
 		},
 	}
@@ -76,7 +78,8 @@ func TestGetHandler(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			logger := zap.NewNop()
 			sugar := logger.Sugar()
-			memStorage := repository.NewMemStorage()
+			memStorage, _ := repository.NewMemStorage(ctx)
+
 			tc.setupStorage(memStorage)
 
 			r := chi.NewRouter()

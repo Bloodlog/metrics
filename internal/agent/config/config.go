@@ -19,6 +19,14 @@ type Config struct {
 	NetAddress     NetAddress
 	ReportInterval int
 	PollInterval   int
+	Batch          bool
+	ClientSetting  ClientSetting
+}
+
+type ClientSetting struct {
+	MaxNumberAttempts  int
+	RetryWaitSecond    int
+	RetryMaxWaitSecond int
 }
 
 const (
@@ -33,6 +41,12 @@ const (
 	addressFlagDescription        = "HTTP server address in the format host:port (default: localhost:8080)"
 	reportIntervalFlagDescription = "Overrides the metric reporting frequency to the server (default: 10 seconds)"
 	pollIntervalFlagDescription   = "Overrides the metric polling frequency (default: 2 seconds)"
+)
+
+const (
+	maxNumberAttempts  = 3
+	retryWaitSecond    = 2
+	retryMaxWaitSecond = 5
 )
 
 func ParseFlags() (*Config, error) {
@@ -70,6 +84,12 @@ func ParseFlags() (*Config, error) {
 		NetAddress:     NetAddress{Host: host, Port: port},
 		ReportInterval: reportInterval,
 		PollInterval:   poolInterval,
+		Batch:          false,
+		ClientSetting: ClientSetting{
+			MaxNumberAttempts:  maxNumberAttempts,
+			RetryWaitSecond:    retryWaitSecond,
+			RetryMaxWaitSecond: retryMaxWaitSecond,
+		},
 	}, nil
 }
 

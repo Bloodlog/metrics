@@ -1,6 +1,7 @@
 package web
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
@@ -32,9 +33,9 @@ func TestGetCounterHandler(t *testing.T) {
 		t.Run(tc.method, func(t *testing.T) {
 			logger := zap.NewNop()
 			sugar := logger.Sugar()
-
-			memStorage := repository.NewMemStorage()
-			err := memStorage.SetCounter("PollCount", counterValue)
+			ctx := context.Background()
+			memStorage, _ := repository.NewMemStorage(ctx)
+			_, err := memStorage.SetCounter(ctx, "PollCount", counterValue)
 			if err != nil {
 				t.Errorf("Failed to SetCounter: %v", err)
 				return
@@ -73,10 +74,10 @@ func TestGetCounterHandler(t *testing.T) {
 func TestGetCounterFailsHandler(t *testing.T) {
 	logger := zap.NewNop()
 	sugar := logger.Sugar()
-
-	memStorage := repository.NewMemStorage()
+	ctx := context.Background()
+	memStorage, _ := repository.NewMemStorage(ctx)
 	counterValue := uint64(100)
-	err := memStorage.SetCounter("PollCount", counterValue)
+	_, err := memStorage.SetCounter(ctx, "PollCount", counterValue)
 	if err != nil {
 		t.Errorf("Failed to SetCounter: %v", err)
 		return
@@ -125,9 +126,9 @@ func TestGetGaugeHandler(t *testing.T) {
 		t.Run(tc.method, func(t *testing.T) {
 			logger := zap.NewNop()
 			sugar := logger.Sugar()
-
-			memStorage := repository.NewMemStorage()
-			err := memStorage.SetGauge("metricName", metricValue)
+			ctx := context.Background()
+			memStorage, _ := repository.NewMemStorage(ctx)
+			_, err := memStorage.SetGauge(ctx, "metricName", metricValue)
 			if err != nil {
 				t.Errorf("Failed to SetGauge: %v", err)
 				return
@@ -172,9 +173,10 @@ func TestGetGaugeFailHandler(t *testing.T) {
 			logger := zap.NewNop()
 			sugar := logger.Sugar()
 
-			memStorage := repository.NewMemStorage()
+			ctx := context.Background()
+			memStorage, _ := repository.NewMemStorage(ctx)
 			metricValue := 1234.1234
-			err := memStorage.SetGauge("metricName", metricValue)
+			_, err := memStorage.SetGauge(ctx, "metricName", metricValue)
 			if err != nil {
 				t.Errorf("Failed to SetGauge: %v", err)
 				return

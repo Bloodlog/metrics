@@ -11,36 +11,44 @@ import (
 )
 
 const (
-	addressFlag            = "a"
-	envAddress             = "ADDRESS"
-	defaultAddress         = "http://localhost:8080"
-	addressFlagDescription = "HTTP server address in the format host:port (default: localhost:8080)"
+	flagHTTPAddress        = "a"
+	envHTTPAddress         = "ADDRESS"
+	defaultHTTPAddress     = "http://localhost:8080"
+	descriptionHTTPAddress = "HTTP server address in the format host:port (default: localhost:8080)"
 )
 
 const (
-	storeIntervalFlg         = "i"
+	flagStoreInterval        = "i"
 	envStoreInterval         = "STORE_INTERVAL"
 	defaultStoreInterval     = 300
-	storeIntervalDescription = "interval fo store server"
+	descriptionStoreInterval = "interval fo store server"
 )
 
 const (
-	restoreFlag        = "r"
+	flagRestore        = "r"
 	envRestore         = "RESTORE"
 	defaultRestore     = true
-	restoreDescription = "загружать ранее сохранённые значения из указанного файла при старте сервера"
+	descriptionRestore = "загружать ранее сохранённые значения из указанного файла при старте сервера"
 )
 
 const (
-	fileStoragePathFlag        = "f"
+	flagFileStoragePath        = "f"
 	envFileStoragePath         = "FILE_STORAGE_PATH"
 	defaultFileStoragePath     = "metrics.json"
-	fileStoragePathDescription = "путь до файла, куда сохраняются текущие значения"
+	descriptionFileStoragePath = "путь до файла, куда сохраняются текущие значения"
+)
+
+const (
+	flagDatabaseDSN        = "d"
+	envDatabaseDSN         = "DATABASE_DSN"
+	defaultDatabaseDSN     = ""
+	descriptionDatabaseDSN = "example postgres://username:password@localhost:5432/database_name"
 )
 
 type Config struct {
 	NetAddress      NetAddress
 	FileStoragePath string
+	DatabaseDsn     string
 	StoreInterval   int
 	Restore         bool
 }
@@ -51,10 +59,11 @@ type NetAddress struct {
 }
 
 func ParseFlags() (*Config, error) {
-	addressFlag := flag.String(addressFlag, defaultAddress, addressFlagDescription)
-	storeIntervalFlag := flag.Int(storeIntervalFlg, defaultStoreInterval, storeIntervalDescription)
-	storagePathFlag := flag.String(fileStoragePathFlag, defaultFileStoragePath, fileStoragePathDescription)
-	restoreFlag := flag.Bool(restoreFlag, defaultRestore, restoreDescription)
+	addressFlag := flag.String(flagHTTPAddress, defaultHTTPAddress, descriptionHTTPAddress)
+	storeIntervalFlag := flag.Int(flagStoreInterval, defaultStoreInterval, descriptionStoreInterval)
+	storagePathFlag := flag.String(flagFileStoragePath, defaultFileStoragePath, descriptionFileStoragePath)
+	restoreFlag := flag.Bool(flagRestore, defaultRestore, descriptionRestore)
+	addressDatabaseFlag := flag.String(flagDatabaseDSN, defaultDatabaseDSN, descriptionDatabaseDSN)
 
 	flag.Parse()
 
@@ -63,9 +72,9 @@ func ParseFlags() (*Config, error) {
 		return nil, fmt.Errorf("read flag UnknownArgs: %w", err)
 	}
 
-	finalAddress, err := getStringValue(*addressFlag, envAddress)
+	finalAddress, err := getStringValue(*addressFlag, envHTTPAddress)
 	if err != nil {
-		return nil, fmt.Errorf("read flag address: %w", err)
+		finalAddress = ""
 	}
 
 	host, port, err := parseAddress(finalAddress)
@@ -88,10 +97,16 @@ func ParseFlags() (*Config, error) {
 		return nil, fmt.Errorf("read flag restore: %w", err)
 	}
 
+	databaseDsn, err := getStringValue(*addressDatabaseFlag, envDatabaseDSN)
+	if err != nil {
+		databaseDsn = ""
+	}
+
 	return &Config{
 		NetAddress:      NetAddress{Host: host, Port: port},
 		StoreInterval:   storeInterval,
 		FileStoragePath: storagePath,
+		DatabaseDsn:     databaseDsn,
 		Restore:         restore,
 	}, nil
 }

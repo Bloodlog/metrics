@@ -1,0 +1,50 @@
+services:
+  postgres:
+    image: postgres:17.2
+    container_name: postgres_container
+    environment:
+      POSTGRES_USER: username
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: database_name
+    ports:
+      - "5432:5432"
+    networks:
+      - metrics
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  app:
+    build:
+      context: .
+      dockerfile: docker/server.Dockerfile
+    container_name: app_container
+    depends_on:
+      - postgres
+    ports:
+      - "8080:8080"
+    networks:
+      - metrics
+    environment:
+      DATABASE_DSN: postgres://username:password@postgres:5432/database_name
+      ADDRESS: http://0.0.0.0:8080
+
+  agent:
+    build:
+      context: .
+      dockerfile: docker/agent.Dockerfile
+    container_name: agent_container
+    depends_on:
+      - app
+    networks:
+      - metrics
+    environment:
+      ADDRESS: http://app:8080
+      REPORT_INTERVAL: 10
+      POLL_INTERVAL: 2
+
+volumes:
+  postgres_data:
+
+networks:
+  metrics:
+    driver: bridge

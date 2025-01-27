@@ -2,22 +2,16 @@ package handlers
 
 import (
 	"fmt"
+	"metrics/internal/agent/clients"
 	"metrics/internal/agent/config"
 	"metrics/internal/agent/repository"
 	"metrics/internal/agent/service"
 	"net"
-	"net/http"
 	"time"
 
 	"go.uber.org/zap"
 
 	"github.com/go-resty/resty/v2"
-)
-
-const (
-	maxNumberAttempts  = 3
-	retryWaitSecond    = 2
-	retryMaxWaitSecond = 5
 )
 
 const (
@@ -36,7 +30,7 @@ type Handlers struct {
 
 func NewHandlers(configs *config.Config, storage *repository.Repository, logger *zap.SugaredLogger) *Handlers {
 	serverAddr := "http://" + net.JoinHostPort(configs.NetAddress.Host, configs.NetAddress.Port)
-	client := createClient(serverAddr, logger)
+	client := clients.CreateClient(serverAddr, logger)
 
 	return &Handlers{
 		configs: configs,
@@ -62,63 +56,75 @@ func (h *Handlers) Handle() error {
 			counter++
 
 		case <-reportTicker.C:
-			var metricCounterRequest service.MetricsCounterRequest
 			delta := int64(counter)
-
-			metricCounterRequest = service.MetricsCounterRequest{
-				Delta: &delta,
-				ID:    nameCounter,
-				MType: typeCounter,
+			var err error
+			if h.configs.Batch {
+				err = h.sendBatch(metrics, delta)
+			} else {
+				err = h.sendAPI(metrics, delta)
 			}
-
-			err := service.SendIncrement(h.client, metricCounterRequest)
-
-			counter = 0
 			if err != nil {
-				return fmt.Errorf("failed to send Increment %d to server: %w", counter, err)
+				return fmt.Errorf("failed to send metric to server: %w", err)
 			}
-
-			for _, metric := range metrics {
-				var MetricGaugeUpdateRequest service.MetricsUpdateRequest
-				valueFloat := float64(metric.Value)
-
-				MetricGaugeUpdateRequest = service.MetricsUpdateRequest{
-					Value: &valueFloat,
-					ID:    metric.Name,
-					MType: typeMetricName,
-				}
-
-				err := service.SendMetric(h.client, MetricGaugeUpdateRequest)
-				if err != nil {
-					return fmt.Errorf("failed to send metric %s to server: %w", metric.Name, err)
-				}
-			}
+			counter = 0
 		}
 	}
 }
 
-func createClient(serverAddr string, logger *zap.SugaredLogger) *resty.Client {
-	handlerLogger := logger.With("client", "send request")
-	return resty.New().
-		SetBaseURL(serverAddr).
-		SetHeader("Content-Encoding", "gzip").
-		SetHeader("Content-Type", "application/json").
-		SetRetryCount(maxNumberAttempts).
-		SetRetryWaitTime(retryWaitSecond * time.Second).
-		SetRetryMaxWaitTime(retryMaxWaitSecond * time.Second).
-		AddRetryCondition(func(r *resty.Response, err error) bool {
-			return err != nil || r.StatusCode() >= http.StatusInternalServerError
-		}).
-		OnBeforeRequest(func(client *resty.Client, req *resty.Request) error {
-			handlerLogger.Infof("Sending request to %s with body: %v", req.URL, req.Body)
-			return nil
-		}).
-		OnAfterResponse(func(client *resty.Client, resp *resty.Response) error {
-			handlerLogger.Infof("Received response from %s with status: %d, body: %v",
-				resp.Request.URL, resp.StatusCode(), resp.String())
-			return nil
-		}).
-		OnError(func(req *resty.Request, err error) {
-			handlerLogger.Infoln("Request to %s failed: %v", req.URL, err)
-		})
+func (h *Handlers) sendBatch(metrics []repository.Metric, counter int64) error {
+	metricsRequests := service.MetricsUpdateRequests{}
+	metric := service.MetricsUpdateRequest{
+		Delta: &counter,
+		ID:    nameCounter,
+		MType: typeCounter,
+	}
+	metricsRequests.Metrics = append(metricsRequests.Metrics, metric)
+
+	for _, metric := range metrics {
+		valueFloat := float64(metric.Value)
+		metric := service.MetricsUpdateRequest{
+			Value: &valueFloat,
+			ID:    metric.Name,
+			MType: typeMetricName,
+		}
+		metricsRequests.Metrics = append(metricsRequests.Metrics, metric)
+	}
+
+	err := service.SendMetricsBatch(h.client, metricsRequests)
+	if err != nil {
+		return fmt.Errorf("failed to send metric to server: %w", err)
+	}
+
+	return nil
+}
+
+func (h *Handlers) sendAPI(metrics []repository.Metric, counter int64) error {
+	metricCounterRequest := service.MetricsCounterRequest{
+		Delta: &counter,
+		ID:    nameCounter,
+		MType: typeCounter,
+	}
+
+	err := service.SendIncrement(h.client, metricCounterRequest)
+	if err != nil {
+		return fmt.Errorf("failed to send Increment %d to server: %w", counter, err)
+	}
+	counter = 0
+
+	for _, metric := range metrics {
+		valueFloat := float64(metric.Value)
+
+		MetricGaugeUpdateRequest := service.MetricsGaugeUpdateRequest{
+			Value: &valueFloat,
+			ID:    metric.Name,
+			MType: typeMetricName,
+		}
+
+		err = service.SendMetric(h.client, MetricGaugeUpdateRequest)
+		if err != nil {
+			return fmt.Errorf("failed to send metric %s to server: %w", metric.Name, err)
+		}
+	}
+
+	return nil
 }

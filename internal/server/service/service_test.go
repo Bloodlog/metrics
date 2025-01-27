@@ -1,18 +1,24 @@
 package service
 
 import (
+	"context"
 	"metrics/internal/server/repository"
 	"testing"
+
+	"go.uber.org/zap"
 
 	"github.com/stretchr/testify/assert"
 )
 
 func TestGet(t *testing.T) {
-	memStorage := repository.NewMemStorage()
+	ctx := context.Background()
+	memStorage, _ := repository.NewMemStorage(ctx)
+	logger := zap.NewNop()
+	sugar := logger.Sugar()
 
 	counterID := "testCounter"
 	counterValue := uint64(42)
-	err := memStorage.SetCounter(counterID, counterValue)
+	_, err := memStorage.SetCounter(ctx, counterID, counterValue)
 	if err != nil {
 		t.Errorf("Failed to SetCounter: %v", err)
 		return
@@ -20,7 +26,7 @@ func TestGet(t *testing.T) {
 
 	gaugeID := "testGauge"
 	gaugeValue := 123.45
-	err = memStorage.SetGauge(gaugeID, gaugeValue)
+	_, err = memStorage.SetGauge(ctx, gaugeID, gaugeValue)
 	if err != nil {
 		t.Errorf("Failed to SetCounter: %v", err)
 		return
@@ -32,7 +38,8 @@ func TestGet(t *testing.T) {
 			MType: "counter",
 		}
 
-		resp, err := Get(req, memStorage)
+		metricService := NewMetricService(sugar)
+		resp, err := metricService.Get(ctx, req, memStorage)
 		assert.NoError(t, err)
 		assert.NotNil(t, resp)
 		assert.Equal(t, counterID, resp.ID)
@@ -47,7 +54,8 @@ func TestGet(t *testing.T) {
 			MType: "gauge",
 		}
 
-		resp, err := Get(req, memStorage)
+		metricService := NewMetricService(sugar)
+		resp, err := metricService.Get(ctx, req, memStorage)
 		assert.NoError(t, err)
 		assert.NotNil(t, resp)
 		assert.Equal(t, gaugeID, resp.ID)
@@ -62,7 +70,8 @@ func TestGet(t *testing.T) {
 			MType: "counter",
 		}
 
-		resp, err := Get(req, memStorage)
+		metricService := NewMetricService(sugar)
+		resp, err := metricService.Get(ctx, req, memStorage)
 		assert.Error(t, err)
 		assert.Nil(t, resp)
 	})
@@ -73,7 +82,8 @@ func TestGet(t *testing.T) {
 			MType: "invalid",
 		}
 
-		resp, err := Get(req, memStorage)
+		metricService := NewMetricService(sugar)
+		resp, err := metricService.Get(ctx, req, memStorage)
 		assert.Error(t, err)
 		assert.Nil(t, resp)
 	})
