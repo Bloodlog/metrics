@@ -7,6 +7,7 @@ import (
 	"metrics/internal/agent/repository"
 	"metrics/internal/agent/service"
 	"net"
+	"sync"
 	"time"
 
 	"go.uber.org/zap"
@@ -21,22 +22,29 @@ const (
 
 const typeMetricName = "gauge"
 
+type MetricsPayload struct {
+	Metrics   []repository.Metric
+	PollCount int64
+}
 type Handlers struct {
-	configs *config.Config
-	storage *repository.MemoryRepository
-	logger  *zap.SugaredLogger
-	client  *resty.Client
+	configs          *config.Config
+	memoryRepository *repository.MemoryRepository
+	systemRepository *repository.SystemRepository
+	logger           *zap.SugaredLogger
+	client           *resty.Client
+	sendQueue        chan MetricsPayload
 }
 
-func NewHandlers(configs *config.Config, storage *repository.MemoryRepository, logger *zap.SugaredLogger) *Handlers {
+func NewHandlers(configs *config.Config, memoryRepository *repository.MemoryRepository, systemRepository *repository.SystemRepository, logger *zap.SugaredLogger) *Handlers {
 	serverAddr := "http://" + net.JoinHostPort(configs.NetAddress.Host, configs.NetAddress.Port)
 	client := clients.NewClient(serverAddr, configs.Key, logger)
 
 	return &Handlers{
-		configs: configs,
-		storage: storage,
-		logger:  logger,
-		client:  client.RestyClient,
+		configs:          configs,
+		memoryRepository: memoryRepository,
+		systemRepository: systemRepository,
+		logger:           logger,
+		client:           client.RestyClient,
 	}
 }
 
@@ -46,27 +54,62 @@ func (h *Handlers) Handle() error {
 	defer pollTicker.Stop()
 	defer reportTicker.Stop()
 
-	var metrics []repository.Metric
+	h.sendQueue = make(chan MetricsPayload, h.configs.RateLimit)
+
+	var wg sync.WaitGroup
+	for i := 0; i < h.configs.RateLimit; i++ {
+		wg.Add(1)
+		go h.worker(&wg)
+	}
+
+	var runtimeMetrics []repository.Metric
+	var systemMetrics []repository.Metric
 	counter := 0
 
-	for {
-		select {
-		case <-pollTicker.C:
-			metrics = h.storage.GetMetrics()
+	go func() {
+		for range pollTicker.C {
+			runtimeMetrics = h.memoryRepository.GetMetrics()
 			counter++
+		}
+	}()
 
-		case <-reportTicker.C:
-			delta := int64(counter)
-			var err error
-			if h.configs.Batch {
-				err = h.sendBatch(metrics, delta)
-			} else {
-				err = h.sendAPI(metrics, delta)
-			}
-			if err != nil {
-				return fmt.Errorf("failed to send metric to server: %w", err)
-			}
-			counter = 0
+	go func() {
+		for range pollTicker.C {
+			systemMetrics = h.systemRepository.GetMetrics()
+		}
+	}()
+
+	for range reportTicker.C {
+		allMetrics := append(runtimeMetrics, systemMetrics...)
+
+		h.sendQueue <- MetricsPayload{
+			Metrics:   allMetrics,
+			PollCount: int64(counter),
+		}
+
+	}
+
+	close(h.sendQueue)
+	wg.Wait()
+
+	return nil
+}
+
+func (h *Handlers) worker(wg *sync.WaitGroup) {
+	defer wg.Done()
+
+	for payload := range h.sendQueue {
+		pollCount := payload.PollCount
+		metrics := payload.Metrics
+
+		var err error
+		if h.configs.Batch {
+			err = h.sendBatch(metrics, pollCount)
+		} else {
+			err = h.sendAPI(metrics, pollCount)
+		}
+		if err != nil {
+			fmt.Printf("Failed to send metrics: %v\n", err)
 		}
 	}
 }
