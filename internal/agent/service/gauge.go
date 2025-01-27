@@ -19,13 +19,8 @@ func SendMetric(client *resty.Client, request MetricsGaugeUpdateRequest) error {
 		return fmt.Errorf("error serializing the structure: %w", err)
 	}
 
-	compressedData, err := Compress(requestData)
-	if err != nil {
-		return fmt.Errorf("error compressing the data: %w", err)
-	}
-
 	_, err = client.R().
-		SetBody(compressedData).
+		SetBody(requestData).
 		Post("/update/")
 	if err != nil {
 		return fmt.Errorf("failed to send metric %s: %w", request.ID, err)

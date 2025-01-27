@@ -1,4 +1,4 @@
-package service
+package clients
 
 import (
 	"bytes"
@@ -6,10 +6,10 @@ import (
 	"fmt"
 )
 
-func Compress(data []byte) ([]byte, error) {
+func (c *Client) compress(data []byte) ([]byte, error) {
 	const (
 		errCompressingData = "error compressing the data: %w"
-		errClosingGzip     = "error close gzip stream: %w"
+		errClosingGzip     = "error closing gzip stream: %w"
 	)
 	var buf bytes.Buffer
 	gzipWriter := gzip.NewWriter(&buf)

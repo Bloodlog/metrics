@@ -7,9 +7,9 @@ import (
 )
 
 func TestGetMemoryMetrics(t *testing.T) {
-	repo := NewRepository()
+	repo := NewMemoryRepository()
 
-	metrics := repo.GetMemoryMetrics()
+	metrics := repo.GetMetrics()
 
 	assert.Equal(t, 28, len(metrics), "Количество метрик должно быть равно 28")
 

@@ -24,13 +24,8 @@ func SendMetricsBatch(client *resty.Client, request MetricsUpdateRequests) error
 		return fmt.Errorf("error serializing the structure: %w", err)
 	}
 
-	compressedData, err := Compress(requestData)
-	if err != nil {
-		return fmt.Errorf("error compressing the data: %w", err)
-	}
-
 	_, err = client.R().
-		SetBody(compressedData).
+		SetBody(requestData).
 		Post("/updates")
 	if err != nil {
 		return fmt.Errorf("failed to send metric %w", err)
