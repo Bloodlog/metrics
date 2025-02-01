@@ -3,7 +3,7 @@ package middleware
 import (
 	"bytes"
 	"crypto/hmac"
-	"encoding/hex"
+	"encoding/base64"
 	"io"
 	"net/http"
 
@@ -29,7 +29,7 @@ func CheckHashMiddleware(logger *zap.SugaredLogger, key string) func(next http.H
 			}
 			r.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
 
-			providedHashBytes, err := hex.DecodeString(providedHash)
+			providedHashBytes, err := base64.StdEncoding.DecodeString(providedHash)
 			if err != nil {
 				logger.Infoln("invalid hash format")
 				http.Error(w, "", http.StatusBadRequest)
