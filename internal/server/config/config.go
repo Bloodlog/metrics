@@ -44,8 +44,15 @@ const (
 	defaultDatabaseDSN     = ""
 	descriptionDatabaseDSN = "example postgres://username:password@localhost:5432/database_name"
 )
+const (
+	flagKey        = "k"
+	envKey         = "KEY"
+	defaultKey     = ""
+	descriptionKey = "Agent adds a HashSHA256 header with the computed hash"
+)
 
 type Config struct {
+	Key             string
 	NetAddress      NetAddress
 	FileStoragePath string
 	DatabaseDsn     string
@@ -64,6 +71,7 @@ func ParseFlags() (*Config, error) {
 	storagePathFlag := flag.String(flagFileStoragePath, defaultFileStoragePath, descriptionFileStoragePath)
 	restoreFlag := flag.Bool(flagRestore, defaultRestore, descriptionRestore)
 	addressDatabaseFlag := flag.String(flagDatabaseDSN, defaultDatabaseDSN, descriptionDatabaseDSN)
+	keyFlag := flag.String(flagKey, defaultKey, descriptionKey)
 
 	flag.Parse()
 
@@ -102,12 +110,18 @@ func ParseFlags() (*Config, error) {
 		databaseDsn = ""
 	}
 
+	key, err := getStringValue(*keyFlag, envKey)
+	if err != nil {
+		key = ""
+	}
+
 	return &Config{
 		NetAddress:      NetAddress{Host: host, Port: port},
 		StoreInterval:   storeInterval,
 		FileStoragePath: storagePath,
 		DatabaseDsn:     databaseDsn,
 		Restore:         restore,
+		Key:             key,
 	}, nil
 }
 

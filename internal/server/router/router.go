@@ -37,7 +37,13 @@ func Run(configs *config.Config, memStorage repository.MetricStorage, logger *za
 func register(r *chi.Mux, configs *config.Config, memStorage repository.MetricStorage, logger *zap.SugaredLogger) {
 	apiHandler := api.NewHandler(memStorage, logger)
 	webHandler := web.NewHandler(memStorage, logger)
-	r.Use(middleware.LoggingMiddleware(logger), middleware.CompressionMiddleware(logger))
+	r.Use(
+		middleware.LoggingMiddleware(logger),
+		middleware.DecompressionMiddleware(logger),
+		middleware.CheckHashMiddleware(logger, configs.Key),
+		middleware.ResponseHashMiddleware(configs.Key),
+		middleware.ResponseCompressionMiddleware(logger),
+	)
 
 	r.Route("/updates", func(r chi.Router) {
 		r.Post("/", apiHandler.UpdatesHandler())

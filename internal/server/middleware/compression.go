@@ -10,6 +10,12 @@ import (
 	"go.uber.org/zap"
 )
 
+const (
+	acceptEncodingHeader  = "Accept-Encoding"
+	gzipEncoding          = "gzip"
+	contentEncodingHeader = "Content-Encoding"
+)
+
 type gzipResponseWriter struct {
 	http.ResponseWriter
 	Writer io.Writer
@@ -23,39 +29,15 @@ func (g gzipResponseWriter) Write(b []byte) (int, error) {
 	return n, nil
 }
 
-const (
-	contentEncodingHeader = "Content-Encoding"
-	acceptEncodingHeader  = "Accept-Encoding"
-	gzipEncoding          = "gzip"
-)
-
-func CompressionMiddleware(logger *zap.SugaredLogger) func(next http.Handler) http.Handler {
-	handlerLogger := logger.With("middleware", "CompressionMiddleware")
+func ResponseCompressionMiddleware(logger *zap.SugaredLogger) func(next http.Handler) http.Handler {
+	handlerLogger := logger.With("middleware", "ResponseCompressionMiddleware")
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if strings.Contains(r.Header.Get(contentEncodingHeader), gzipEncoding) {
-				gzr, err := gzip.NewReader(r.Body)
-				if err != nil {
-					handlerLogger.Infoln("Failed to decompress request body", err)
-					w.WriteHeader(http.StatusInternalServerError)
-					return
-				}
-				defer func(gzr *gzip.Reader) {
-					err := gzr.Close()
-					if err != nil {
-						handlerLogger.Infoln("Failed to decompress request body", err)
-						w.WriteHeader(http.StatusInternalServerError)
-						return
-					}
-				}(gzr)
-				r.Body = io.NopCloser(gzr)
-			}
-
-			if !strings.Contains(r.Header.Get(acceptEncodingHeader), gzipEncoding) {
+			contentEncoding := r.Header.Get(acceptEncodingHeader)
+			if !strings.Contains(contentEncoding, gzipEncoding) {
 				next.ServeHTTP(w, r)
 				return
 			}
-
 			gz, err := gzip.NewWriterLevel(w, gzip.BestSpeed)
 			if err != nil {
 				handlerLogger.Infoln("Failed to compress response", err)
