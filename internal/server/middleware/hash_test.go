@@ -25,12 +25,11 @@ func TestResponseHashMiddleware(t *testing.T) {
 		middleware(handler).ServeHTTP(rec, req)
 
 		resp := rec.Result()
-		defer func(Body io.ReadCloser) {
-			err := Body.Close()
-			if err != nil {
+		defer func() {
+			if err := resp.Body.Close(); err != nil {
 				t.Errorf("error %v", err)
 			}
-		}(resp.Body)
+		}()
 
 		body, _ := io.ReadAll(resp.Body)
 		assert.Equal(t, expectedBody, string(body))
@@ -47,12 +46,11 @@ func TestResponseHashMiddleware(t *testing.T) {
 		middleware(handler).ServeHTTP(rec, req)
 
 		resp := rec.Result()
-		defer func(Body io.ReadCloser) {
-			err := Body.Close()
-			if err != nil {
+		defer func() {
+			if err := resp.Body.Close(); err != nil {
 				t.Errorf("error %v", err)
 			}
-		}(resp.Body)
+		}()
 
 		body, _ := io.ReadAll(resp.Body)
 		assert.Equal(t, expectedBody, string(body))

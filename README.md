@@ -32,4 +32,10 @@ git fetch template && git checkout template/main .github
 Подробнее про локальный и автоматический запуск читайте в [README автотестов](https://github.com/Yandex-Practicum/go-autotests).
 
 
+![example workflow](https://github.com/Bloodlog/metrics/actions/workflows/.github/workflows/golangci-lint.yml/badge.svg?event=push)
+
+![example workflow](https://github.com/Bloodlog/metrics/actions/workflows/.github/workflows/mertricstest.yml/badge.svg?event=push)
+
+![example workflow](https://github.com/Bloodlog/metrics/actions/workflows/.github/workflows/statictest.yml/badge.svg?event=push)
+
 pprof: http://127.0.0.1:6060/debug/pprof/
