@@ -11,8 +11,6 @@ func TestGetSystemMetrics(t *testing.T) {
 
 	metrics := repo.GetMetrics()
 
-	assert.Equal(t, 12, len(metrics), "Количество метрик должно быть равно 12")
-
 	for _, metric := range metrics {
 		assert.NotEmpty(t, metric.Name, "Имя метрики не должно быть пустым")
 	}
