@@ -35,3 +35,13 @@ style:
 	go fmt ./...
 	go vet ./...
 	goimports -w .
+
+build:
+	docker-compose up --build
+
+go-test:
+	go test ./...
+
+go-test-cover:
+	go test ./... -coverprofile=coverage.out
+	go tool cover -func=coverage.out

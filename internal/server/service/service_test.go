@@ -88,3 +88,94 @@ func TestGet(t *testing.T) {
 		assert.Nil(t, resp)
 	})
 }
+
+func TestUpdate(t *testing.T) {
+	ctx := context.Background()
+	memStorage, _ := repository.NewMemStorage(ctx)
+	logger := zap.NewNop()
+	sugar := logger.Sugar()
+
+	counterID := "testCounter"
+	counterValue := uint64(42)
+	_, err := memStorage.SetCounter(ctx, counterID, counterValue)
+	if err != nil {
+		t.Errorf("Failed to SetCounter: %v", err)
+		return
+	}
+
+	gaugeID := "testGauge"
+	gaugeValue := 123.45
+	_, err = memStorage.SetGauge(ctx, gaugeID, gaugeValue)
+	if err != nil {
+		t.Errorf("Failed to SetGauge: %v", err)
+		return
+	}
+
+	t.Run("Update counter metric", func(t *testing.T) {
+		req := MetricsUpdateRequest{
+			Delta: new(int64),
+			ID:    counterID,
+			MType: "counter",
+		}
+		*req.Delta = 10
+
+		metricService := NewMetricService(sugar)
+		resp, err := metricService.Update(ctx, req, memStorage)
+
+		assert.NoError(t, err)
+		assert.NotNil(t, resp)
+		assert.Equal(t, counterID, resp.ID)
+		assert.Equal(t, "counter", resp.MType)
+		assert.NotNil(t, resp.Delta)
+		assert.Equal(t, int64(52), *resp.Delta)
+	})
+
+	t.Run("Update gauge metric", func(t *testing.T) {
+		req := MetricsUpdateRequest{
+			Value: new(float64),
+			ID:    gaugeID,
+			MType: "gauge",
+		}
+		*req.Value = 150.5
+
+		metricService := NewMetricService(sugar)
+		resp, err := metricService.Update(ctx, req, memStorage)
+
+		assert.NoError(t, err)
+		assert.NotNil(t, resp)
+		assert.Equal(t, gaugeID, resp.ID)
+		assert.Equal(t, "gauge", resp.MType)
+		assert.NotNil(t, resp.Value)
+		assert.Equal(t, 150.5, *resp.Value)
+	})
+
+	t.Run("Update counter metric with nil Delta", func(t *testing.T) {
+		req := MetricsUpdateRequest{
+			Delta: nil,
+			ID:    counterID,
+			MType: "counter",
+		}
+
+		metricService := NewMetricService(sugar)
+		resp, err := metricService.Update(ctx, req, memStorage)
+
+		assert.Error(t, err)
+		assert.Nil(t, resp)
+		assert.Equal(t, "delta field cannot be nil for counter type", err.Error())
+	})
+
+	t.Run("Update gauge metric with nil Value", func(t *testing.T) {
+		req := MetricsUpdateRequest{
+			Value: nil,
+			ID:    gaugeID,
+			MType: "gauge",
+		}
+
+		metricService := NewMetricService(sugar)
+		resp, err := metricService.Update(ctx, req, memStorage)
+
+		assert.Error(t, err)
+		assert.Nil(t, resp)
+		assert.Equal(t, "value field cannot be nil for gauge type", err.Error())
+	})
+}

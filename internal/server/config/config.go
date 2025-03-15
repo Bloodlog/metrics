@@ -58,6 +58,7 @@ type Config struct {
 	DatabaseDsn     string
 	StoreInterval   int
 	Restore         bool
+	Debug           bool
 }
 
 type NetAddress struct {
@@ -72,6 +73,7 @@ func ParseFlags() (*Config, error) {
 	restoreFlag := flag.Bool(flagRestore, defaultRestore, descriptionRestore)
 	addressDatabaseFlag := flag.String(flagDatabaseDSN, defaultDatabaseDSN, descriptionDatabaseDSN)
 	keyFlag := flag.String(flagKey, defaultKey, descriptionKey)
+	enablePprof := flag.Bool("pprof", false, "enable pprof for debugging")
 
 	flag.Parse()
 
@@ -122,6 +124,7 @@ func ParseFlags() (*Config, error) {
 		DatabaseDsn:     databaseDsn,
 		Restore:         restore,
 		Key:             key,
+		Debug:           *enablePprof,
 	}, nil
 }
 

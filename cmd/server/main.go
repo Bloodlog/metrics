@@ -9,6 +9,9 @@ import (
 	"metrics/internal/server/repository"
 	"metrics/internal/server/router"
 
+	"net/http"
+	_ "net/http/pprof"
+
 	"go.uber.org/zap"
 )
 
@@ -18,7 +21,7 @@ func main() {
 		log.Fatalf("Failed to initialize logger: %v", err)
 	}
 
-	if err := run(loggerZap); err != nil {
+	if err = run(loggerZap); err != nil {
 		loggerZap.Fatal("Application failed", zap.Error(err))
 	}
 }
@@ -34,10 +37,21 @@ func run(loggerZap *zap.SugaredLogger) error {
 	if err != nil {
 		return fmt.Errorf("repository error: %w", err)
 	}
-
-	if err := router.Run(cfg, rep, loggerZap); err != nil {
+	initPprof(cfg, loggerZap)
+	if err = router.Run(cfg, rep, loggerZap); err != nil {
 		return fmt.Errorf("failed to run router: %w", err)
 	}
 
 	return nil
+}
+
+func initPprof(cfg *config.Config, log *zap.SugaredLogger) {
+	if cfg.Debug {
+		go func() {
+			err := http.ListenAndServe(cfg.NetAddress.Host+":6060", nil)
+			if err != nil {
+				log.Info(err.Error(), "failed start profiler")
+			}
+		}()
+	}
 }

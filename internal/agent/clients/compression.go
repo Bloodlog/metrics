@@ -19,7 +19,7 @@ func (c *Client) compress(data []byte) ([]byte, error) {
 		return nil, fmt.Errorf(errCompressingData, err)
 	}
 
-	if err := gzipWriter.Close(); err != nil {
+	if err = gzipWriter.Close(); err != nil {
 		return nil, fmt.Errorf(errClosingGzip, err)
 	}
 
