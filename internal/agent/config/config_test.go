@@ -1,55 +1,21 @@
 package config
 
 import (
-	"flag"
-	"os"
-	"strconv"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
-func resetFlags() {
-	flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
-}
+func TestParseFlags(t *testing.T) {
+	cfg, err := processFlags("localhost:8080", 500, 600, "my-secret-key", 10)
+	assert.NoError(t, err)
 
-func TestParseAddressFlags(t *testing.T) {
-	resetFlags()
-	flagAddress := "a"
-	host := "localhost"
-	port := "8080"
-	os.Args = []string{"cmd", "--" + flagAddress + "=" + host + ":" + port}
-	cfg, _ := ParseFlags()
-	assert.Equal(t, host, cfg.NetAddress.Host)
-	assert.Equal(t, port, cfg.NetAddress.Port)
-}
+	assert.Equal(t, "localhost", cfg.NetAddress.Host)
+	assert.Equal(t, "8080", cfg.NetAddress.Port)
 
-func TestParseReportIntervalFlags(t *testing.T) {
-	resetFlags()
-	flagInterval := "r"
-	interval := "500"
-	os.Args = []string{"cmd", "--" + flagInterval + "=" + interval}
-	cfg, _ := ParseFlags()
-	intervalInt, _ := strconv.Atoi(interval)
-
-	assert.Equal(t, intervalInt, cfg.ReportInterval)
-}
-
-func TestParsePoolIntervalFlags(t *testing.T) {
-	resetFlags()
-	flagInterval := "p"
-	interval := "600"
-	os.Args = []string{"cmd", "--" + flagInterval + "=" + interval}
-	cfg, _ := ParseFlags()
-	intervalInt, _ := strconv.Atoi(interval)
-
-	assert.Equal(t, intervalInt, cfg.PollInterval)
-}
-
-func TestParseKeyFlags(t *testing.T) {
-	resetFlags()
-	os.Args = []string{"cmd", "--k=my-secret-key"}
-	cfg, _ := ParseFlags()
+	assert.Equal(t, 500, cfg.ReportInterval)
+	assert.Equal(t, 600, cfg.PollInterval)
 
 	assert.Equal(t, "my-secret-key", cfg.Key)
+	assert.Equal(t, 10, cfg.RateLimit)
 }

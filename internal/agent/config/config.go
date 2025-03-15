@@ -59,7 +59,17 @@ func ParseFlags() (*Config, error) {
 		return nil, fmt.Errorf("read flags: %w", err)
 	}
 
-	finalAddress, err := getStringValue(*addressFlag, envAddress)
+	return processFlags(*addressFlag, *reportIntervalFlag, *pollIntervalFlag, *keyFlag, *rateLimitFlag)
+}
+
+func processFlags(
+	addressFlag string,
+	reportIntervalFlag,
+	pollIntervalFlag int,
+	keyFlag string,
+	rateLimitFlag int,
+) (*Config, error) {
+	finalAddress, err := getStringValue(addressFlag, envAddress)
 	if err != nil {
 		return nil, fmt.Errorf("read flag: %w", err)
 	}
@@ -69,22 +79,22 @@ func ParseFlags() (*Config, error) {
 		return nil, fmt.Errorf("read flag address: %w", err)
 	}
 
-	reportInterval, err := getIntValue(*reportIntervalFlag, envReportInterval)
+	reportInterval, err := getIntValue(reportIntervalFlag, envReportInterval)
 	if err != nil {
 		return nil, fmt.Errorf("read flag report interval: %w", err)
 	}
 
-	poolInterval, err := getIntValue(*pollIntervalFlag, envPollInterval)
+	poolInterval, err := getIntValue(pollIntervalFlag, envPollInterval)
 	if err != nil {
 		return nil, fmt.Errorf("read flag pool interval: %w", err)
 	}
 
-	key, err := getStringValue(*keyFlag, envKey)
+	key, err := getStringValue(keyFlag, envKey)
 	if err != nil {
 		key = ""
 	}
 
-	rateLimit, err := getIntValue(*rateLimitFlag, envRateLimit)
+	rateLimit, err := getIntValue(rateLimitFlag, envRateLimit)
 	if err != nil {
 		rateLimit = 1
 	}

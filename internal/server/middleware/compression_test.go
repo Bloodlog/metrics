@@ -30,24 +30,22 @@ func TestResponseCompressionMiddleware(t *testing.T) {
 		middleware(handler).ServeHTTP(rec, req)
 
 		resp := rec.Result()
-		defer func(Body io.ReadCloser) {
-			err := Body.Close()
-			if err != nil {
+		defer func() {
+			if err := resp.Body.Close(); err != nil {
 				t.Errorf("error %v", err)
 			}
-		}(resp.Body)
+		}()
 
 		assert.Equal(t, gzipEncoding, resp.Header.Get(contentEncodingHeader))
 
 		compressedBody, _ := io.ReadAll(resp.Body)
 
 		r, _ := gzip.NewReader(bytes.NewReader(compressedBody))
-		defer func(r *gzip.Reader) {
-			err := r.Close()
-			if err != nil {
+		defer func() {
+			if err := resp.Body.Close(); err != nil {
 				t.Errorf("error %v", err)
 			}
-		}(r)
+		}()
 		result, _ := io.ReadAll(r)
 		decompressedBody := string(result)
 
@@ -61,12 +59,11 @@ func TestResponseCompressionMiddleware(t *testing.T) {
 		middleware(handler).ServeHTTP(rec, req)
 
 		resp := rec.Result()
-		defer func(Body io.ReadCloser) {
-			err := Body.Close()
-			if err != nil {
+		defer func() {
+			if err := resp.Body.Close(); err != nil {
 				t.Errorf("error %v", err)
 			}
-		}(resp.Body)
+		}()
 
 		assert.Empty(t, resp.Header.Get(contentEncodingHeader))
 

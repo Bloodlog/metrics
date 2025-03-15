@@ -45,12 +45,12 @@ func run(loggerZap *zap.SugaredLogger) error {
 	return nil
 }
 
-func initPprof(cfg *config.Config, log *zap.SugaredLogger) {
+func initPprof(cfg *config.Config, zapLog *zap.SugaredLogger) {
 	if cfg.Debug {
 		go func() {
 			err := http.ListenAndServe(cfg.NetAddress.Host+":6060", nil)
 			if err != nil {
-				log.Info(err.Error(), "failed start profiler")
+				zapLog.Info(err.Error(), "failed start profiler")
 			}
 		}()
 	}
