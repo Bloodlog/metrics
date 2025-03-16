@@ -16,11 +16,15 @@ type NetAddress struct {
 }
 
 type Config struct {
+	// Ключ для вычисления хеша.
 	Key            string
 	NetAddress     NetAddress
+	// Интервал отправки метрик.
 	ReportInterval int
+	// Интервал опроса метрик.
 	PollInterval   int
 	RateLimit      int
+	// Разрешить отправку метрик одним пакетным запросом.
 	Batch          bool
 }
 

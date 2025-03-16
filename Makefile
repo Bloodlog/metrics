@@ -45,3 +45,9 @@ go-test:
 go-test-cover:
 	go test ./... -coverprofile=coverage.out
 	go tool cover -func=coverage.out
+
+go-doc:
+	godoc -http=:8080
+
+swag:
+	swag init --output ./swagger/ -d cmd/server/

@@ -33,3 +33,6 @@ cmd/server/metrics.json
 
 # pprof
 profiles
+
+# swagger
+swagger

@@ -52,12 +52,18 @@ const (
 )
 
 type Config struct {
+	// Ключ для вычисления хеша.
 	Key             string
 	NetAddress      NetAddress
+	// Путь к файлу хранилищу.
 	FileStoragePath string
+	// Настройки БД в формате dsn.
 	DatabaseDsn     string
+	// Интервал сохранения хранилища.
 	StoreInterval   int
+	// Разрешить загрузку из файла хранилища.
 	Restore         bool
+	// Разрешить отладку.
 	Debug           bool
 }
 
