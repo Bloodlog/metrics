@@ -38,4 +38,9 @@ git fetch template && git checkout template/main .github
 
 ![example workflow](https://github.com/Bloodlog/metrics/actions/workflows/.github/workflows/statictest.yml/badge.svg?event=push)
 
-pprof: http://127.0.0.1:6060/debug/pprof/
+* [pprof:](http://127.0.0.1:6060/debug/pprof/)
+* [swagger:](http://127.0.0.1:8080/swagger/index.html#/)
+* [Go doc](http://localhost:8081/)
+* [Go doc dto](http://127.0.0.1:8081/pkg/metrics/internal/server/dto/)
+* [Go doc api handlers](http://127.0.0.1:8081/pkg/metrics/internal/server/handlers/api/)
+* [Go doc web handlers](http://localhost:8081/pkg/metrics/internal/server/handlers/web/)

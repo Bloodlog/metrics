@@ -1,7 +1,7 @@
 package web
 
 import (
-	"context"
+	"metrics/internal/server/service"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -34,11 +34,11 @@ func TestUpdateHandler(t *testing.T) {
 		t.Run(tc.method, func(t *testing.T) {
 			logger := zap.NewNop()
 			sugar := logger.Sugar()
-			ctx := context.Background()
 
-			memStorage, _ := repository.NewMemStorage(ctx)
+			memStorage, _ := repository.NewMemStorage()
 			r := chi.NewRouter()
-			webHandler := NewHandler(memStorage, sugar)
+			metricService := service.NewMetricService(memStorage, sugar)
+			webHandler := NewHandler(metricService, sugar)
 			r.Post("/update/{metricType}/{metricName}/{metricValue}", webHandler.UpdateHandler())
 			srv := httptest.NewServer(r)
 			defer srv.Close()

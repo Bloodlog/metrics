@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"metrics/internal/server/dto"
 	"metrics/internal/server/repository"
 	"testing"
 
@@ -12,7 +13,7 @@ import (
 
 func TestGet(t *testing.T) {
 	ctx := context.Background()
-	memStorage, _ := repository.NewMemStorage(ctx)
+	memStorage, _ := repository.NewMemStorage()
 	logger := zap.NewNop()
 	sugar := logger.Sugar()
 
@@ -33,13 +34,13 @@ func TestGet(t *testing.T) {
 	}
 
 	t.Run("Get counter metric", func(t *testing.T) {
-		req := MetricsGetRequest{
+		req := dto.MetricsGetRequest{
 			ID:    counterID,
 			MType: "counter",
 		}
 
-		metricService := NewMetricService(sugar)
-		resp, err := metricService.Get(ctx, req, memStorage)
+		metricService := NewMetricService(memStorage, sugar)
+		resp, err := metricService.Get(ctx, req)
 		assert.NoError(t, err)
 		assert.NotNil(t, resp)
 		assert.Equal(t, counterID, resp.ID)
@@ -49,13 +50,13 @@ func TestGet(t *testing.T) {
 	})
 
 	t.Run("Get gauge metric", func(t *testing.T) {
-		req := MetricsGetRequest{
+		req := dto.MetricsGetRequest{
 			ID:    gaugeID,
 			MType: "gauge",
 		}
 
-		metricService := NewMetricService(sugar)
-		resp, err := metricService.Get(ctx, req, memStorage)
+		metricService := NewMetricService(memStorage, sugar)
+		resp, err := metricService.Get(ctx, req)
 		assert.NoError(t, err)
 		assert.NotNil(t, resp)
 		assert.Equal(t, gaugeID, resp.ID)
@@ -65,25 +66,25 @@ func TestGet(t *testing.T) {
 	})
 
 	t.Run("Get non-existing metric", func(t *testing.T) {
-		req := MetricsGetRequest{
+		req := dto.MetricsGetRequest{
 			ID:    "unknownMetric",
 			MType: "counter",
 		}
 
-		metricService := NewMetricService(sugar)
-		resp, err := metricService.Get(ctx, req, memStorage)
+		metricService := NewMetricService(memStorage, sugar)
+		resp, err := metricService.Get(ctx, req)
 		assert.Error(t, err)
 		assert.Nil(t, resp)
 	})
 
 	t.Run("Invalid metric type", func(t *testing.T) {
-		req := MetricsGetRequest{
+		req := dto.MetricsGetRequest{
 			ID:    counterID,
 			MType: "invalid",
 		}
 
-		metricService := NewMetricService(sugar)
-		resp, err := metricService.Get(ctx, req, memStorage)
+		metricService := NewMetricService(memStorage, sugar)
+		resp, err := metricService.Get(ctx, req)
 		assert.Error(t, err)
 		assert.Nil(t, resp)
 	})
@@ -91,7 +92,7 @@ func TestGet(t *testing.T) {
 
 func TestUpdate(t *testing.T) {
 	ctx := context.Background()
-	memStorage, _ := repository.NewMemStorage(ctx)
+	memStorage, _ := repository.NewMemStorage()
 	logger := zap.NewNop()
 	sugar := logger.Sugar()
 
@@ -112,15 +113,15 @@ func TestUpdate(t *testing.T) {
 	}
 
 	t.Run("Update counter metric", func(t *testing.T) {
-		req := MetricsUpdateRequest{
+		req := dto.MetricsUpdateRequest{
 			Delta: new(int64),
 			ID:    counterID,
 			MType: "counter",
 		}
 		*req.Delta = 10
 
-		metricService := NewMetricService(sugar)
-		resp, err := metricService.Update(ctx, req, memStorage)
+		metricService := NewMetricService(memStorage, sugar)
+		resp, err := metricService.Update(ctx, req)
 
 		assert.NoError(t, err)
 		assert.NotNil(t, resp)
@@ -131,15 +132,15 @@ func TestUpdate(t *testing.T) {
 	})
 
 	t.Run("Update gauge metric", func(t *testing.T) {
-		req := MetricsUpdateRequest{
+		req := dto.MetricsUpdateRequest{
 			Value: new(float64),
 			ID:    gaugeID,
 			MType: "gauge",
 		}
 		*req.Value = 150.5
 
-		metricService := NewMetricService(sugar)
-		resp, err := metricService.Update(ctx, req, memStorage)
+		metricService := NewMetricService(memStorage, sugar)
+		resp, err := metricService.Update(ctx, req)
 
 		assert.NoError(t, err)
 		assert.NotNil(t, resp)
@@ -150,14 +151,14 @@ func TestUpdate(t *testing.T) {
 	})
 
 	t.Run("Update counter metric with nil Delta", func(t *testing.T) {
-		req := MetricsUpdateRequest{
+		req := dto.MetricsUpdateRequest{
 			Delta: nil,
 			ID:    counterID,
 			MType: "counter",
 		}
 
-		metricService := NewMetricService(sugar)
-		resp, err := metricService.Update(ctx, req, memStorage)
+		metricService := NewMetricService(memStorage, sugar)
+		resp, err := metricService.Update(ctx, req)
 
 		assert.Error(t, err)
 		assert.Nil(t, resp)
@@ -165,14 +166,14 @@ func TestUpdate(t *testing.T) {
 	})
 
 	t.Run("Update gauge metric with nil Value", func(t *testing.T) {
-		req := MetricsUpdateRequest{
+		req := dto.MetricsUpdateRequest{
 			Value: nil,
 			ID:    gaugeID,
 			MType: "gauge",
 		}
 
-		metricService := NewMetricService(sugar)
-		resp, err := metricService.Update(ctx, req, memStorage)
+		metricService := NewMetricService(memStorage, sugar)
+		resp, err := metricService.Update(ctx, req)
 
 		assert.Error(t, err)
 		assert.Nil(t, resp)

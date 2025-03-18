@@ -2,6 +2,7 @@ package web
 
 import (
 	"context"
+	"metrics/internal/server/service"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
@@ -34,14 +35,15 @@ func TestGetCounterHandler(t *testing.T) {
 			logger := zap.NewNop()
 			sugar := logger.Sugar()
 			ctx := context.Background()
-			memStorage, _ := repository.NewMemStorage(ctx)
+			memStorage, _ := repository.NewMemStorage()
 			_, err := memStorage.SetCounter(ctx, "PollCount", counterValue)
 			if err != nil {
 				t.Errorf("Failed to SetCounter: %v", err)
 				return
 			}
 			r := chi.NewRouter()
-			webHandler := NewHandler(memStorage, sugar)
+			metricService := service.NewMetricService(memStorage, sugar)
+			webHandler := NewHandler(metricService, sugar)
 			r.Get("/value/{metricType}/{metricName}", webHandler.GetHandler())
 			srv := httptest.NewServer(r)
 			defer srv.Close()
@@ -75,7 +77,7 @@ func TestGetCounterFailsHandler(t *testing.T) {
 	logger := zap.NewNop()
 	sugar := logger.Sugar()
 	ctx := context.Background()
-	memStorage, _ := repository.NewMemStorage(ctx)
+	memStorage, _ := repository.NewMemStorage()
 	counterValue := uint64(100)
 	_, err := memStorage.SetCounter(ctx, "PollCount", counterValue)
 	if err != nil {
@@ -83,7 +85,8 @@ func TestGetCounterFailsHandler(t *testing.T) {
 		return
 	}
 	r := chi.NewRouter()
-	webHandler := NewHandler(memStorage, sugar)
+	metricService := service.NewMetricService(memStorage, sugar)
+	webHandler := NewHandler(metricService, sugar)
 	r.Get("/value/{metricType}/{metricName}", webHandler.GetHandler())
 	srv := httptest.NewServer(r)
 	defer srv.Close()
@@ -127,14 +130,15 @@ func TestGetGaugeHandler(t *testing.T) {
 			logger := zap.NewNop()
 			sugar := logger.Sugar()
 			ctx := context.Background()
-			memStorage, _ := repository.NewMemStorage(ctx)
+			memStorage, _ := repository.NewMemStorage()
 			_, err := memStorage.SetGauge(ctx, "metricName", metricValue)
 			if err != nil {
 				t.Errorf("Failed to SetGauge: %v", err)
 				return
 			}
 			r := chi.NewRouter()
-			webHandler := NewHandler(memStorage, sugar)
+			metricService := service.NewMetricService(memStorage, sugar)
+			webHandler := NewHandler(metricService, sugar)
 			r.Get("/value/{metricType}/{metricName}", webHandler.GetHandler())
 			srv := httptest.NewServer(r)
 			defer srv.Close()
@@ -174,7 +178,7 @@ func TestGetGaugeFailHandler(t *testing.T) {
 			sugar := logger.Sugar()
 
 			ctx := context.Background()
-			memStorage, _ := repository.NewMemStorage(ctx)
+			memStorage, _ := repository.NewMemStorage()
 			metricValue := 1234.1234
 			_, err := memStorage.SetGauge(ctx, "metricName", metricValue)
 			if err != nil {
@@ -182,7 +186,8 @@ func TestGetGaugeFailHandler(t *testing.T) {
 				return
 			}
 			r := chi.NewRouter()
-			webHandler := NewHandler(memStorage, sugar)
+			metricService := service.NewMetricService(memStorage, sugar)
+			webHandler := NewHandler(metricService, sugar)
 			r.Get("/value/{metricType}/{metricName}", webHandler.GetHandler())
 			srv := httptest.NewServer(r)
 			defer srv.Close()

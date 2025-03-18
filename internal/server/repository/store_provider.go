@@ -29,22 +29,12 @@ func IsRetriableError(err error) bool {
 	return errors.As(err, &retriableErr)
 }
 
-type MetricStorage interface {
-	SetGauge(ctx context.Context, name string, value float64) (float64, error)
-	GetGauge(ctx context.Context, name string) (float64, error)
-	SetCounter(ctx context.Context, name string, value uint64) (uint64, error)
-	GetCounter(ctx context.Context, name string) (uint64, error)
-	Gauges(ctx context.Context) (map[string]float64, error)
-	Counters(ctx context.Context) (map[string]uint64, error)
-	UpdateCounterAndGauges(ctx context.Context, counters map[string]uint64, gauges map[string]float64) error
-}
-
 func NewMetricStorage(ctx context.Context, cfg *config.Config, logger *zap.SugaredLogger) (MetricStorage, error) {
 	storageType := resolve(cfg)
 
 	switch storageType {
 	case "memory":
-		storage, _ := NewMemStorage(ctx)
+		storage, _ := NewMemStorage()
 
 		return storage, nil
 	case "file":
@@ -52,15 +42,24 @@ func NewMetricStorage(ctx context.Context, cfg *config.Config, logger *zap.Sugar
 
 		return storage, nil
 	case "file-retry":
-		storage, _ := NewRetryFileStorage(ctx, cfg, logger)
+		storage, err := NewRetryFileStorage(ctx, cfg, logger)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create NewRetryFileStorage: %w", err)
+		}
 
 		return storage, nil
 	case "database":
-		storage, _ := NewDBRepository(ctx, cfg, logger)
+		storage, err := NewDBRepository(ctx, cfg, logger)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create NewDBRepository: %w", err)
+		}
 
 		return storage, nil
 	case "database-retry":
-		storage, _ := NewRetryBRepository(ctx, cfg, logger)
+		storage, err := NewRetryBRepository(ctx, cfg, logger)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create RetryDBRepository: %w", err)
+		}
 
 		return storage, nil
 	default:

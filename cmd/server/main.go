@@ -7,7 +7,7 @@ import (
 	"metrics/internal/server/config"
 	"metrics/internal/server/logger"
 	"metrics/internal/server/repository"
-	"metrics/internal/server/router"
+	"metrics/internal/server/server"
 
 	"net/http"
 	_ "net/http/pprof"
@@ -26,6 +26,11 @@ func main() {
 	}
 }
 
+// @title Metrics API
+// @version 1.0
+// @description API для управления метриками
+// @host 127.0.0.1:8080
+// @BasePath /.
 func run(loggerZap *zap.SugaredLogger) error {
 	cfg, err := config.ParseFlags()
 	if err != nil {
@@ -33,12 +38,13 @@ func run(loggerZap *zap.SugaredLogger) error {
 		return fmt.Errorf("failed to parse flags: %w", err)
 	}
 	ctx := context.Background()
-	rep, err := repository.NewMetricStorage(ctx, cfg, loggerZap)
+	memStorage, err := repository.NewMetricStorage(ctx, cfg, loggerZap)
 	if err != nil {
 		return fmt.Errorf("repository error: %w", err)
 	}
+
 	initPprof(cfg, loggerZap)
-	if err = router.Run(cfg, rep, loggerZap); err != nil {
+	if err = server.ConfigureServerHandler(memStorage, cfg, loggerZap); err != nil {
 		return fmt.Errorf("failed to run router: %w", err)
 	}
 

@@ -1,49 +1,60 @@
 package router
 
 import (
-	"fmt"
 	"metrics/internal/server/config"
 	"metrics/internal/server/handlers/api"
 	"metrics/internal/server/handlers/web"
 	"metrics/internal/server/middleware"
 	"metrics/internal/server/repository"
-	"net"
+	"metrics/internal/server/service"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
 
+	_ "metrics/swagger"
+
+	httpSwagger "github.com/swaggo/http-swagger"
 	"go.uber.org/zap"
 )
 
-func Run(configs *config.Config, memStorage repository.MetricStorage, logger *zap.SugaredLogger) error {
-	handlerLogger := logger.With("router", "router")
-	serverAddr := net.JoinHostPort(configs.NetAddress.Host, configs.NetAddress.Port)
-
+func ConfigureServerHandler(
+	memStorage repository.MetricStorage,
+	cfg *config.Config,
+	logger *zap.SugaredLogger,
+) http.Handler {
 	router := chi.NewRouter()
 
-	register(router, configs, memStorage, logger)
-
-	handlerLogger.Infow(
-		"Starting server",
-		"addr", serverAddr,
-	)
-	err := http.ListenAndServe(serverAddr, router)
-	if err != nil {
-		return fmt.Errorf("failed to start server: %w", err)
-	}
-	return nil
-}
-
-func register(r *chi.Mux, configs *config.Config, memStorage repository.MetricStorage, logger *zap.SugaredLogger) {
-	apiHandler := api.NewHandler(memStorage, logger)
-	webHandler := web.NewHandler(memStorage, logger)
-	r.Use(
+	router.Use(
 		middleware.LoggingMiddleware(logger),
 		middleware.DecompressionMiddleware(logger),
-		middleware.CheckHashMiddleware(logger, configs.Key),
-		middleware.ResponseHashMiddleware(configs.Key),
+		middleware.CheckHashMiddleware(logger, cfg.Key),
+		middleware.ResponseHashMiddleware(cfg.Key),
 		middleware.ResponseCompressionMiddleware(logger),
 	)
+
+	register(router, cfg, memStorage, logger)
+
+	router.NotFound(func(w http.ResponseWriter, r *http.Request) {
+		handlerLogger := logger.With("router", "NotFound")
+		handlerLogger.Infoln("Route not found",
+			"method", r.Method,
+			"uri", r.RequestURI,
+		)
+		w.WriteHeader(http.StatusNotFound)
+	})
+
+	return router
+}
+
+func register(
+	r *chi.Mux,
+	cfg *config.Config,
+	memStorage repository.MetricStorage,
+	logger *zap.SugaredLogger,
+) {
+	metricService := service.NewMetricService(memStorage, logger)
+	apiHandler := api.NewHandler(metricService, logger)
+	webHandler := web.NewHandler(metricService, logger)
 
 	r.Route("/updates", func(r chi.Router) {
 		r.Post("/", apiHandler.UpdatesHandler())
@@ -57,13 +68,6 @@ func register(r *chi.Mux, configs *config.Config, memStorage repository.MetricSt
 		r.Get("/{metricType}/{metricName}", webHandler.GetHandler())
 	})
 	r.Get("/", webHandler.ListHandler())
-	r.Get("/ping", webHandler.HealthHandler(configs.DatabaseDsn))
-	r.NotFound(func(w http.ResponseWriter, r *http.Request) {
-		handlerLogger := logger.With("router", "NotFound")
-		handlerLogger.Infoln("Route not found",
-			"method", r.Method,
-			"uri", r.RequestURI,
-		)
-		w.WriteHeader(http.StatusNotFound)
-	})
+	r.Get("/ping", webHandler.HealthHandler(cfg.DatabaseDsn))
+	r.Get("/swagger/*", httpSwagger.WrapHandler)
 }

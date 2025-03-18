@@ -1,19 +1,32 @@
 package web
 
 import (
-	"metrics/internal/server/service"
+	"metrics/internal/server/dto"
 	"net/http"
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
 )
 
+// UpdateHandler .
+// @Summary Обновление значения метрики
+// @Description Обновляет значение метрики по её типу (counter или gauge) на основе переданных параметров
+// @Tags Text
+// @Accept  text/plain
+// @Produce  text/plain
+// @Param metricType path string true "Тип метрики (counter или gauge)"
+// @Param metricName path string true "Имя метрики"
+// @Param metricValue path string true "Новое значение метрики"
+// @Success 200 {string} string "Метрика успешно обновлена"
+// @Failure 400 {string} string "Неверный запрос"
+// @Failure 500 {string} string "Внутренняя ошибка сервера"
+// @Router /update/{metricType}/{metricName}/{metricValue} [post].
 func (h *Handler) UpdateHandler() http.HandlerFunc {
 	handlerLogger := h.logger.With(nameLogger, "web UpdateHandler")
 	return func(response http.ResponseWriter, request *http.Request) {
 		ctx := request.Context()
 		response.Header().Set("Content-Type", "text/plain; charset=utf-8")
-		var metricUpdateRequest service.MetricsUpdateRequest
+		var metricUpdateRequest dto.MetricsUpdateRequest
 
 		metricValueRequest := chi.URLParam(request, "metricValue")
 		metricNameRequest := chi.URLParam(request, "metricName")
@@ -26,7 +39,7 @@ func (h *Handler) UpdateHandler() http.HandlerFunc {
 				return
 			}
 
-			metricUpdateRequest = service.MetricsUpdateRequest{
+			metricUpdateRequest = dto.MetricsUpdateRequest{
 				ID:    metricNameRequest,
 				MType: metricTypeRequest,
 				Delta: &metricValue,
@@ -38,14 +51,13 @@ func (h *Handler) UpdateHandler() http.HandlerFunc {
 				response.WriteHeader(http.StatusBadRequest)
 				return
 			}
-			metricUpdateRequest = service.MetricsUpdateRequest{
+			metricUpdateRequest = dto.MetricsUpdateRequest{
 				ID:    metricNameRequest,
 				MType: metricTypeRequest,
 				Value: &metricValue,
 			}
 		}
-		metricService := service.NewMetricService(handlerLogger)
-		_, err := metricService.Update(ctx, metricUpdateRequest, h.memStorage)
+		_, err := h.metricService.Update(ctx, metricUpdateRequest)
 		if err != nil {
 			handlerLogger.Infow("error in service", "error", err)
 			response.WriteHeader(http.StatusBadRequest)

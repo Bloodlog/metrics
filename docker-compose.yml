@@ -1,17 +1,25 @@
 services:
   postgres:
+    container_name: postgres
     image: postgres:17.2
-    container_name: postgres_container
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U metric -d metrics" ]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 10s
     environment:
-      POSTGRES_USER: username
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: database_name
+      POSTGRES_USER: postgres
+      POSTGRES_DB: postgres
+      POSTGRES_PASSWORD: "P@ssw0rd"
+      PGDATA: "/var/lib/postgresql/data"
     ports:
       - "5432:5432"
+    volumes:
+      - "./db/init:/docker-entrypoint-initdb.d"
+      - "postgres_data:/var/lib/postgresql/data"
     networks:
       - metrics
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
 
   app:
     build:
@@ -19,13 +27,14 @@ services:
       dockerfile: docker/server.Dockerfile
     container_name: app_container
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     ports:
       - "8080:8080"
     networks:
       - metrics
     environment:
-      DATABASE_DSN: postgres://username:password@postgres:5432/database_name
+      DATABASE_DSN: postgres://metric:password@postgres:5432/metrics?sslmode=disable
       ADDRESS: http://0.0.0.0:8080
       KEY: "test"
 

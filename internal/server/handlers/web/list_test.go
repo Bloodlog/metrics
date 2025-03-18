@@ -2,6 +2,7 @@ package web
 
 import (
 	"context"
+	"metrics/internal/server/service"
 	"net/http"
 	"net/http/httptest"
 	"regexp"
@@ -36,7 +37,7 @@ func TestListGaugeHandler(t *testing.T) {
 			logger := zap.NewNop()
 			sugar := logger.Sugar()
 
-			memStorage, _ := repository.NewMemStorage(ctx)
+			memStorage, _ := repository.NewMemStorage()
 			metricName := "metricName"
 			_, err := memStorage.SetGauge(ctx, metricName, metricValue)
 			if err != nil {
@@ -51,7 +52,8 @@ func TestListGaugeHandler(t *testing.T) {
 				return
 			}
 			r := chi.NewRouter()
-			webHandler := NewHandler(memStorage, sugar)
+			metricService := service.NewMetricService(memStorage, sugar)
+			webHandler := NewHandler(metricService, sugar)
 			r.Get("/", webHandler.ListHandler())
 			srv := httptest.NewServer(r)
 			defer srv.Close()

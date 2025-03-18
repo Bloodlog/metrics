@@ -3,17 +3,30 @@ package api
 import (
 	"encoding/json"
 	"errors"
-	"metrics/internal/server/service"
+	"metrics/internal/server/apperrors"
+	"metrics/internal/server/dto"
 	"net/http"
 )
 
+// GetHandler .
+// @Summary Получение значения метрики
+// @Description Получает значение метрики по имени и типу
+// @Tags Json
+// @Accept  json
+// @Produce json
+// @Param request body dto.MetricsGetRequest true "Запрос на получение метрики".
+// @Success 200 {object} dto.MetricsResponse
+// @Failure 400 {string} string "Некорректный запрос"
+// @Failure 404 {string} string "Метрика не найдена"
+// @Failure 500 {string} string "Ошибка сервера"
+// @Router /value [post].
 func (h *Handler) GetHandler() http.HandlerFunc {
 	handlerLogger := h.logger.With(nameLogger, "api GetHandler")
 	return func(response http.ResponseWriter, request *http.Request) {
 		ctx := request.Context()
 		response.Header().Set("Content-Type", "application/json")
 
-		var metricGetRequest service.MetricsGetRequest
+		var metricGetRequest dto.MetricsGetRequest
 
 		if err := json.NewDecoder(request.Body).Decode(&metricGetRequest); err != nil {
 			handlerLogger.Infow("Invalid JSON", nameError, err)
@@ -28,10 +41,9 @@ func (h *Handler) GetHandler() http.HandlerFunc {
 			return
 		}
 
-		metricService := service.NewMetricService(handlerLogger)
-		result, err := metricService.Get(ctx, metricGetRequest, h.memStorage)
+		result, err := h.metricService.Get(ctx, metricGetRequest)
 		if err != nil {
-			if errors.Is(err, service.ErrMetricNotFound) {
+			if errors.Is(err, apperrors.ErrMetricNotFound) {
 				handlerLogger.Infoln("Metric not found", err)
 				response.WriteHeader(http.StatusNotFound)
 				return
