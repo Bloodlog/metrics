@@ -1,0 +1,259 @@
+basePath: /.
+definitions:
+  dto.MetricsGetRequest:
+    properties:
+      id:
+        description: Имя метрики.
+        type: string
+      type:
+        description: 'Тип метрики: counter или gauge.'
+        type: string
+    type: object
+  dto.MetricsResponse:
+    properties:
+      delta:
+        description: Значение counter.
+        type: integer
+      id:
+        description: 'Тип метрики: counter или gauge.'
+        type: string
+      type:
+        description: Имя метрики.
+        type: string
+      value:
+        description: Значение gauge.
+        type: number
+    type: object
+  dto.MetricsUpdateRequest:
+    properties:
+      delta:
+        description: Значение counter.
+        type: integer
+      id:
+        description: Имя метрики.
+        type: string
+      type:
+        description: 'Тип метрики: counter или gauge.'
+        type: string
+      value:
+        description: Значение gauge.
+        type: number
+    type: object
+host: 127.0.0.1:8080
+info:
+  contact: {}
+  description: API для управления метриками
+  title: Metrics API
+  version: "1.0"
+paths:
+  /:
+    get:
+      description: Генерирует HTML-страницу с перечнем метрик (gauge и counter)
+      produces:
+      - text/html
+      responses:
+        "200":
+          description: HTML страница с метриками
+          schema:
+            type: string
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            type: string
+      summary: Список метрик
+      tags:
+      - Info
+  /ping:
+    get:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Проверка состояния сервиса
+      tags:
+      - Info
+  /update:
+    post:
+      consumes:
+      - application/json
+      description: Обновляет метрику с переданными параметрами
+      parameters:
+      - description: Metrics Update Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.MetricsUpdateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Response with success status
+          schema:
+            type: string
+        "400":
+          description: Invalid request
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Обновление метрики
+      tags:
+      - Json
+  /update/{metricType}/{metricName}/{metricValue}:
+    post:
+      consumes:
+      - text/plain
+      description: Обновляет значение метрики по её типу (counter или gauge) на основе
+        переданных параметров
+      parameters:
+      - description: Тип метрики (counter или gauge)
+        in: path
+        name: metricType
+        required: true
+        type: string
+      - description: Имя метрики
+        in: path
+        name: metricName
+        required: true
+        type: string
+      - description: Новое значение метрики
+        in: path
+        name: metricValue
+        required: true
+        type: string
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: Метрика успешно обновлена
+          schema:
+            type: string
+        "400":
+          description: Неверный запрос
+          schema:
+            type: string
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            type: string
+      summary: Обновление значения метрики
+      tags:
+      - Text
+  /updates:
+    post:
+      consumes:
+      - application/json
+      description: Обновляет несколько метрик с переданными параметрами
+      parameters:
+      - description: Metrics Update Request List
+        in: body
+        name: request
+        required: true
+        schema:
+          items:
+            $ref: '#/definitions/dto.MetricsUpdateRequest'
+          type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully updated
+          schema:
+            type: string
+        "400":
+          description: Invalid request
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Обновление нескольких метрик
+      tags:
+      - Json
+  /value:
+    post:
+      consumes:
+      - application/json
+      description: Получает значение метрики по имени и типу
+      parameters:
+      - description: Запрос на получение метрики
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.MetricsGetRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.MetricsResponse'
+        "400":
+          description: Некорректный запрос
+          schema:
+            type: string
+        "404":
+          description: Метрика не найдена
+          schema:
+            type: string
+        "500":
+          description: Ошибка сервера
+          schema:
+            type: string
+      summary: Получение значения метрики
+      tags:
+      - Json
+  /value/{metricType}/{metricName}:
+    get:
+      consumes:
+      - text/plain
+      description: Возвращает значение метрики по ее типу (counter или gauge) в формате
+        текста
+      parameters:
+      - description: Тип метрики (counter или gauge)
+        in: path
+        name: metricType
+        required: true
+        type: string
+      - description: Имя метрики
+        in: path
+        name: metricName
+        required: true
+        type: string
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: Метрика возвращена успешно
+          schema:
+            type: string
+        "400":
+          description: Неверный запрос
+          schema:
+            type: string
+        "404":
+          description: Метрика не найдена
+          schema:
+            type: string
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            type: string
+      summary: Получение значения метрики
+      tags:
+      - Text
+swagger: "2.0"
