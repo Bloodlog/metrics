@@ -6,6 +6,14 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
+// HealthHandler .
+// @Tags Info
+// @Summary Проверка состояния сервиса
+// @Accept  json
+// @Produce json
+// @Success 200 {string} string ""
+// @Failure 500 {string} string ""
+// @Router /ping [get].
 func (h *Handler) HealthHandler(dsn string) http.HandlerFunc {
 	handlerLogger := h.logger.With(nameLogger, "web HealthHandler")
 	const nameError = "error"

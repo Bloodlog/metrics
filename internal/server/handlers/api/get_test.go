@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"metrics/internal/server/service"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -78,12 +79,13 @@ func TestGetHandler(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			logger := zap.NewNop()
 			sugar := logger.Sugar()
-			memStorage, _ := repository.NewMemStorage(ctx)
+			memStorage, _ := repository.NewMemStorage()
 
 			tc.setupStorage(memStorage)
 
 			r := chi.NewRouter()
-			apiHandler := NewHandler(memStorage, sugar)
+			metricService := service.NewMetricService(memStorage, sugar)
+			apiHandler := NewHandler(metricService, sugar)
 			r.Post("/get", apiHandler.GetHandler())
 			srv := httptest.NewServer(r)
 			defer srv.Close()

@@ -21,13 +21,13 @@ func ResponseHashMiddleware(key string) func(next http.Handler) http.Handler {
 				ResponseWriter: w,
 				body:           &bytes.Buffer{},
 			}
-			next.ServeHTTP(hashWriter, r)
-
 			h := hmac.New(sha256.New, []byte(key))
 			h.Write(hashWriter.body.Bytes())
 			hashHex := base64.StdEncoding.EncodeToString(h.Sum(nil))
 
 			w.Header().Set("HashSHA256", hashHex)
+
+			next.ServeHTTP(hashWriter, r)
 		})
 	}
 }

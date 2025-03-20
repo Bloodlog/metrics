@@ -12,7 +12,7 @@ type MemStorage struct {
 	mu       *sync.RWMutex
 }
 
-func NewMemStorage(ctx context.Context) (MetricStorage, error) {
+func NewMemStorage() (MetricStorage, error) {
 	memStorage := &MemStorage{
 		mu:       &sync.RWMutex{},
 		gauges:   make(map[string]float64),

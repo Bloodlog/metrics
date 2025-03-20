@@ -30,3 +30,6 @@ golangci-lint
 
 # Local db
 cmd/server/metrics.json
+
+# pprof
+profiles

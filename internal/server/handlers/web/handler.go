@@ -1,7 +1,7 @@
 package web
 
 import (
-	"metrics/internal/server/repository"
+	"metrics/internal/server/service"
 
 	"go.uber.org/zap"
 )
@@ -10,13 +10,16 @@ const nameLogger = "handler"
 const nameError = "error"
 
 type Handler struct {
-	memStorage repository.MetricStorage
-	logger     *zap.SugaredLogger
+	metricService service.MetricService
+	logger        *zap.SugaredLogger
 }
 
-func NewHandler(memStorage repository.MetricStorage, logger *zap.SugaredLogger) *Handler {
+func NewHandler(
+	metricService service.MetricService,
+	logger *zap.SugaredLogger,
+) *Handler {
 	return &Handler{
-		memStorage: memStorage,
-		logger:     logger,
+		metricService: metricService,
+		logger:        logger,
 	}
 }

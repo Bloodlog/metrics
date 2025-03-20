@@ -2,10 +2,21 @@ package api
 
 import (
 	"encoding/json"
-	"metrics/internal/server/service"
+	"metrics/internal/server/dto"
 	"net/http"
 )
 
+// UpdateHandler .
+// @Summary Обновление метрики
+// @Description Обновляет метрику с переданными параметрами
+// @Tags Json
+// @Accept  json
+// @Produce  json
+// @Param request body dto.MetricsUpdateRequest true "Metrics Update Request"
+// @Success 200 {object} string "Response with success status"
+// @Failure 400 {string} string "Invalid request"
+// @Failure 500 {string} string "Internal server error"
+// @Router /update [post].
 func (h *Handler) UpdateHandler() http.HandlerFunc {
 	handlerLogger := h.logger.With(nameLogger, "api UpdateHandler")
 	const nameError = "error"
@@ -13,7 +24,7 @@ func (h *Handler) UpdateHandler() http.HandlerFunc {
 		ctx := request.Context()
 		response.Header().Set("Content-Type", "application/json")
 
-		var metricUpdateRequest service.MetricsUpdateRequest
+		var metricUpdateRequest dto.MetricsUpdateRequest
 
 		if err := json.NewDecoder(request.Body).Decode(&metricUpdateRequest); err != nil {
 			handlerLogger.Infow("Invalid JSON", nameError, err)
@@ -21,8 +32,7 @@ func (h *Handler) UpdateHandler() http.HandlerFunc {
 			return
 		}
 
-		metricService := service.NewMetricService(handlerLogger)
-		result, err := metricService.Update(ctx, metricUpdateRequest, h.memStorage)
+		result, err := h.metricService.Update(ctx, metricUpdateRequest)
 		if err != nil {
 			handlerLogger.Infow("error in service", nameError, err)
 			response.WriteHeader(http.StatusBadRequest)

@@ -11,7 +11,7 @@ func TestMemStorage_SetAndGetGauge(t *testing.T) {
 	ctx := context.Background()
 	const counterName string = "Allocate"
 	const counterValue float64 = 1333.333
-	ms, _ := NewMemStorage(ctx)
+	ms, _ := NewMemStorage()
 
 	_, err := ms.SetGauge(ctx, counterName, counterValue)
 	if err != nil {
@@ -27,7 +27,7 @@ func TestMemStorage_SetAndGetGauge(t *testing.T) {
 
 func TestMemStorage_GetGauge_NotFound(t *testing.T) {
 	ctx := context.Background()
-	ms, _ := NewMemStorage(ctx)
+	ms, _ := NewMemStorage()
 
 	const nameMetric = "nonexistent"
 	_, err := ms.GetGauge(ctx, nameMetric)
@@ -38,7 +38,7 @@ func TestMemStorage_GetGauge_NotFound(t *testing.T) {
 
 func TestMemStorage_SetAndGetCounter(t *testing.T) {
 	ctx := context.Background()
-	ms, _ := NewMemStorage(ctx)
+	ms, _ := NewMemStorage()
 
 	_, err := ms.SetCounter(ctx, "requests", 5)
 	if err != nil {
@@ -59,7 +59,7 @@ func TestMemStorage_SetAndGetCounter(t *testing.T) {
 
 func TestMemStorage_GetCounter_NotFound(t *testing.T) {
 	ctx := context.Background()
-	ms, _ := NewMemStorage(ctx)
+	ms, _ := NewMemStorage()
 
 	const nameMetric = "nonexistent"
 	_, err := ms.GetCounter(ctx, nameMetric)

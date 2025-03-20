@@ -52,12 +52,19 @@ const (
 )
 
 type Config struct {
-	Key             string
-	NetAddress      NetAddress
+	// Ключ для вычисления хеша.
+	Key        string
+	NetAddress NetAddress
+	// Путь к файлу хранилищу.
 	FileStoragePath string
-	DatabaseDsn     string
-	StoreInterval   int
-	Restore         bool
+	// Настройки БД в формате dsn.
+	DatabaseDsn string
+	// Интервал сохранения хранилища.
+	StoreInterval int
+	// Разрешить загрузку из файла хранилища.
+	Restore bool
+	// Разрешить отладку.
+	Debug bool
 }
 
 type NetAddress struct {
@@ -72,6 +79,7 @@ func ParseFlags() (*Config, error) {
 	restoreFlag := flag.Bool(flagRestore, defaultRestore, descriptionRestore)
 	addressDatabaseFlag := flag.String(flagDatabaseDSN, defaultDatabaseDSN, descriptionDatabaseDSN)
 	keyFlag := flag.String(flagKey, defaultKey, descriptionKey)
+	enablePprof := flag.Bool("pprof", false, "enable pprof for debugging")
 
 	flag.Parse()
 
@@ -80,7 +88,27 @@ func ParseFlags() (*Config, error) {
 		return nil, fmt.Errorf("read flag UnknownArgs: %w", err)
 	}
 
-	finalAddress, err := getStringValue(*addressFlag, envHTTPAddress)
+	return processFlags(
+		*addressFlag,
+		*storeIntervalFlag,
+		*storagePathFlag,
+		*restoreFlag,
+		*addressDatabaseFlag,
+		*keyFlag,
+		*enablePprof,
+	)
+}
+
+func processFlags(
+	addressFlag string,
+	storeIntervalFlag int,
+	storagePathFlag string,
+	restoreFlag bool,
+	addressDatabaseFlag string,
+	keyFlag string,
+	enablePprof bool,
+) (*Config, error) {
+	finalAddress, err := getStringValue(addressFlag, envHTTPAddress)
 	if err != nil {
 		finalAddress = ""
 	}
@@ -90,27 +118,27 @@ func ParseFlags() (*Config, error) {
 		return nil, fmt.Errorf("read flag address: %w", err)
 	}
 
-	storeInterval, err := getIntValue(*storeIntervalFlag, envStoreInterval)
+	storeInterval, err := getIntValue(storeIntervalFlag, envStoreInterval)
 	if err != nil {
 		return nil, fmt.Errorf("read flag report interval: %w", err)
 	}
 
-	storagePath, err := getStringValue(*storagePathFlag, envFileStoragePath)
+	storagePath, err := getStringValue(storagePathFlag, envFileStoragePath)
 	if err != nil {
 		return nil, fmt.Errorf("read flag storage: %w", err)
 	}
 
-	restore, err := getBoolValue(*restoreFlag, envRestore)
+	restore, err := getBoolValue(restoreFlag, envRestore)
 	if err != nil {
 		return nil, fmt.Errorf("read flag restore: %w", err)
 	}
 
-	databaseDsn, err := getStringValue(*addressDatabaseFlag, envDatabaseDSN)
+	databaseDsn, err := getStringValue(addressDatabaseFlag, envDatabaseDSN)
 	if err != nil {
 		databaseDsn = ""
 	}
 
-	key, err := getStringValue(*keyFlag, envKey)
+	key, err := getStringValue(keyFlag, envKey)
 	if err != nil {
 		key = ""
 	}
@@ -122,6 +150,7 @@ func ParseFlags() (*Config, error) {
 		DatabaseDsn:     databaseDsn,
 		Restore:         restore,
 		Key:             key,
+		Debug:           enablePprof,
 	}, nil
 }
 

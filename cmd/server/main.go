@@ -7,7 +7,10 @@ import (
 	"metrics/internal/server/config"
 	"metrics/internal/server/logger"
 	"metrics/internal/server/repository"
-	"metrics/internal/server/router"
+	"metrics/internal/server/server"
+
+	"net/http"
+	_ "net/http/pprof"
 
 	"go.uber.org/zap"
 )
@@ -18,11 +21,16 @@ func main() {
 		log.Fatalf("Failed to initialize logger: %v", err)
 	}
 
-	if err := run(loggerZap); err != nil {
+	if err = run(loggerZap); err != nil {
 		loggerZap.Fatal("Application failed", zap.Error(err))
 	}
 }
 
+// @title Metrics API
+// @version 1.0
+// @description API для управления метриками
+// @host 127.0.0.1:8080
+// @BasePath /.
 func run(loggerZap *zap.SugaredLogger) error {
 	cfg, err := config.ParseFlags()
 	if err != nil {
@@ -30,14 +38,26 @@ func run(loggerZap *zap.SugaredLogger) error {
 		return fmt.Errorf("failed to parse flags: %w", err)
 	}
 	ctx := context.Background()
-	rep, err := repository.NewMetricStorage(ctx, cfg, loggerZap)
+	memStorage, err := repository.NewMetricStorage(ctx, cfg, loggerZap)
 	if err != nil {
 		return fmt.Errorf("repository error: %w", err)
 	}
 
-	if err := router.Run(cfg, rep, loggerZap); err != nil {
+	initPprof(cfg, loggerZap)
+	if err = server.ConfigureServerHandler(memStorage, cfg, loggerZap); err != nil {
 		return fmt.Errorf("failed to run router: %w", err)
 	}
 
 	return nil
+}
+
+func initPprof(cfg *config.Config, zapLog *zap.SugaredLogger) {
+	if cfg.Debug {
+		go func() {
+			err := http.ListenAndServe(cfg.NetAddress.Host+":6060", nil)
+			if err != nil {
+				zapLog.Info(err.Error(), "failed start profiler")
+			}
+		}()
+	}
 }

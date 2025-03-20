@@ -23,14 +23,13 @@ func NewFileStorageWrapper(
 	logger *zap.SugaredLogger,
 ) (*FileStorageWrapper, error) {
 	handlerLogger := logger.With("file", "NewFileStorageWrapper")
-	memRepo, _ := NewMemStorage(ctx)
+	memRepo, _ := NewMemStorage()
 
 	fileStorage := &FileStorageWrapper{
 		storage: memRepo,
 		cfg:     cfg,
 		logger:  handlerLogger,
 	}
-
 	if fileStorage.cfg.Restore {
 		logger.Info("Restore is enabled, loading from file...")
 		if err := fileStorage.loadFromFile(ctx); err != nil {

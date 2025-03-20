@@ -5,24 +5,21 @@ import (
 	"net/http"
 )
 
-type MetricsData struct {
-	Gauges   map[string]float64
-	Counters map[string]uint64
-}
-
+// ListHandler .
+// @Summary Список метрик
+// @Description Генерирует HTML-страницу с перечнем метрик (gauge и counter)
+// @Tags Info
+// @Produce  text/html
+// @Success 200 {string} string "HTML страница с метриками"
+// @Failure 500 {string} string "Внутренняя ошибка сервера"
+// @Router / [get].
 func (h *Handler) ListHandler() http.HandlerFunc {
 	handlerLogger := h.logger.With(nameLogger, "web ListHandler")
 	return func(response http.ResponseWriter, request *http.Request) {
 		ctx := request.Context()
 		response.Header().Set("Content-Type", "text/html; charset=utf-8")
 
-		gauges, _ := h.memStorage.Gauges(ctx)
-		counters, _ := h.memStorage.Counters(ctx)
-
-		data := MetricsData{
-			Gauges:   gauges,
-			Counters: counters,
-		}
+		data := h.metricService.GetMetrics(ctx)
 
 		tmpl, err := template.New("metrics").Parse(`
 			<html>
