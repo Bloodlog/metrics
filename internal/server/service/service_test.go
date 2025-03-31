@@ -206,7 +206,7 @@ func TestGetMetrics(t *testing.T) {
 	t.Run("Get metrics", func(t *testing.T) {
 		metricService := NewMetricService(memStorage, sugar)
 		resp := metricService.GetMetrics(ctx)
-		
+
 		assert.Equal(t, resp.Counters[counterID], counterValue)
 		assert.Equal(t, resp.Gauges[gaugeID], gaugeValue)
 	})
