@@ -19,7 +19,7 @@ func TestHealthHandler_Failure(t *testing.T) {
 	webHandler := NewHandler(metricService, sugar)
 	healthHandler := webHandler.HealthHandler("mock_dsn")
 
-	req := httptest.NewRequest("GET", "/ping", nil)
+	req := httptest.NewRequest(http.MethodGet, "/ping", http.NoBody)
 	w := httptest.NewRecorder()
 
 	healthHandler.ServeHTTP(w, req)

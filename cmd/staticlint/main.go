@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"go/ast"
 
 	"github.com/timakin/bodyclose/passes/bodyclose"
@@ -22,6 +23,8 @@ const (
 	directOsExitError = "direct os.Exit call in main function is not allowed"
 )
 
+var errNoAnalysisNeeded = errors.New("no analysis needed")
+
 var NoOsExitAnalyzer = &analysis.Analyzer{
 	Name: "noosexit",
 	Doc:  "checks for direct os.Exit calls in main function of main package",
@@ -30,7 +33,7 @@ var NoOsExitAnalyzer = &analysis.Analyzer{
 
 func runNoOsExitAnalyzer(pass *analysis.Pass) (interface{}, error) {
 	if pass.Pkg.Name() != "main" {
-		return nil, nil
+		return nil, errNoAnalysisNeeded
 	}
 	for _, file := range pass.Files {
 		for _, decl := range file.Decls {
@@ -39,7 +42,7 @@ func runNoOsExitAnalyzer(pass *analysis.Pass) (interface{}, error) {
 			}
 		}
 	}
-	return nil, nil
+	return nil, errNoAnalysisNeeded
 }
 
 func checkForOsExitCall(pass *analysis.Pass, body *ast.BlockStmt) {
