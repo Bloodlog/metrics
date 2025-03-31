@@ -51,3 +51,7 @@ go-doc:
 
 swag:
 	swag init -g cmd/server/main.go --output ./swagger/
+
+multichecker:
+	go build -o cmd/staticlint/multichecker cmd/staticlint/main.go
+	cmd/staticlint/multichecker internal
