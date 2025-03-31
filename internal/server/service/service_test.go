@@ -180,3 +180,34 @@ func TestUpdate(t *testing.T) {
 		assert.Equal(t, "value field cannot be nil for gauge type", err.Error())
 	})
 }
+
+func TestGetMetrics(t *testing.T) {
+	ctx := context.Background()
+	memStorage, _ := repository.NewMemStorage()
+	logger := zap.NewNop()
+	sugar := logger.Sugar()
+
+	counterID := "testCounter"
+	counterValue := uint64(42)
+	_, err := memStorage.SetCounter(ctx, counterID, counterValue)
+	if err != nil {
+		t.Errorf("Failed to SetCounter: %v", err)
+		return
+	}
+
+	gaugeID := "testGauge"
+	gaugeValue := 123.45
+	_, err = memStorage.SetGauge(ctx, gaugeID, gaugeValue)
+	if err != nil {
+		t.Errorf("Failed to SetGauge: %v", err)
+		return
+	}
+
+	t.Run("Get metrics", func(t *testing.T) {
+		metricService := NewMetricService(memStorage, sugar)
+		resp := metricService.GetMetrics(ctx)
+		
+		assert.Equal(t, resp.Counters[counterID], counterValue)
+		assert.Equal(t, resp.Gauges[gaugeID], gaugeValue)
+	})
+}
