@@ -7,7 +7,7 @@ import (
 )
 
 func (c *Client) hash(data []byte) string {
-	h := hmac.New(sha256.New, []byte(c.key))
+	h := hmac.New(sha256.New, []byte(c.Key))
 	h.Write(data)
 	hash := h.Sum(nil)
 	return base64.StdEncoding.EncodeToString(hash)

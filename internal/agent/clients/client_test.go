@@ -20,9 +20,9 @@ func TestNewClient(t *testing.T) {
 
 	assert.NotNil(t, client.RestyClient)
 
-	assert.Equal(t, sugar, client.logger)
+	assert.Equal(t, sugar, client.Logger)
 
-	assert.Equal(t, key, client.key)
+	assert.Equal(t, key, client.Key)
 
 	header := client.RestyClient.Header
 	assert.Equal(t, serverAddr, client.RestyClient.BaseURL)

@@ -6,7 +6,7 @@ import (
 
 func TestHash(t *testing.T) {
 	client := &Client{
-		key: "your-secret-key",
+		Key: "your-secret-key",
 	}
 
 	data := []byte("test data")

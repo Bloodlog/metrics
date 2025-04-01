@@ -3,10 +3,12 @@ package main
 import (
 	"fmt"
 	"log"
+	"metrics/internal/agent/clients"
 	"metrics/internal/agent/config"
 	"metrics/internal/agent/handlers"
 	"metrics/internal/agent/logger"
 	"metrics/internal/agent/repository"
+	"net"
 
 	"go.uber.org/zap"
 )
@@ -31,13 +33,17 @@ func run(loggerZap *zap.SugaredLogger) error {
 	memoryRepository := repository.NewMemoryRepository()
 	systemRepository := repository.NewSystemRepository()
 
+	serverAddr := "http://" + net.JoinHostPort(configs.NetAddress.Host, configs.NetAddress.Port)
+	client := clients.NewClient(serverAddr, configs.Key, loggerZap)
+
 	applicationHandlers := handlers.NewHandlers(
+		client,
 		configs,
 		memoryRepository,
 		systemRepository,
 		loggerZap,
 	)
-	if err := applicationHandlers.Handle(); err != nil {
+	if err = applicationHandlers.Handle(); err != nil {
 		return fmt.Errorf("application failed: %w", err)
 	}
 
