@@ -19,10 +19,6 @@ func setupTestClient() *clients.Client {
 	clientResty := resty.New()
 	httpmock.ActivateNonDefault(clientResty.GetClient())
 
-	url := "/update/"
-
-	httpmock.RegisterResponder(http.MethodPost, url, httpmock.NewStringResponder(http.StatusOK, ""))
-
 	return &clients.Client{
 		RestyClient: clientResty,
 		Logger:      logger,
@@ -34,7 +30,28 @@ func TestSendAPI_Success(t *testing.T) {
 	client := setupTestClient()
 	defer httpmock.DeactivateAndReset()
 
+	url := "/update/"
+	httpmock.RegisterResponder(http.MethodPost, url, httpmock.NewStringResponder(http.StatusOK, ""))
+
 	h := NewHandlers(client, &config.Config{}, repository.NewMemoryRepository(), repository.NewSystemRepository(), client.Logger)
 	err := h.sendAPI([]repository.Metric{{Name: "metric1", Value: 10}}, 5)
+	assert.NoError(t, err)
+}
+
+func TestSendBatch_Success(t *testing.T) {
+	client := setupTestClient()
+	defer httpmock.DeactivateAndReset()
+
+	url := "/updates"
+	httpmock.RegisterResponder(http.MethodPost, url, httpmock.NewStringResponder(http.StatusOK, ""))
+
+	h := NewHandlers(client, &config.Config{}, repository.NewMemoryRepository(), repository.NewSystemRepository(), client.Logger)
+
+	metrics := []repository.Metric{
+		{Name: "metric1", Value: 10},
+		{Name: "metric2", Value: 20},
+	}
+
+	err := h.sendBatch(metrics, 5)
 	assert.NoError(t, err)
 }
