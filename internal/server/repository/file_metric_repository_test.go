@@ -11,13 +11,19 @@ import (
 	"go.uber.org/zap"
 )
 
-func setupTestFileStorage(t *testing.T) *FileStorageWrapper {
-	const tempFileNamePattern = "metrics_test.json"
-	tempFile, err := os.CreateTemp("", tempFileNamePattern)
+func createTempFile(t *testing.T, pattern string) *os.File {
+	t.Helper()
+	tempFile, err := os.CreateTemp("", pattern)
 	if err != nil {
-		t.Errorf("Failed to create temp file: %v", err)
-		return nil
+		t.Fatalf("Failed to create temp file: %v", err)
 	}
+	return tempFile
+}
+
+func setupTestFileStorage(t *testing.T) *FileStorageWrapper {
+	t.Helper()
+	const tempFileNamePattern = "metrics_test.json"
+	tempFile := createTempFile(t, tempFileNamePattern)
 	defer func() {
 		_ = os.Remove(tempFile.Name())
 	}()
@@ -38,12 +44,7 @@ func setupTestFileStorage(t *testing.T) *FileStorageWrapper {
 func TestSaveToFileAndLoadFromFile(t *testing.T) {
 	ctx := context.Background()
 	const tempFileNamePattern = "metrics_test_*.json"
-
-	tempFile, err := os.CreateTemp("", tempFileNamePattern)
-	if err != nil {
-		t.Errorf("Failed to create temp file: %v", err)
-		return
-	}
+	tempFile := createTempFile(t, tempFileNamePattern)
 	defer func() {
 		_ = os.Remove(tempFile.Name())
 	}()
@@ -190,17 +191,14 @@ func TestUpdateCounterAndGauges(t *testing.T) {
 	ctx := context.Background()
 	counters := map[string]uint64{"counter1": 15}
 	gauges := map[string]float64{"gauge1": 25.5}
-
 	err := fs.UpdateCounterAndGauges(ctx, counters, gauges)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-
 	valCounter, _ := fs.GetCounter(ctx, "counter1")
 	if valCounter != 15 {
 		t.Errorf("expected 15, got %d", valCounter)
 	}
-
 	valGauge, _ := fs.GetGauge(ctx, "gauge1")
 	if valGauge != 25.5 {
 		t.Errorf("expected 25.5, got %v", valGauge)

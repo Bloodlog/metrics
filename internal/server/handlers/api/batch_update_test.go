@@ -1,35 +1,46 @@
 package api
 
 import (
-	"metrics/internal/server/service"
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
-	"go.uber.org/zap"
-
-	"github.com/go-chi/chi/v5"
-
 	"github.com/go-resty/resty/v2"
 	"github.com/stretchr/testify/assert"
-
-	"metrics/internal/server/repository"
 )
 
 func TestBatchUpdateHandler(t *testing.T) {
-	testCases := []struct {
+	successCases := []struct {
 		name         string
 		requestBody  string
 		expectedCode int
+		metricID     string
 	}{
 		{
-			name: "Success",
+			name: "Valid Counter and Gauge Update",
 			requestBody: `[
 				{"id": "PollCount", "type": "counter", "delta": 100},
 				{"id": "Allocate", "type": "gauge", "value": 25.5}
 			]`,
 			expectedCode: http.StatusOK,
 		},
+		{
+			name: "Valid Counter and Gauge Update (Allocate)",
+			requestBody: `[
+				{"id": "PollCount", "type": "counter", "delta": 100},
+				{"id": "Allocate", "type": "gauge", "value": 25.5}
+			]`,
+			expectedCode: http.StatusOK,
+			metricID:     "Allocate",
+		},
+	}
+
+	failCases := []struct {
+		name         string
+		requestBody  string
+		expectedCode int
+	}{
 		{
 			name:         "Invalid JSON",
 			requestBody:  `{"id": "PollCount", "type": "counter", "delta": "not_a_number"}`,
@@ -47,15 +58,39 @@ func TestBatchUpdateHandler(t *testing.T) {
 		},
 	}
 
-	for _, tc := range testCases {
+	for _, tc := range successCases {
 		t.Run(tc.name, func(t *testing.T) {
-			logger := zap.NewNop()
-			sugar := logger.Sugar()
+			route := "/updates"
+			r, apiHandler, memStore := setupHandler()
+			r.Post(route, apiHandler.UpdatesHandler())
+			srv := httptest.NewServer(r)
+			defer srv.Close()
+			resp, err := resty.New().R().
+				SetHeader("Content-Type", "application/json").
+				SetBody(tc.requestBody).
+				Post(srv.URL + route)
 
-			memStorage, _ := repository.NewMemStorage()
-			r := chi.NewRouter()
-			metricService := service.NewMetricService(memStorage, sugar)
-			apiHandler := NewHandler(metricService, sugar)
+			assert.NoError(t, err, "Error making HTTP request")
+			assert.Equal(t, tc.expectedCode, resp.StatusCode(), "Unexpected status code")
+			ctx := context.Background()
+			if tc.expectedCode == http.StatusOK {
+				if tc.metricID == "PollCount" {
+					counter, err := memStore.GetCounter(ctx, tc.metricID)
+					assert.NoError(t, err, "Error retrieving counter")
+					assert.Equal(t, 100, counter, "Unexpected counter value")
+				}
+				if tc.metricID == "Allocate" {
+					gauge, err := memStore.GetGauge(ctx, tc.metricID)
+					assert.NoError(t, err, "Error retrieving gauge")
+					assert.Equal(t, 25.5, gauge, "Unexpected gauge value")
+				}
+			}
+		})
+	}
+
+	for _, tc := range failCases {
+		t.Run(tc.name, func(t *testing.T) {
+			r, apiHandler, _ := setupHandler()
 			r.Post("/updates", apiHandler.UpdatesHandler())
 
 			srv := httptest.NewServer(r)
@@ -67,7 +102,6 @@ func TestBatchUpdateHandler(t *testing.T) {
 				Post(srv.URL + "/updates")
 
 			assert.NoError(t, err, "Error making HTTP request")
-
 			assert.Equal(t, tc.expectedCode, resp.StatusCode(), "Unexpected status code")
 		})
 	}

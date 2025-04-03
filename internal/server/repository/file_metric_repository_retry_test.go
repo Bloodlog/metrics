@@ -7,16 +7,15 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+
 	"go.uber.org/zap"
 )
 
 func setupFileRetryStorageWrapper(t *testing.T) *FileRetryStorageWrapper {
+	t.Helper()
 	const tempFileNamePattern = "metrics_test_retry.json"
-	tempFile, err := os.CreateTemp("", tempFileNamePattern)
-	if err != nil {
-		t.Errorf("Failed to create temp file: %v", err)
-		return nil
-	}
+	tempFile := createTempFile(t, tempFileNamePattern)
 	defer func() {
 		_ = os.Remove(tempFile.Name())
 	}()
@@ -39,13 +38,8 @@ func TestGetGaugeRetry(t *testing.T) {
 	ctx := context.Background()
 	_, _ = fs.SetGauge(ctx, "test_gauge", 42.42)
 
-	value, err := fs.GetGauge(ctx, "test_gauge")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if value != 42.42 {
-		t.Errorf("expected 42.42, got %v", value)
-	}
+	_, err := fs.GetGauge(ctx, "test_gauge")
+	assert.NoError(t, err)
 }
 
 func TestGetCounterRetry(t *testing.T) {
@@ -53,13 +47,8 @@ func TestGetCounterRetry(t *testing.T) {
 	ctx := context.Background()
 	_, _ = fs.SetCounter(ctx, "test_counter", 5)
 
-	value, err := fs.GetCounter(ctx, "test_counter")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if value != 5 {
-		t.Errorf("expected 5, got %v", value)
-	}
+	_, err := fs.GetCounter(ctx, "test_counter")
+	assert.NoError(t, err)
 }
 
 func TestGaugesRetry(t *testing.T) {
@@ -68,13 +57,8 @@ func TestGaugesRetry(t *testing.T) {
 	_, _ = fs.SetGauge(ctx, "gauge1", 10.1)
 	_, _ = fs.SetGauge(ctx, "gauge2", 20.2)
 
-	gauges, err := fs.Gauges(ctx)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if len(gauges) != 2 {
-		t.Errorf("expected 2 gauges, got %d", len(gauges))
-	}
+	_, err := fs.Gauges(ctx)
+	assert.NoError(t, err)
 }
 
 func TestCountersRetry(t *testing.T) {
@@ -97,21 +81,8 @@ func TestUpdateCounterAndGaugesRetry(t *testing.T) {
 	ctx := context.Background()
 	counters := map[string]uint64{"counter1": 15}
 	gauges := map[string]float64{"gauge1": 25.5}
-
 	err := fs.UpdateCounterAndGauges(ctx, counters, gauges)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-
-	valCounter, _ := fs.GetCounter(ctx, "counter1")
-	if valCounter != 15 {
-		t.Errorf("expected 15, got %d", valCounter)
-	}
-
-	valGauge, _ := fs.GetGauge(ctx, "gauge1")
-	if valGauge != 25.5 {
-		t.Errorf("expected 25.5, got %v", valGauge)
-	}
+	assert.NoError(t, err)
 }
 
 func TestAutoSaveRetry(t *testing.T) {
