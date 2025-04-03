@@ -32,3 +32,21 @@ func TestParseAddressFlags(t *testing.T) {
 
 	assert.Equal(t, true, cfg.Debug)
 }
+
+func TestParseFlags(t *testing.T) {
+	cfg, err := ParseFlags()
+	assert.NoError(t, err)
+	assert.Equal(t, "localhost", cfg.NetAddress.Host)
+	assert.Equal(t, "8080", cfg.NetAddress.Port)
+
+	assert.Equal(t, 300, cfg.StoreInterval)
+
+	assert.Equal(t, true, cfg.Restore)
+
+	assert.Equal(t, "metrics.json", cfg.FileStoragePath)
+
+	assert.Equal(t, "", cfg.DatabaseDsn)
+	assert.Equal(t, "", cfg.Key)
+
+	assert.Equal(t, false, cfg.Debug)
+}
