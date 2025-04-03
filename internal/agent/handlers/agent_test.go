@@ -33,7 +33,13 @@ func TestSendAPI_Success(t *testing.T) {
 	url := "/update/"
 	httpmock.RegisterResponder(http.MethodPost, url, httpmock.NewStringResponder(http.StatusOK, ""))
 
-	h := NewHandlers(client, &config.Config{}, repository.NewMemoryRepository(), repository.NewSystemRepository(), client.Logger)
+	h := NewHandlers(
+		client,
+		&config.Config{},
+		repository.NewMemoryRepository(),
+		repository.NewSystemRepository(),
+		client.Logger,
+	)
 	err := h.sendAPI([]repository.Metric{{Name: "metric1", Value: 10}}, 5)
 	assert.NoError(t, err)
 }
@@ -45,7 +51,13 @@ func TestSendBatch_Success(t *testing.T) {
 	url := "/updates"
 	httpmock.RegisterResponder(http.MethodPost, url, httpmock.NewStringResponder(http.StatusOK, ""))
 
-	h := NewHandlers(client, &config.Config{}, repository.NewMemoryRepository(), repository.NewSystemRepository(), client.Logger)
+	h := NewHandlers(
+		client,
+		&config.Config{},
+		repository.NewMemoryRepository(),
+		repository.NewSystemRepository(),
+		client.Logger,
+	)
 
 	metrics := []repository.Metric{
 		{Name: "metric1", Value: 10},

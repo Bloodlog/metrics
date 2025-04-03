@@ -1,6 +1,7 @@
 package clients
 
 import (
+	"bytes"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -69,7 +70,7 @@ func TestReadBody(t *testing.T) {
 			if (err != nil) != tt.wantErr {
 				t.Errorf("readBody() error = %v, wantErr %v", err, tt.wantErr)
 			}
-			if err == nil && string(got) != string(tt.want) {
+			if err == nil && !bytes.Equal(got, tt.want) {
 				t.Errorf("readBody() = %v, want %v", got, tt.want)
 			}
 		})
