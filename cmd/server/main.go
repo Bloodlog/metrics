@@ -15,7 +15,16 @@ import (
 	"go.uber.org/zap"
 )
 
+var (
+	Version     string
+	BuildTime   string
+	BuildCommit string
+)
+
 func main() {
+	fmt.Printf("Build version: %s\n", getOrDefault(Version))
+	fmt.Printf("Build date: %s\n", getOrDefault(BuildTime))
+	fmt.Printf("Build commit: %s\n", getOrDefault(BuildCommit))
 	loggerZap, err := logger.InitilazerLogger()
 	if err != nil {
 		log.Fatalf("Failed to initialize logger: %v", err)
@@ -60,4 +69,11 @@ func initPprof(cfg *config.Config, zapLog *zap.SugaredLogger) {
 			}
 		}()
 	}
+}
+
+func getOrDefault(value string) string {
+	if value == "" {
+		return "N/A"
+	}
+	return value
 }

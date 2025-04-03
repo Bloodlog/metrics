@@ -36,7 +36,7 @@ style:
 	go vet ./...
 	goimports -w .
 
-build:
+docker-up:
 	docker-compose up --build
 
 go-test:
@@ -55,3 +55,7 @@ swag:
 multichecker:
 	go build -o cmd/staticlint/multichecker cmd/staticlint/main.go
 	cmd/staticlint/multichecker internal
+
+build:
+	go build -ldflags "-X main.Version=v1.0.1 -X 'main.BuildTime=$(date +'%Y/%m/%d %H:%M:%S')'" -o cmd/agent/agent cmd/agent/main.go
+	go build -ldflags "-X main.Version=v1.0.1 -X 'main.BuildTime=$(date +'%Y/%m/%d %H:%M:%S')'" -o cmd/server/server cmd/server/main.go
