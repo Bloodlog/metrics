@@ -16,15 +16,15 @@ import (
 )
 
 var (
-	Version     string
-	BuildTime   string
-	BuildCommit string
+	version     = "N/A"
+	buildTime   = "N/A"
+	buildCommit = "N/A"
 )
 
 func main() {
-	fmt.Printf("Build version: %s\n", getOrDefault(Version))
-	fmt.Printf("Build date: %s\n", getOrDefault(BuildTime))
-	fmt.Printf("Build commit: %s\n", getOrDefault(BuildCommit))
+	fmt.Printf("Build version: %s\n", getOrDefault(version))
+	fmt.Printf("Build date: %s\n", getOrDefault(buildTime))
+	fmt.Printf("Build commit: %s\n", getOrDefault(buildCommit))
 	loggerZap, err := logger.InitilazerLogger()
 	if err != nil {
 		log.Fatalf("Failed to initialize logger: %v", err)
