@@ -57,5 +57,5 @@ multichecker:
 	cmd/staticlint/multichecker internal
 
 build:
-	go build -ldflags "-X main.Version=v1.0.1 -X 'main.BuildTime=$(date +'%Y/%m/%d %H:%M:%S')'" -o cmd/agent/agent cmd/agent/main.go
-	go build -ldflags "-X main.Version=v1.0.1 -X 'main.BuildTime=$(date +'%Y/%m/%d %H:%M:%S')'" -o cmd/server/server cmd/server/main.go
+	go build -ldflags "-X main.version=v1.0.1 -X 'main.buildTime=$(date +'%Y/%m/%d %H:%M:%S')'" -o cmd/agent/agent cmd/agent/main.go
+	go build -ldflags "-X main.version=v1.0.1 -X 'main.buildTime=$(date +'%Y/%m/%d %H:%M:%S')'" -o cmd/server/server cmd/server/main.go

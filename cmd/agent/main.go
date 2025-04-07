@@ -20,9 +20,9 @@ var (
 )
 
 func main() {
-	fmt.Printf("Build version: %s\n", getOrDefault(version))
-	fmt.Printf("Build date: %s\n", getOrDefault(buildTime))
-	fmt.Printf("Build commit: %s\n", getOrDefault(buildCommit))
+	fmt.Printf("Build version: %s\n", version)
+	fmt.Printf("Build date: %s\n", buildTime)
+	fmt.Printf("Build commit: %s\n", buildCommit)
 	loggerZap, err := logger.InitilazerLogger()
 	if err != nil {
 		log.Fatalf("Failed to initialize logger: %v", err)
@@ -57,11 +57,4 @@ func run(loggerZap *zap.SugaredLogger) error {
 	}
 
 	return nil
-}
-
-func getOrDefault(value string) string {
-	if value == "" {
-		return "N/A"
-	}
-	return value
 }
