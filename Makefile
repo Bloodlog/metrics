@@ -36,7 +36,7 @@ style:
 	go vet ./...
 	goimports -w .
 
-build:
+docker-up:
 	docker-compose up --build
 
 go-test:
@@ -51,3 +51,11 @@ go-doc:
 
 swag:
 	swag init -g cmd/server/main.go --output ./swagger/
+
+multichecker:
+	go build -o cmd/staticlint/multichecker cmd/staticlint/main.go
+	cmd/staticlint/multichecker internal
+
+build:
+	go build -ldflags "-X main.version=v1.0.1 -X 'main.buildTime=$(date +'%Y/%m/%d %H:%M:%S')'" -o cmd/agent/agent cmd/agent/main.go
+	go build -ldflags "-X main.version=v1.0.1 -X 'main.buildTime=$(date +'%Y/%m/%d %H:%M:%S')'" -o cmd/server/server cmd/server/main.go

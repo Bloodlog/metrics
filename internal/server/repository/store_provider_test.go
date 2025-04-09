@@ -14,8 +14,8 @@ func TestNewMetricStorage(t *testing.T) {
 	logger := zap.NewExample().Sugar()
 
 	tests := []struct {
-		name string
 		cfg  *config.Config
+		name string
 	}{
 		{
 			name: "Memory storage",

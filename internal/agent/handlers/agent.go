@@ -6,7 +6,6 @@ import (
 	"metrics/internal/agent/config"
 	"metrics/internal/agent/repository"
 	"metrics/internal/agent/service"
-	"net"
 	"sync"
 	"time"
 
@@ -36,14 +35,12 @@ type Handlers struct {
 }
 
 func NewHandlers(
+	client *clients.Client,
 	configs *config.Config,
 	memoryRepository *repository.MemoryRepository,
 	systemRepository *repository.SystemRepository,
 	logger *zap.SugaredLogger,
 ) *Handlers {
-	serverAddr := "http://" + net.JoinHostPort(configs.NetAddress.Host, configs.NetAddress.Port)
-	client := clients.NewClient(serverAddr, configs.Key, logger)
-
 	return &Handlers{
 		configs:          configs,
 		memoryRepository: memoryRepository,

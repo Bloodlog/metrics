@@ -83,8 +83,6 @@ func (ms *MemStorage) UpdateCounterAndGauges(
 	counters map[string]uint64,
 	gauges map[string]float64,
 ) error {
-	ms.mu.Lock()
-	defer ms.mu.Unlock()
 	for counterName, counterValue := range counters {
 		_, err := ms.SetCounter(ctx, counterName, counterValue)
 		if err != nil {

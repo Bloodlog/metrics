@@ -10,8 +10,8 @@ import (
 
 type Client struct {
 	RestyClient *resty.Client
-	logger      *zap.SugaredLogger
-	key         string
+	Logger      *zap.SugaredLogger
+	Key         string
 }
 
 func NewClient(serverAddr, key string, logger *zap.SugaredLogger) *Client {
@@ -28,8 +28,8 @@ func NewClient(serverAddr, key string, logger *zap.SugaredLogger) *Client {
 
 	client := &Client{
 		RestyClient: restyClient,
-		logger:      logger,
-		key:         key,
+		Logger:      logger,
+		Key:         key,
 	}
 
 	client.RestyClient.OnBeforeRequest(func(c *resty.Client, r *resty.Request) error {
@@ -49,7 +49,7 @@ func (c *Client) processRequest(r *resty.Request) error {
 	if err != nil {
 		return fmt.Errorf("failed to read request body: %w", err)
 	}
-	if c.key != "" {
+	if c.Key != "" {
 		hashHex := c.hash(requestBody)
 		r.SetHeader("HashSHA256", hashHex)
 	}

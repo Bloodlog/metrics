@@ -22,7 +22,7 @@ func TestClient_Compress(t *testing.T) {
 			t.Fatalf("failed to create gzip reader: %v", err)
 		}
 		defer func(gzipReader *gzip.Reader) {
-			err := gzipReader.Close()
+			err = gzipReader.Close()
 			if err != nil {
 				t.Fatalf("failed to create decompressed data: %v", err)
 			}
@@ -50,7 +50,7 @@ func TestClient_Compress(t *testing.T) {
 			t.Fatalf("failed to create gzip reader: %v", err)
 		}
 		defer func(gzipReader *gzip.Reader) {
-			err := gzipReader.Close()
+			err = gzipReader.Close()
 			if err != nil {
 				t.Fatalf("failed to read decompressed data: %v", err)
 			}

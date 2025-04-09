@@ -24,11 +24,6 @@ func (e *RetriableError) Unwrap() error {
 	return e.Err
 }
 
-func IsRetriableError(err error) bool {
-	var retriableErr *RetriableError
-	return errors.As(err, &retriableErr)
-}
-
 func NewMetricStorage(ctx context.Context, cfg *config.Config, logger *zap.SugaredLogger) (MetricStorage, error) {
 	storageType := resolve(cfg)
 
