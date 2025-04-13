@@ -76,15 +76,25 @@ func processFlags(
 	configShort string,
 	configLong string,
 ) (*dto.Config, error) {
-	config := configLong
-	if config == "" {
-		config = configShort
+	configPath := configLong
+	if configPath == "" {
+		configPath = configShort
 	}
-	if config != "" {
-		// TODO:
+	if configPath != "" {
+		if fromEnv, ok := os.LookupEnv("CONFIG"); ok {
+			configPath = fromEnv
+		}
+	}
+	var fileCfg dto.Config
+	if configPath != "" {
+		loaded, err := loadConfigFromFile(configPath)
+		if err != nil {
+			return nil, fmt.Errorf("load config from file: %w", err)
+		}
+		fileCfg = *loaded
 	}
 
-	finalAddress, err := getStringValue(addressFlag, envAddress)
+	finalAddress, err := getStringValue(addressFlag, envAddress, fileCfg.Address)
 	if err != nil {
 		return nil, fmt.Errorf("read flag: %w", err)
 	}
@@ -95,27 +105,27 @@ func processFlags(
 	}
 	address := "http://" + net.JoinHostPort(host, port)
 
-	reportInterval, err := getIntValue(reportIntervalFlag, envReportInterval)
+	reportInterval, err := getIntValue(reportIntervalFlag, envReportInterval, fileCfg.ReportInterval)
 	if err != nil {
 		return nil, fmt.Errorf("read flag report interval: %w", err)
 	}
 
-	poolInterval, err := getIntValue(pollIntervalFlag, envPollInterval)
+	poolInterval, err := getIntValue(pollIntervalFlag, envPollInterval, fileCfg.PollInterval)
 	if err != nil {
 		return nil, fmt.Errorf("read flag pool interval: %w", err)
 	}
 
-	key, err := getStringValue(keyFlag, envKey)
+	key, err := getStringValue(keyFlag, envKey, fileCfg.Key)
 	if err != nil {
 		key = ""
 	}
 
-	rateLimit, err := getIntValue(rateLimitFlag, envRateLimit)
+	rateLimit, err := getIntValue(rateLimitFlag, envRateLimit, fileCfg.RateLimit)
 	if err != nil {
 		rateLimit = 1
 	}
 
-	cryptoKey, err := getStringValue(cryptoKeyFlag, envCryptoKey)
+	cryptoKey, err := getStringValue(cryptoKeyFlag, envCryptoKey, fileCfg.CryptoKey)
 	if err != nil {
 		cryptoKey = ""
 	}
@@ -157,7 +167,7 @@ func validateUnknownArgs(unknownArgs []string) error {
 	return nil
 }
 
-func getStringValue(flagValue, envKey string) (string, error) {
+func getStringValue(flagValue string, envKey, fileVal string) (string, error) {
 	if envValue, exists := os.LookupEnv(envKey); exists {
 		return envValue, nil
 	}
@@ -166,10 +176,14 @@ func getStringValue(flagValue, envKey string) (string, error) {
 		return flagValue, nil
 	}
 
+	if fileVal != "" {
+		return fileVal, nil
+	}
+
 	return "", fmt.Errorf("missing required configuration: %s or flag value", envKey)
 }
 
-func getIntValue(flagValue int, envKey string) (int, error) {
+func getIntValue(flagValue int, envKey string, fileVal int) (int, error) {
 	if envValue, exists := os.LookupEnv(envKey); exists {
 		parsedValue, err := strconv.Atoi(envValue)
 		if err != nil {
@@ -180,6 +194,10 @@ func getIntValue(flagValue int, envKey string) (int, error) {
 
 	if flagValue != 0 {
 		return flagValue, nil
+	}
+
+	if fileVal != 0 {
+		return fileVal, nil
 	}
 
 	return 0, fmt.Errorf("missing required configuration: %s or flag value", envKey)

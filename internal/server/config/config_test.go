@@ -16,6 +16,8 @@ func TestParseAddressFlags(t *testing.T) {
 		"my-secret-key",
 		"test",
 		true,
+		"",
+		"",
 	)
 	assert.NoError(t, err)
 

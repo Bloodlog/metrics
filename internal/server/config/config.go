@@ -68,7 +68,8 @@ func ParseFlags() (*dto.Config, error) {
 	keyFlag := flag.String(flagKey, defaultKey, descriptionKey)
 	cryptoFlag := flag.String(flagCryptoKey, "", cryptoKeyDescription)
 	enablePprof := flag.Bool("pprof", false, "enable pprof for debugging")
-
+	configShort := flag.String("c", "", "Path to config file (short)")
+	configLong := flag.String("config", "", "Path to config file (long)")
 	flag.Parse()
 
 	uknownArguments := flag.Args()
@@ -85,6 +86,8 @@ func ParseFlags() (*dto.Config, error) {
 		*keyFlag,
 		*cryptoFlag,
 		*enablePprof,
+		*configShort,
+		*configLong,
 	)
 }
 
@@ -97,8 +100,28 @@ func processFlags(
 	keyFlag string,
 	cryptoKeyFlag string,
 	enablePprof bool,
+	configShort string,
+	configLong string,
 ) (*dto.Config, error) {
-	finalAddress, err := getStringValue(addressFlag, envHTTPAddress)
+	configPath := configLong
+	if configPath == "" {
+		configPath = configShort
+	}
+	if configPath != "" {
+		if fromEnv, ok := os.LookupEnv("CONFIG"); ok {
+			configPath = fromEnv
+		}
+	}
+	var fileCfg dto.Config
+	if configPath != "" {
+		loaded, err := loadConfigFromFile(configPath)
+		if err != nil {
+			return nil, fmt.Errorf("load config from file: %w", err)
+		}
+		fileCfg = *loaded
+	}
+
+	finalAddress, err := getStringValue(addressFlag, envHTTPAddress, fileCfg.Address)
 	if err != nil {
 		finalAddress = ""
 	}
@@ -109,32 +132,33 @@ func processFlags(
 	}
 	address := net.JoinHostPort(host, port)
 
-	storeInterval, err := getIntValue(storeIntervalFlag, envStoreInterval)
+	storeInterval, err := getIntValue(storeIntervalFlag, envStoreInterval, fileCfg.StoreInterval)
 	if err != nil {
 		return nil, fmt.Errorf("read flag report interval: %w", err)
 	}
 
-	storagePath, err := getStringValue(storagePathFlag, envFileStoragePath)
+	storagePath, err := getStringValue(storagePathFlag, envFileStoragePath, fileCfg.FileStoragePath)
 	if err != nil {
 		return nil, fmt.Errorf("read flag storage: %w", err)
 	}
 
-	restore, err := getBoolValue(restoreFlag, envRestore)
+	restore := fileCfg.Restore
+	restore, err = getBoolValue(restoreFlag, envRestore)
 	if err != nil {
 		return nil, fmt.Errorf("read flag restore: %w", err)
 	}
 
-	databaseDsn, err := getStringValue(addressDatabaseFlag, envDatabaseDSN)
+	databaseDsn, err := getStringValue(addressDatabaseFlag, envDatabaseDSN, fileCfg.DatabaseDsn)
 	if err != nil {
 		databaseDsn = ""
 	}
 
-	key, err := getStringValue(keyFlag, envKey)
+	key, err := getStringValue(keyFlag, envKey, fileCfg.Key)
 	if err != nil {
 		key = ""
 	}
 
-	cryptoKey, err := getStringValue(cryptoKeyFlag, envCryptoKey)
+	cryptoKey, err := getStringValue(cryptoKeyFlag, envCryptoKey, fileCfg.CryptoKey)
 	if err != nil {
 		cryptoKey = ""
 	}
@@ -177,7 +201,7 @@ func parseAddress(address string) (string, string, error) {
 	return host, port, nil
 }
 
-func getStringValue(flagValue, envKey string) (string, error) {
+func getStringValue(flagValue, envKey string, fileVal string) (string, error) {
 	if envValue, exists := os.LookupEnv(envKey); exists {
 		return envValue, nil
 	}
@@ -186,10 +210,14 @@ func getStringValue(flagValue, envKey string) (string, error) {
 		return flagValue, nil
 	}
 
+	if fileVal != "" {
+		return fileVal, nil
+	}
+
 	return "", fmt.Errorf("missing required configuration: %s or flag value", envKey)
 }
 
-func getIntValue(flagValue int, envKey string) (int, error) {
+func getIntValue(flagValue int, envKey string, fileVal int) (int, error) {
 	if envValue, exists := os.LookupEnv(envKey); exists {
 		parsedValue, err := strconv.Atoi(envValue)
 		if err != nil {
@@ -200,6 +228,10 @@ func getIntValue(flagValue int, envKey string) (int, error) {
 
 	if flagValue != 0 {
 		return flagValue, nil
+	}
+
+	if fileVal != 0 {
+		return fileVal, nil
 	}
 
 	return 0, fmt.Errorf("missing required configuration: %s or flag value", envKey)
