@@ -59,3 +59,7 @@ multichecker:
 build:
 	go build -ldflags "-X main.version=v1.0.1 -X 'main.buildTime=$(date +'%Y/%m/%d %H:%M:%S')'" -o cmd/agent/agent cmd/agent/main.go
 	go build -ldflags "-X main.version=v1.0.1 -X 'main.buildTime=$(date +'%Y/%m/%d %H:%M:%S')'" -o cmd/server/server cmd/server/main.go
+
+certificate:
+	go build -o cmd/cert/cert cmd/cert/main.go
+	cmd/cert/cert

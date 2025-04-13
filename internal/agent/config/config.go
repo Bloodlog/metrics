@@ -17,7 +17,9 @@ type NetAddress struct {
 
 type Config struct {
 	// Ключ для вычисления хеша.
-	Key        string
+	Key string
+	// Включить поддержку асимметричного шифрования
+	CryptoKey  string
 	NetAddress NetAddress
 	// Интервал отправки метрик.
 	ReportInterval int
@@ -48,6 +50,10 @@ const (
 	flagRateLimit        = "l"
 	envRateLimit         = "RATE_LIMIT"
 	rateLimitDescription = "Rate limit"
+
+	flagCryptoKey        = "crypto-key"
+	envCryptoKey         = "CRYPTO_KEY"
+	cryptoKeyDescription = "Cryptographic encryption key"
 )
 
 func ParseFlags() (*Config, error) {
@@ -56,6 +62,7 @@ func ParseFlags() (*Config, error) {
 	pollIntervalFlag := flag.Int("p", defaultPollInterval, pollIntervalFlagDescription)
 	keyFlag := flag.String(flagKey, "", keyDescription)
 	rateLimitFlag := flag.Int(flagRateLimit, 1, rateLimitDescription)
+	cryptoFlag := flag.String(flagCryptoKey, "", cryptoKeyDescription)
 	flag.Parse()
 
 	uknownArguments := flag.Args()
@@ -63,7 +70,14 @@ func ParseFlags() (*Config, error) {
 		return nil, fmt.Errorf("read flags: %w", err)
 	}
 
-	return processFlags(*addressFlag, *reportIntervalFlag, *pollIntervalFlag, *keyFlag, *rateLimitFlag)
+	return processFlags(
+		*addressFlag,
+		*reportIntervalFlag,
+		*pollIntervalFlag,
+		*keyFlag,
+		*rateLimitFlag,
+		*cryptoFlag,
+	)
 }
 
 func processFlags(
@@ -72,6 +86,7 @@ func processFlags(
 	pollIntervalFlag int,
 	keyFlag string,
 	rateLimitFlag int,
+	cryptoKeyFlag string,
 ) (*Config, error) {
 	finalAddress, err := getStringValue(addressFlag, envAddress)
 	if err != nil {
@@ -103,6 +118,11 @@ func processFlags(
 		rateLimit = 1
 	}
 
+	cryptoKey, err := getStringValue(cryptoKeyFlag, envCryptoKey)
+	if err != nil {
+		cryptoKey = ""
+	}
+
 	return &Config{
 		NetAddress:     NetAddress{Host: host, Port: port},
 		ReportInterval: reportInterval,
@@ -110,6 +130,7 @@ func processFlags(
 		Batch:          false,
 		Key:            key,
 		RateLimit:      rateLimit,
+		CryptoKey:      cryptoKey,
 	}, nil
 }
 

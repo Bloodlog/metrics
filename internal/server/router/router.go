@@ -1,6 +1,8 @@
 package router
 
 import (
+	"crypto/rsa"
+	"log"
 	"metrics/internal/server/config"
 	"metrics/internal/server/handlers/api"
 	"metrics/internal/server/handlers/web"
@@ -56,10 +58,21 @@ func register(
 	apiHandler := api.NewHandler(metricService, logger)
 	webHandler := web.NewHandler(metricService, logger)
 
+	var privateKey *rsa.PrivateKey
+	if cfg.CryptoKey != "" {
+		var err error
+		privateKey, err = loadRSAPrivateKeyFromFile(cfg.CryptoKey)
+		if err != nil {
+			log.Fatalf("failed to load private key: %v", err)
+		}
+	}
+
 	r.Route("/updates", func(r chi.Router) {
+		r.Use(middleware.DecryptMiddleware(privateKey))
 		r.Post("/", apiHandler.UpdatesHandler())
 	})
 	r.Route("/update", func(r chi.Router) {
+		r.Use(middleware.DecryptMiddleware(privateKey))
 		r.Post("/", apiHandler.UpdateHandler())
 		r.Post("/{metricType}/{metricName}/{metricValue}", webHandler.UpdateHandler())
 	})
