@@ -19,8 +19,7 @@ func TestParseAddressFlags(t *testing.T) {
 	)
 	assert.NoError(t, err)
 
-	assert.Equal(t, "localhost", cfg.NetAddress.Host)
-	assert.Equal(t, "8080", cfg.NetAddress.Port)
+	assert.Equal(t, "localhost:8080", cfg.Address)
 
 	assert.Equal(t, 500, cfg.StoreInterval)
 
@@ -39,8 +38,7 @@ func TestParseAddressFlags(t *testing.T) {
 func TestParseFlags(t *testing.T) {
 	cfg, err := ParseFlags()
 	assert.NoError(t, err)
-	assert.Equal(t, "localhost", cfg.NetAddress.Host)
-	assert.Equal(t, "8080", cfg.NetAddress.Port)
+	assert.Equal(t, "localhost:8080", cfg.Address)
 
 	assert.Equal(t, 300, cfg.StoreInterval)
 

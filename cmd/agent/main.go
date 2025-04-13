@@ -8,7 +8,6 @@ import (
 	"metrics/internal/agent/handlers"
 	"metrics/internal/agent/logger"
 	"metrics/internal/agent/repository"
-	"net"
 
 	"go.uber.org/zap"
 )
@@ -42,8 +41,7 @@ func run(loggerZap *zap.SugaredLogger) error {
 	memoryRepository := repository.NewMemoryRepository()
 	systemRepository := repository.NewSystemRepository()
 
-	serverAddr := "http://" + net.JoinHostPort(configs.NetAddress.Host, configs.NetAddress.Port)
-	client := clients.NewClient(serverAddr, configs.Key, configs.CryptoKey, loggerZap)
+	client := clients.NewClient(configs.Address, configs.Key, configs.CryptoKey, loggerZap)
 
 	applicationHandlers := handlers.NewHandlers(
 		client,

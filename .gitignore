@@ -37,3 +37,5 @@ cmd/server/metrics.json
 profiles
 
 cert/*.cert
+
+*.json

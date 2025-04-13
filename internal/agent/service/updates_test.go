@@ -1,6 +1,7 @@
 package service
 
 import (
+	"metrics/internal/agent/dto"
 	"net/http"
 	"testing"
 
@@ -14,8 +15,8 @@ func TestSendMetricsBatch(t *testing.T) {
 
 	httpmock.ActivateNonDefault(client.GetClient())
 
-	metricsUpdateRequest := MetricsUpdateRequests{
-		Metrics: []MetricsUpdateRequest{
+	metricsUpdateRequest := dto.MetricsUpdateRequests{
+		Metrics: []dto.MetricsUpdateRequest{
 			{
 				ID:    "metric1",
 				MType: "gauge",

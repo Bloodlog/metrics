@@ -2,6 +2,7 @@ package repository
 
 import (
 	"math/rand"
+	"metrics/internal/agent/dto"
 	"runtime"
 )
 
@@ -12,39 +13,39 @@ func NewMemoryRepository() *MemoryRepository {
 	return &MemoryRepository{}
 }
 
-func (r *MemoryRepository) GetMetrics() []Metric {
+func (r *MemoryRepository) GetMetrics() []dto.Metric {
 	var memStats runtime.MemStats
 	runtime.ReadMemStats(&memStats)
 
-	metrics := append([]Metric{},
-		Metric{"Alloc", memStats.Alloc},
-		Metric{"BuckHashSys", memStats.BuckHashSys},
-		Metric{"Frees", memStats.Frees},
-		Metric{"GCCPUFraction", uint64(memStats.GCCPUFraction)},
-		Metric{"GCSys", memStats.GCSys},
-		Metric{"HeapAlloc", memStats.HeapAlloc},
-		Metric{"HeapIdle", memStats.HeapIdle},
-		Metric{"HeapInuse", memStats.HeapInuse},
-		Metric{"HeapObjects", memStats.HeapObjects},
-		Metric{"HeapReleased", memStats.HeapReleased},
-		Metric{"HeapSys", memStats.HeapSys},
-		Metric{"LastGC", memStats.LastGC},
-		Metric{"Lookups", memStats.Lookups},
-		Metric{"MCacheInuse", memStats.MCacheInuse},
-		Metric{"MCacheSys", memStats.MCacheSys},
-		Metric{"MSpanInuse", memStats.MSpanInuse},
-		Metric{"MSpanSys", memStats.MSpanSys},
-		Metric{"Mallocs", memStats.Mallocs},
-		Metric{"NextGC", memStats.NextGC},
-		Metric{"NumForcedGC", uint64(memStats.NumForcedGC)},
-		Metric{"NumGC", uint64(memStats.NumGC)},
-		Metric{"OtherSys", memStats.OtherSys},
-		Metric{"PauseTotalNs", memStats.PauseTotalNs},
-		Metric{"StackInuse", memStats.StackInuse},
-		Metric{"StackSys", memStats.StackSys},
-		Metric{"Sys", memStats.Sys},
-		Metric{"TotalAlloc", memStats.TotalAlloc},
-		Metric{"RandomValue", rand.Uint64()},
+	metrics := append([]dto.Metric{},
+		dto.Metric{Name: "Alloc", Value: memStats.Alloc},
+		dto.Metric{Name: "BuckHashSys", Value: memStats.BuckHashSys},
+		dto.Metric{Name: "Frees", Value: memStats.Frees},
+		dto.Metric{Name: "GCCPUFraction", Value: uint64(memStats.GCCPUFraction)},
+		dto.Metric{Name: "GCSys", Value: memStats.GCSys},
+		dto.Metric{Name: "HeapAlloc", Value: memStats.HeapAlloc},
+		dto.Metric{Name: "HeapIdle", Value: memStats.HeapIdle},
+		dto.Metric{Name: "HeapInuse", Value: memStats.HeapInuse},
+		dto.Metric{Name: "HeapObjects", Value: memStats.HeapObjects},
+		dto.Metric{Name: "HeapReleased", Value: memStats.HeapReleased},
+		dto.Metric{Name: "HeapSys", Value: memStats.HeapSys},
+		dto.Metric{Name: "LastGC", Value: memStats.LastGC},
+		dto.Metric{Name: "Lookups", Value: memStats.Lookups},
+		dto.Metric{Name: "MCacheInuse", Value: memStats.MCacheInuse},
+		dto.Metric{Name: "MCacheSys", Value: memStats.MCacheSys},
+		dto.Metric{Name: "MSpanInuse", Value: memStats.MSpanInuse},
+		dto.Metric{Name: "MSpanSys", Value: memStats.MSpanSys},
+		dto.Metric{Name: "Mallocs", Value: memStats.Mallocs},
+		dto.Metric{Name: "NextGC", Value: memStats.NextGC},
+		dto.Metric{Name: "NumForcedGC", Value: uint64(memStats.NumForcedGC)},
+		dto.Metric{Name: "NumGC", Value: uint64(memStats.NumGC)},
+		dto.Metric{Name: "OtherSys", Value: memStats.OtherSys},
+		dto.Metric{Name: "PauseTotalNs", Value: memStats.PauseTotalNs},
+		dto.Metric{Name: "StackInuse", Value: memStats.StackInuse},
+		dto.Metric{Name: "StackSys", Value: memStats.StackSys},
+		dto.Metric{Name: "Sys", Value: memStats.Sys},
+		dto.Metric{Name: "TotalAlloc", Value: memStats.TotalAlloc},
+		dto.Metric{Name: "RandomValue", Value: rand.Uint64()},
 	)
 
 	return metrics

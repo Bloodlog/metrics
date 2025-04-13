@@ -14,11 +14,12 @@ func TestProcessFlags(t *testing.T) {
 		"my-secret-key",
 		10,
 		"test",
+		"",
+		"",
 	)
 	assert.NoError(t, err)
 
-	assert.Equal(t, "localhost", cfg.NetAddress.Host)
-	assert.Equal(t, "8080", cfg.NetAddress.Port)
+	assert.Equal(t, "http://localhost:8080", cfg.Address)
 
 	assert.Equal(t, 500, cfg.ReportInterval)
 	assert.Equal(t, 600, cfg.PollInterval)
@@ -31,8 +32,7 @@ func TestProcessFlags(t *testing.T) {
 func TestParseFlags(t *testing.T) {
 	cfg, err := ParseFlags()
 	assert.NoError(t, err)
-	assert.Equal(t, "localhost", cfg.NetAddress.Host)
-	assert.Equal(t, "8080", cfg.NetAddress.Port)
+	assert.Equal(t, "http://localhost:8080", cfg.Address)
 
 	assert.Equal(t, 10, cfg.ReportInterval)
 	assert.Equal(t, 2, cfg.PollInterval)

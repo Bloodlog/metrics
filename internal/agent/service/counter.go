@@ -3,17 +3,12 @@ package service
 import (
 	"encoding/json"
 	"fmt"
+	"metrics/internal/agent/dto"
 
 	"github.com/go-resty/resty/v2"
 )
 
-type MetricsCounterRequest struct {
-	Delta *int64 `json:"delta,omitempty"`
-	ID    string `json:"id"`
-	MType string `json:"type"`
-}
-
-func SendIncrement(client *resty.Client, request MetricsCounterRequest) error {
+func SendIncrement(client *resty.Client, request dto.MetricsCounterRequest) error {
 	requestData, err := json.Marshal(request)
 	if err != nil {
 		return fmt.Errorf("error serializing the structure: %w", err)

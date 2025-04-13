@@ -3,17 +3,12 @@ package service
 import (
 	"encoding/json"
 	"fmt"
+	"metrics/internal/agent/dto"
 
 	"github.com/go-resty/resty/v2"
 )
 
-type MetricsGaugeUpdateRequest struct {
-	Value *float64 `json:"value,omitempty"`
-	ID    string   `json:"id"`
-	MType string   `json:"type"`
-}
-
-func SendMetric(client *resty.Client, request MetricsGaugeUpdateRequest) error {
+func SendMetric(client *resty.Client, request dto.MetricsGaugeUpdateRequest) error {
 	requestData, err := json.Marshal(request)
 	if err != nil {
 		return fmt.Errorf("error serializing the structure: %w", err)

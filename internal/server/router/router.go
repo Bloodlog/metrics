@@ -3,7 +3,7 @@ package router
 import (
 	"crypto/rsa"
 	"log"
-	"metrics/internal/server/config"
+	"metrics/internal/server/dto"
 	"metrics/internal/server/handlers/api"
 	"metrics/internal/server/handlers/web"
 	"metrics/internal/server/middleware"
@@ -21,7 +21,7 @@ import (
 
 func ConfigureServerHandler(
 	memStorage repository.MetricStorage,
-	cfg *config.Config,
+	cfg *dto.Config,
 	logger *zap.SugaredLogger,
 ) http.Handler {
 	router := chi.NewRouter()
@@ -50,7 +50,7 @@ func ConfigureServerHandler(
 
 func register(
 	r *chi.Mux,
-	cfg *config.Config,
+	cfg *dto.Config,
 	memStorage repository.MetricStorage,
 	logger *zap.SugaredLogger,
 ) {

@@ -3,24 +3,23 @@ package repository
 import (
 	"context"
 	"fmt"
+	"metrics/internal/server/dto"
 
 	"github.com/jackc/pgx/v5"
 	"go.uber.org/zap"
-
-	"metrics/internal/server/config"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type DBRepository struct {
 	pool   *pgxpool.Pool
-	cfg    *config.Config
+	cfg    *dto.Config
 	logger *zap.SugaredLogger
 }
 
 func NewDBRepository(
 	ctx context.Context,
-	cfg *config.Config,
+	cfg *dto.Config,
 	logger *zap.SugaredLogger,
 ) (*DBRepository, error) {
 	handlerLogger := logger.With("database", "NewDBRepository")

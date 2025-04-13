@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"metrics/internal/server/config"
+	"metrics/internal/server/dto"
 	"time"
 
 	"go.uber.org/zap"
@@ -24,7 +24,7 @@ func (e *RetriableError) Unwrap() error {
 	return e.Err
 }
 
-func NewMetricStorage(ctx context.Context, cfg *config.Config, logger *zap.SugaredLogger) (MetricStorage, error) {
+func NewMetricStorage(ctx context.Context, cfg *dto.Config, logger *zap.SugaredLogger) (MetricStorage, error) {
 	storageType := resolve(cfg)
 
 	switch storageType {
@@ -62,7 +62,7 @@ func NewMetricStorage(ctx context.Context, cfg *config.Config, logger *zap.Sugar
 	}
 }
 
-func resolve(cfg *config.Config) string {
+func resolve(cfg *dto.Config) string {
 	if cfg.DatabaseDsn != "" {
 		return "database-retry"
 	}

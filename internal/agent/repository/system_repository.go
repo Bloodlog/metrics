@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"metrics/internal/agent/dto"
 	"strconv"
 
 	"github.com/shirou/gopsutil/cpu"
@@ -14,21 +15,21 @@ func NewSystemRepository() *SystemRepository {
 type SystemRepository struct {
 }
 
-func (r *SystemRepository) GetMetrics() []Metric {
+func (r *SystemRepository) GetMetrics() []dto.Metric {
 	const percent = 100
-	var metrics []Metric
+	var metrics []dto.Metric
 
 	virtualMemory, err := mem.VirtualMemory()
 	if err == nil {
 		metrics = append(metrics,
-			Metric{"TotalMemory", virtualMemory.Total},
-			Metric{"FreeMemory", virtualMemory.Free},
+			dto.Metric{Name: "TotalMemory", Value: virtualMemory.Total},
+			dto.Metric{Name: "FreeMemory", Value: virtualMemory.Free},
 		)
 	}
 
 	if cpuUsages, err := cpu.Percent(0, true); err == nil {
 		for i, usage := range cpuUsages {
-			metrics = append(metrics, Metric{
+			metrics = append(metrics, dto.Metric{
 				Name:  "CPUutilization" + strconv.Itoa(i+1),
 				Value: uint64(usage * percent),
 			})

@@ -1,6 +1,7 @@
 package service
 
 import (
+	"metrics/internal/agent/dto"
 	"net/http"
 	"testing"
 
@@ -20,10 +21,10 @@ func TestCounterService_SendIncrement(t *testing.T) {
 	httpmock.RegisterResponder("POST", url, responder)
 
 	counter := 42
-	var metricCounterRequest MetricsCounterRequest
+	var metricCounterRequest dto.MetricsCounterRequest
 	delta := int64(counter)
 
-	metricCounterRequest = MetricsCounterRequest{
+	metricCounterRequest = dto.MetricsCounterRequest{
 		Delta: &delta,
 		ID:    "PoolCounter",
 		MType: "counter",

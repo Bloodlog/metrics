@@ -3,7 +3,7 @@ package handlers
 import (
 	"fmt"
 	"metrics/internal/agent/clients"
-	"metrics/internal/agent/config"
+	"metrics/internal/agent/dto"
 	"metrics/internal/agent/repository"
 	"metrics/internal/agent/service"
 	"sync"
@@ -22,11 +22,11 @@ const (
 const typeMetricName = "gauge"
 
 type MetricsPayload struct {
-	Metrics   []repository.Metric
+	Metrics   []dto.Metric
 	PollCount int64
 }
 type Handlers struct {
-	configs          *config.Config
+	configs          *dto.Config
 	memoryRepository *repository.MemoryRepository
 	systemRepository *repository.SystemRepository
 	logger           *zap.SugaredLogger
@@ -36,7 +36,7 @@ type Handlers struct {
 
 func NewHandlers(
 	client *clients.Client,
-	configs *config.Config,
+	configs *dto.Config,
 	memoryRepository *repository.MemoryRepository,
 	systemRepository *repository.SystemRepository,
 	logger *zap.SugaredLogger,
@@ -64,8 +64,8 @@ func (h *Handlers) Handle() error {
 		go h.worker(&wg)
 	}
 
-	var runtimeMetrics []repository.Metric
-	var systemMetrics []repository.Metric
+	var runtimeMetrics []dto.Metric
+	var systemMetrics []dto.Metric
 	counter := 0
 
 	go func() {
@@ -113,9 +113,9 @@ func (h *Handlers) worker(wg *sync.WaitGroup) {
 	}
 }
 
-func (h *Handlers) sendBatch(metrics []repository.Metric, counter int64) error {
-	metricsRequests := service.MetricsUpdateRequests{}
-	metric := service.MetricsUpdateRequest{
+func (h *Handlers) sendBatch(metrics []dto.Metric, counter int64) error {
+	metricsRequests := dto.MetricsUpdateRequests{}
+	metric := dto.MetricsUpdateRequest{
 		Delta: &counter,
 		ID:    nameCounter,
 		MType: typeCounter,
@@ -124,7 +124,7 @@ func (h *Handlers) sendBatch(metrics []repository.Metric, counter int64) error {
 
 	for _, metric := range metrics {
 		valueFloat := float64(metric.Value)
-		metric := service.MetricsUpdateRequest{
+		metric := dto.MetricsUpdateRequest{
 			Value: &valueFloat,
 			ID:    metric.Name,
 			MType: typeMetricName,
@@ -140,8 +140,8 @@ func (h *Handlers) sendBatch(metrics []repository.Metric, counter int64) error {
 	return nil
 }
 
-func (h *Handlers) sendAPI(metrics []repository.Metric, counter int64) error {
-	metricCounterRequest := service.MetricsCounterRequest{
+func (h *Handlers) sendAPI(metrics []dto.Metric, counter int64) error {
+	metricCounterRequest := dto.MetricsCounterRequest{
 		Delta: &counter,
 		ID:    nameCounter,
 		MType: typeCounter,
@@ -156,7 +156,7 @@ func (h *Handlers) sendAPI(metrics []repository.Metric, counter int64) error {
 	for _, metric := range metrics {
 		valueFloat := float64(metric.Value)
 
-		MetricGaugeUpdateRequest := service.MetricsGaugeUpdateRequest{
+		MetricGaugeUpdateRequest := dto.MetricsGaugeUpdateRequest{
 			Value: &valueFloat,
 			ID:    metric.Name,
 			MType: typeMetricName,

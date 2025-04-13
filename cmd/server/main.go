@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"metrics/internal/server/config"
+	"metrics/internal/server/dto"
 	"metrics/internal/server/logger"
 	"metrics/internal/server/repository"
 	"metrics/internal/server/server"
@@ -60,10 +61,10 @@ func run(loggerZap *zap.SugaredLogger) error {
 	return nil
 }
 
-func initPprof(cfg *config.Config, zapLog *zap.SugaredLogger) {
+func initPprof(cfg *dto.Config, zapLog *zap.SugaredLogger) {
 	if cfg.Debug {
 		go func() {
-			err := http.ListenAndServe(cfg.NetAddress.Host+":6060", nil)
+			err := http.ListenAndServe("0.0.0.0"+":6060", nil)
 			if err != nil {
 				zapLog.Info(err.Error(), "failed start profiler")
 			}

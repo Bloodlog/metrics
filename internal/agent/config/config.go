@@ -4,31 +4,13 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"metrics/internal/agent/dto"
+	"net"
 	"net/url"
 	"os"
 	"strconv"
 	"strings"
 )
-
-type NetAddress struct {
-	Host string
-	Port string
-}
-
-type Config struct {
-	// Ключ для вычисления хеша.
-	Key string
-	// Включить поддержку асимметричного шифрования
-	CryptoKey  string
-	NetAddress NetAddress
-	// Интервал отправки метрик.
-	ReportInterval int
-	// Интервал опроса метрик.
-	PollInterval int
-	RateLimit    int
-	// Разрешить отправку метрик одним пакетным запросом.
-	Batch bool
-}
 
 const (
 	defaultAddress        = "http://localhost:8080"
@@ -56,13 +38,15 @@ const (
 	cryptoKeyDescription = "Cryptographic encryption key"
 )
 
-func ParseFlags() (*Config, error) {
+func ParseFlags() (*dto.Config, error) {
 	addressFlag := flag.String("a", defaultAddress, addressFlagDescription)
 	reportIntervalFlag := flag.Int("r", defaultReportInterval, reportIntervalFlagDescription)
 	pollIntervalFlag := flag.Int("p", defaultPollInterval, pollIntervalFlagDescription)
 	keyFlag := flag.String(flagKey, "", keyDescription)
 	rateLimitFlag := flag.Int(flagRateLimit, 1, rateLimitDescription)
 	cryptoFlag := flag.String(flagCryptoKey, "", cryptoKeyDescription)
+	configShort := flag.String("c", "", "Path to config file (short)")
+	configLong := flag.String("config", "", "Path to config file (long)")
 	flag.Parse()
 
 	uknownArguments := flag.Args()
@@ -77,6 +61,8 @@ func ParseFlags() (*Config, error) {
 		*keyFlag,
 		*rateLimitFlag,
 		*cryptoFlag,
+		*configShort,
+		*configLong,
 	)
 }
 
@@ -87,7 +73,17 @@ func processFlags(
 	keyFlag string,
 	rateLimitFlag int,
 	cryptoKeyFlag string,
-) (*Config, error) {
+	configShort string,
+	configLong string,
+) (*dto.Config, error) {
+	config := configLong
+	if config == "" {
+		config = configShort
+	}
+	if config != "" {
+		// TODO:
+	}
+
 	finalAddress, err := getStringValue(addressFlag, envAddress)
 	if err != nil {
 		return nil, fmt.Errorf("read flag: %w", err)
@@ -97,6 +93,7 @@ func processFlags(
 	if err != nil {
 		return nil, fmt.Errorf("read flag address: %w", err)
 	}
+	address := "http://" + net.JoinHostPort(host, port)
 
 	reportInterval, err := getIntValue(reportIntervalFlag, envReportInterval)
 	if err != nil {
@@ -123,8 +120,8 @@ func processFlags(
 		cryptoKey = ""
 	}
 
-	return &Config{
-		NetAddress:     NetAddress{Host: host, Port: port},
+	return &dto.Config{
+		Address:        address,
 		ReportInterval: reportInterval,
 		PollInterval:   poolInterval,
 		Batch:          false,

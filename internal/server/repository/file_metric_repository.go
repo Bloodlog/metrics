@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"metrics/internal/server/config"
+	"metrics/internal/server/dto"
 	"os"
 	"time"
 
@@ -13,13 +13,13 @@ import (
 
 type FileStorageWrapper struct {
 	storage MetricStorage
-	cfg     *config.Config
+	cfg     *dto.Config
 	logger  *zap.SugaredLogger
 }
 
 func NewFileStorageWrapper(
 	ctx context.Context,
-	cfg *config.Config,
+	cfg *dto.Config,
 	logger *zap.SugaredLogger,
 ) (*FileStorageWrapper, error) {
 	handlerLogger := logger.With("file", "NewFileStorageWrapper")

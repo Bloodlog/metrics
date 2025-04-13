@@ -4,6 +4,8 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"metrics/internal/server/dto"
+	"net"
 	"net/url"
 	"os"
 	"strconv"
@@ -57,30 +59,7 @@ const (
 	cryptoKeyDescription = "Cryptographic encryption key"
 )
 
-type Config struct {
-	// Ключ для вычисления хеша.
-	Key        string
-	NetAddress NetAddress
-	// Путь к файлу хранилищу.
-	FileStoragePath string
-	// Настройки БД в формате dsn.
-	DatabaseDsn string
-	// Включить поддержку асимметричного шифрования
-	CryptoKey string
-	// Интервал сохранения хранилища.
-	StoreInterval int
-	// Разрешить загрузку из файла хранилища.
-	Restore bool
-	// Разрешить отладку.
-	Debug bool
-}
-
-type NetAddress struct {
-	Host string
-	Port string
-}
-
-func ParseFlags() (*Config, error) {
+func ParseFlags() (*dto.Config, error) {
 	addressFlag := flag.String(flagHTTPAddress, defaultHTTPAddress, descriptionHTTPAddress)
 	storeIntervalFlag := flag.Int(flagStoreInterval, defaultStoreInterval, descriptionStoreInterval)
 	storagePathFlag := flag.String(flagFileStoragePath, defaultFileStoragePath, descriptionFileStoragePath)
@@ -118,7 +97,7 @@ func processFlags(
 	keyFlag string,
 	cryptoKeyFlag string,
 	enablePprof bool,
-) (*Config, error) {
+) (*dto.Config, error) {
 	finalAddress, err := getStringValue(addressFlag, envHTTPAddress)
 	if err != nil {
 		finalAddress = ""
@@ -128,6 +107,7 @@ func processFlags(
 	if err != nil {
 		return nil, fmt.Errorf("read flag address: %w", err)
 	}
+	address := net.JoinHostPort(host, port)
 
 	storeInterval, err := getIntValue(storeIntervalFlag, envStoreInterval)
 	if err != nil {
@@ -159,8 +139,8 @@ func processFlags(
 		cryptoKey = ""
 	}
 
-	return &Config{
-		NetAddress:      NetAddress{Host: host, Port: port},
+	return &dto.Config{
+		Address:         address,
 		StoreInterval:   storeInterval,
 		FileStoragePath: storagePath,
 		DatabaseDsn:     databaseDsn,
