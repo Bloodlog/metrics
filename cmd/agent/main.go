@@ -43,7 +43,7 @@ func run(loggerZap *zap.SugaredLogger) error {
 	systemRepository := repository.NewSystemRepository()
 
 	serverAddr := "http://" + net.JoinHostPort(configs.NetAddress.Host, configs.NetAddress.Port)
-	client := clients.NewClient(serverAddr, configs.Key, loggerZap)
+	client := clients.NewClient(serverAddr, configs.Key, configs.CryptoKey, loggerZap)
 
 	applicationHandlers := handlers.NewHandlers(
 		client,

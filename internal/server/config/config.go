@@ -51,6 +51,12 @@ const (
 	descriptionKey = "Agent adds a HashSHA256 header with the computed hash"
 )
 
+const (
+	flagCryptoKey        = "crypto-key"
+	envCryptoKey         = "CRYPTO_KEY"
+	cryptoKeyDescription = "Cryptographic encryption key"
+)
+
 type Config struct {
 	// Ключ для вычисления хеша.
 	Key        string
@@ -59,6 +65,8 @@ type Config struct {
 	FileStoragePath string
 	// Настройки БД в формате dsn.
 	DatabaseDsn string
+	// Включить поддержку асимметричного шифрования
+	CryptoKey string
 	// Интервал сохранения хранилища.
 	StoreInterval int
 	// Разрешить загрузку из файла хранилища.
@@ -79,6 +87,7 @@ func ParseFlags() (*Config, error) {
 	restoreFlag := flag.Bool(flagRestore, defaultRestore, descriptionRestore)
 	addressDatabaseFlag := flag.String(flagDatabaseDSN, defaultDatabaseDSN, descriptionDatabaseDSN)
 	keyFlag := flag.String(flagKey, defaultKey, descriptionKey)
+	cryptoFlag := flag.String(flagCryptoKey, "", cryptoKeyDescription)
 	enablePprof := flag.Bool("pprof", false, "enable pprof for debugging")
 
 	flag.Parse()
@@ -95,6 +104,7 @@ func ParseFlags() (*Config, error) {
 		*restoreFlag,
 		*addressDatabaseFlag,
 		*keyFlag,
+		*cryptoFlag,
 		*enablePprof,
 	)
 }
@@ -106,6 +116,7 @@ func processFlags(
 	restoreFlag bool,
 	addressDatabaseFlag string,
 	keyFlag string,
+	cryptoKeyFlag string,
 	enablePprof bool,
 ) (*Config, error) {
 	finalAddress, err := getStringValue(addressFlag, envHTTPAddress)
@@ -143,6 +154,11 @@ func processFlags(
 		key = ""
 	}
 
+	cryptoKey, err := getStringValue(cryptoKeyFlag, envCryptoKey)
+	if err != nil {
+		cryptoKey = ""
+	}
+
 	return &Config{
 		NetAddress:      NetAddress{Host: host, Port: port},
 		StoreInterval:   storeInterval,
@@ -151,6 +167,7 @@ func processFlags(
 		Restore:         restore,
 		Key:             key,
 		Debug:           enablePprof,
+		CryptoKey:       cryptoKey,
 	}, nil
 }
 

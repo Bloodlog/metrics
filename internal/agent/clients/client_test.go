@@ -15,7 +15,7 @@ func TestNewClient(t *testing.T) {
 	serverAddr := "http://example.com"
 	key := "test-key"
 
-	client := NewClient(serverAddr, key, sugar)
+	client := NewClient(serverAddr, key, "", sugar)
 
 	assert.NotNil(t, client)
 

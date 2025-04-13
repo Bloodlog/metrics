@@ -14,6 +14,7 @@ func TestParseAddressFlags(t *testing.T) {
 		true,
 		"postgres://user:pass@localhost:5432/dbname",
 		"my-secret-key",
+		"test",
 		true,
 	)
 	assert.NoError(t, err)
@@ -29,6 +30,8 @@ func TestParseAddressFlags(t *testing.T) {
 
 	assert.Equal(t, "postgres://user:pass@localhost:5432/dbname", cfg.DatabaseDsn)
 	assert.Equal(t, "my-secret-key", cfg.Key)
+
+	assert.Equal(t, "test", cfg.CryptoKey)
 
 	assert.Equal(t, true, cfg.Debug)
 }
@@ -47,6 +50,8 @@ func TestParseFlags(t *testing.T) {
 
 	assert.Equal(t, "", cfg.DatabaseDsn)
 	assert.Equal(t, "", cfg.Key)
+
+	assert.Equal(t, "", cfg.CryptoKey)
 
 	assert.Equal(t, false, cfg.Debug)
 }

@@ -7,7 +7,14 @@ import (
 )
 
 func TestProcessFlags(t *testing.T) {
-	cfg, err := processFlags("localhost:8080", 500, 600, "my-secret-key", 10)
+	cfg, err := processFlags(
+		"localhost:8080",
+		500,
+		600,
+		"my-secret-key",
+		10,
+		"test",
+	)
 	assert.NoError(t, err)
 
 	assert.Equal(t, "localhost", cfg.NetAddress.Host)
@@ -18,6 +25,7 @@ func TestProcessFlags(t *testing.T) {
 
 	assert.Equal(t, "my-secret-key", cfg.Key)
 	assert.Equal(t, 10, cfg.RateLimit)
+	assert.Equal(t, "test", cfg.CryptoKey)
 }
 
 func TestParseFlags(t *testing.T) {
@@ -31,4 +39,5 @@ func TestParseFlags(t *testing.T) {
 
 	assert.Equal(t, "", cfg.Key)
 	assert.Equal(t, 1, cfg.RateLimit)
+	assert.Equal(t, "", cfg.CryptoKey)
 }
