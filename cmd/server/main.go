@@ -7,9 +7,8 @@ import (
 	"metrics/internal/config"
 	server2 "metrics/internal/config/server"
 	"metrics/internal/logger"
-	"metrics/internal/server/repository"
-	"metrics/internal/server/server"
-
+	"metrics/internal/repository"
+	"metrics/internal/server"
 	"net/http"
 	_ "net/http/pprof"
 

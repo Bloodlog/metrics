@@ -46,6 +46,10 @@ go-test-cover:
 	go test ./... -coverprofile=coverage.out
 	go tool cover -func=coverage.out
 
+go-test-cover-internal:
+	go test ./internal/... -coverprofile=coverage.out
+	go tool cover -func=coverage.out
+
 go-doc:
 	godoc -http=:8081
 

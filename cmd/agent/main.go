@@ -3,11 +3,11 @@ package main
 import (
 	"fmt"
 	"log"
-	"metrics/internal/agent/clients"
-	"metrics/internal/agent/handlers"
-	"metrics/internal/agent/repository"
 	"metrics/internal/config/agent"
+	"metrics/internal/handlers"
 	"metrics/internal/logger"
+	repository2 "metrics/internal/repository"
+	"metrics/internal/service"
 
 	"go.uber.org/zap"
 )
@@ -38,12 +38,12 @@ func run(loggerZap *zap.SugaredLogger) error {
 		return fmt.Errorf("failed to parse flags: %w", err)
 	}
 
-	memoryRepository := repository.NewMemoryRepository()
-	systemRepository := repository.NewSystemRepository()
+	memoryRepository := repository2.NewMemoryRepository()
+	systemRepository := repository2.NewSystemRepository()
 
-	client := clients.NewClient(configs.Address, configs.Key, configs.CryptoKey, loggerZap)
+	client := service.NewClient(configs.Address, configs.Key, configs.CryptoKey, loggerZap)
 
-	applicationHandlers := handlers.NewHandlers(
+	applicationHandlers := handlers.NewAgentHandler(
 		client,
 		configs,
 		memoryRepository,
