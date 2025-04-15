@@ -2,9 +2,9 @@ package middleware
 
 import (
 	"bytes"
-	"crypto/rand"
 	"crypto/rsa"
 	"io"
+	"metrics/internal/security"
 	"net/http"
 	"strconv"
 )
@@ -25,7 +25,7 @@ func DecryptMiddleware(privateKey *rsa.PrivateKey) func(http.Handler) http.Handl
 				_ = Body.Close()
 			}(r.Body)
 
-			decryptedData, err := rsa.DecryptPKCS1v15(rand.Reader, privateKey, encryptedData)
+			decryptedData, err := security.DecryptRSA(privateKey, encryptedData)
 			if err != nil {
 				http.Error(w, "failed to decrypt request body", http.StatusBadRequest)
 				return

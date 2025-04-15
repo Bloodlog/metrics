@@ -1,4 +1,4 @@
-package config
+package agent
 
 import (
 	"testing"
@@ -6,8 +6,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestProcessFlags(t *testing.T) {
-	cfg, err := processFlags(
+func TestProcessAgentFlags(t *testing.T) {
+	cfg, err := processAgentFlags(
 		"localhost:8080",
 		500,
 		600,
@@ -29,8 +29,8 @@ func TestProcessFlags(t *testing.T) {
 	assert.Equal(t, "test", cfg.CryptoKey)
 }
 
-func TestParseFlags(t *testing.T) {
-	cfg, err := ParseFlags()
+func TestParseAgentFlags(t *testing.T) {
+	cfg, err := ParseAgentFlags()
 	assert.NoError(t, err)
 	assert.Equal(t, "http://localhost:8080", cfg.Address)
 

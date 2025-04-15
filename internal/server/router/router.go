@@ -3,7 +3,8 @@ package router
 import (
 	"crypto/rsa"
 	"log"
-	"metrics/internal/server/dto"
+	"metrics/internal/config"
+	"metrics/internal/security"
 	"metrics/internal/server/handlers/api"
 	"metrics/internal/server/handlers/web"
 	"metrics/internal/server/middleware"
@@ -21,7 +22,7 @@ import (
 
 func ConfigureServerHandler(
 	memStorage repository.MetricStorage,
-	cfg *dto.Config,
+	cfg *config.ServerConfig,
 	logger *zap.SugaredLogger,
 ) http.Handler {
 	router := chi.NewRouter()
@@ -50,7 +51,7 @@ func ConfigureServerHandler(
 
 func register(
 	r *chi.Mux,
-	cfg *dto.Config,
+	cfg *config.ServerConfig,
 	memStorage repository.MetricStorage,
 	logger *zap.SugaredLogger,
 ) {
@@ -61,7 +62,7 @@ func register(
 	var privateKey *rsa.PrivateKey
 	if cfg.CryptoKey != "" {
 		var err error
-		privateKey, err = loadRSAPrivateKeyFromFile(cfg.CryptoKey)
+		privateKey, err = security.LoadRSAPrivateKeyFromFile(cfg.CryptoKey)
 		if err != nil {
 			log.Fatalf("failed to load private key: %v", err)
 		}

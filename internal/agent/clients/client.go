@@ -4,6 +4,7 @@ import (
 	"crypto/rsa"
 	"fmt"
 	"log"
+	"metrics/internal/security"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hashicorp/go-retryablehttp"
@@ -32,7 +33,7 @@ func NewClient(serverAddr, key string, cryptoPath string, logger *zap.SugaredLog
 	var publicKey *rsa.PublicKey
 	if cryptoPath != "" {
 		var err error
-		publicKey, err = loadRSAPublicKeyFromCert(cryptoPath)
+		publicKey, err = security.LoadRSAPublicKeyFromCert(cryptoPath)
 		if err != nil {
 			log.Fatalf("failed to load public key: %v", err)
 		}

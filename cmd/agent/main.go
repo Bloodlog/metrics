@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"log"
 	"metrics/internal/agent/clients"
-	"metrics/internal/agent/config"
 	"metrics/internal/agent/handlers"
-	"metrics/internal/agent/logger"
 	"metrics/internal/agent/repository"
+	"metrics/internal/config/agent"
+	"metrics/internal/logger"
 
 	"go.uber.org/zap"
 )
@@ -33,7 +33,7 @@ func main() {
 }
 
 func run(loggerZap *zap.SugaredLogger) error {
-	configs, err := config.ParseFlags()
+	configs, err := agent.ParseAgentFlags()
 	if err != nil {
 		return fmt.Errorf("failed to parse flags: %w", err)
 	}

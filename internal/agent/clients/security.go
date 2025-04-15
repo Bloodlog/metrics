@@ -1,14 +1,9 @@
 package clients
 
 import (
-	"crypto/hmac"
-	"crypto/sha256"
-	"encoding/base64"
+	"metrics/internal/security"
 )
 
 func (c *Client) hash(data []byte) string {
-	h := hmac.New(sha256.New, []byte(c.Key))
-	h.Write(data)
-	hash := h.Sum(nil)
-	return base64.StdEncoding.EncodeToString(hash)
+	return security.HMACSHA256Base64(data, []byte(c.Key))
 }

@@ -6,6 +6,7 @@ import (
 	"metrics/internal/agent/dto"
 	"metrics/internal/agent/repository"
 	"metrics/internal/agent/service"
+	"metrics/internal/config"
 	"sync"
 	"time"
 
@@ -26,7 +27,7 @@ type MetricsPayload struct {
 	PollCount int64
 }
 type Handlers struct {
-	configs          *dto.Config
+	configs          *config.AgentConfig
 	memoryRepository *repository.MemoryRepository
 	systemRepository *repository.SystemRepository
 	logger           *zap.SugaredLogger
@@ -36,7 +37,7 @@ type Handlers struct {
 
 func NewHandlers(
 	client *clients.Client,
-	configs *dto.Config,
+	configs *config.AgentConfig,
 	memoryRepository *repository.MemoryRepository,
 	systemRepository *repository.SystemRepository,
 	logger *zap.SugaredLogger,

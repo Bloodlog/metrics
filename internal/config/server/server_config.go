@@ -1,15 +1,11 @@
-package config
+package server
 
 import (
-	"errors"
 	"flag"
 	"fmt"
-	"metrics/internal/server/dto"
+	"metrics/internal/config"
 	"net"
-	"net/url"
 	"os"
-	"strconv"
-	"strings"
 )
 
 const (
@@ -59,7 +55,7 @@ const (
 	cryptoKeyDescription = "Cryptographic encryption key"
 )
 
-func ParseFlags() (*dto.Config, error) {
+func ParseFlags() (*config.ServerConfig, error) {
 	addressFlag := flag.String(flagHTTPAddress, defaultHTTPAddress, descriptionHTTPAddress)
 	storeIntervalFlag := flag.Int(flagStoreInterval, defaultStoreInterval, descriptionStoreInterval)
 	storagePathFlag := flag.String(flagFileStoragePath, defaultFileStoragePath, descriptionFileStoragePath)
@@ -73,7 +69,7 @@ func ParseFlags() (*dto.Config, error) {
 	flag.Parse()
 
 	uknownArguments := flag.Args()
-	if err := validateUnknownArgs(uknownArguments); err != nil {
+	if err := config.ValidateUnknownArgs(uknownArguments); err != nil {
 		return nil, fmt.Errorf("read flag UnknownArgs: %w", err)
 	}
 
@@ -102,7 +98,7 @@ func processFlags(
 	enablePprof bool,
 	configShort string,
 	configLong string,
-) (*dto.Config, error) {
+) (*config.ServerConfig, error) {
 	configPath := configLong
 	if configPath == "" {
 		configPath = configShort
@@ -112,58 +108,56 @@ func processFlags(
 			configPath = fromEnv
 		}
 	}
-	var fileCfg dto.Config
+	var fileCfg config.ServerConfig
 	if configPath != "" {
-		loaded, err := loadConfigFromFile(configPath)
+		err := config.LoadConfigFromFile(configPath, &fileCfg)
 		if err != nil {
 			return nil, fmt.Errorf("load config from file: %w", err)
 		}
-		fileCfg = *loaded
 	}
 
-	finalAddress, err := getStringValue(addressFlag, envHTTPAddress, fileCfg.Address)
+	finalAddress, err := config.GetStringValue(addressFlag, envHTTPAddress, fileCfg.Address)
 	if err != nil {
 		finalAddress = ""
 	}
 
-	host, port, err := parseAddress(finalAddress)
+	host, port, err := config.ParseAddress(finalAddress)
 	if err != nil {
 		return nil, fmt.Errorf("read flag address: %w", err)
 	}
 	address := net.JoinHostPort(host, port)
 
-	storeInterval, err := getIntValue(storeIntervalFlag, envStoreInterval, fileCfg.StoreInterval)
+	storeInterval, err := config.GetIntValue(storeIntervalFlag, envStoreInterval, fileCfg.StoreInterval)
 	if err != nil {
 		return nil, fmt.Errorf("read flag report interval: %w", err)
 	}
 
-	storagePath, err := getStringValue(storagePathFlag, envFileStoragePath, fileCfg.FileStoragePath)
+	storagePath, err := config.GetStringValue(storagePathFlag, envFileStoragePath, fileCfg.FileStoragePath)
 	if err != nil {
 		return nil, fmt.Errorf("read flag storage: %w", err)
 	}
 
-	restore := fileCfg.Restore
-	restore, err = getBoolValue(restoreFlag, envRestore)
+	restore, err := config.GetBoolValue(restoreFlag, envRestore)
 	if err != nil {
 		return nil, fmt.Errorf("read flag restore: %w", err)
 	}
 
-	databaseDsn, err := getStringValue(addressDatabaseFlag, envDatabaseDSN, fileCfg.DatabaseDsn)
+	databaseDsn, err := config.GetStringValue(addressDatabaseFlag, envDatabaseDSN, fileCfg.DatabaseDsn)
 	if err != nil {
 		databaseDsn = ""
 	}
 
-	key, err := getStringValue(keyFlag, envKey, fileCfg.Key)
+	key, err := config.GetStringValue(keyFlag, envKey, fileCfg.Key)
 	if err != nil {
 		key = ""
 	}
 
-	cryptoKey, err := getStringValue(cryptoKeyFlag, envCryptoKey, fileCfg.CryptoKey)
+	cryptoKey, err := config.GetStringValue(cryptoKeyFlag, envCryptoKey, fileCfg.CryptoKey)
 	if err != nil {
 		cryptoKey = ""
 	}
 
-	return &dto.Config{
+	return &config.ServerConfig{
 		Address:         address,
 		StoreInterval:   storeInterval,
 		FileStoragePath: storagePath,
@@ -173,78 +167,4 @@ func processFlags(
 		Debug:           enablePprof,
 		CryptoKey:       cryptoKey,
 	}, nil
-}
-
-func validateUnknownArgs(unknownArgs []string) error {
-	if len(unknownArgs) > 0 {
-		return fmt.Errorf("unknown flags or arguments detected: %v", unknownArgs)
-	}
-	return nil
-}
-
-func parseAddress(address string) (string, string, error) {
-	if !strings.HasPrefix(address, "http://") && !strings.HasPrefix(address, "https://") {
-		address = "http://" + address
-	}
-	parsedURL, err := url.Parse(address)
-	if err != nil {
-		return "", "", errors.New("failed to parse address (expected host:port)")
-	}
-
-	host := parsedURL.Hostname()
-	port := parsedURL.Port()
-
-	if host == "" || port == "" {
-		return "", "", errors.New("failed to parse address (expected host:port)")
-	}
-
-	return host, port, nil
-}
-
-func getStringValue(flagValue, envKey string, fileVal string) (string, error) {
-	if envValue, exists := os.LookupEnv(envKey); exists {
-		return envValue, nil
-	}
-
-	if flagValue != "" {
-		return flagValue, nil
-	}
-
-	if fileVal != "" {
-		return fileVal, nil
-	}
-
-	return "", fmt.Errorf("missing required configuration: %s or flag value", envKey)
-}
-
-func getIntValue(flagValue int, envKey string, fileVal int) (int, error) {
-	if envValue, exists := os.LookupEnv(envKey); exists {
-		parsedValue, err := strconv.Atoi(envValue)
-		if err != nil {
-			return 0, fmt.Errorf("invalid value for environment variable %s: %s", envKey, envValue)
-		}
-		return parsedValue, nil
-	}
-
-	if flagValue != 0 {
-		return flagValue, nil
-	}
-
-	if fileVal != 0 {
-		return fileVal, nil
-	}
-
-	return 0, fmt.Errorf("missing required configuration: %s or flag value", envKey)
-}
-
-func getBoolValue(flagValue bool, envKey string) (bool, error) {
-	if envValue, exists := os.LookupEnv(envKey); exists {
-		parsedValue, err := strconv.ParseBool(envValue)
-		if err != nil {
-			return false, fmt.Errorf("invalid boolean value for environment variable %s: %s", envKey, envValue)
-		}
-		return parsedValue, nil
-	}
-
-	return flagValue, nil
 }

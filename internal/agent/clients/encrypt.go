@@ -1,19 +1,18 @@
 package clients
 
 import (
-	"crypto/rand"
-	"crypto/rsa"
 	"errors"
 	"fmt"
+	"metrics/internal/security"
 )
 
 func (c *Client) encrypt(data []byte) ([]byte, error) {
 	if c.PublicKey == nil {
 		return nil, errors.New("public key is not loaded")
 	}
-	encryptedData, err := rsa.EncryptPKCS1v15(rand.Reader, c.PublicKey, data)
+	encrypted, err := security.EncryptWithPublicKey(data, c.PublicKey)
 	if err != nil {
-		return nil, fmt.Errorf("encryption failed: %w", err)
+		return nil, fmt.Errorf("encrypt with public key: %w", err)
 	}
-	return encryptedData, nil
+	return encrypted, nil
 }

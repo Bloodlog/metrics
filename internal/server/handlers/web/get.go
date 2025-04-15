@@ -2,7 +2,7 @@ package web
 
 import (
 	"errors"
-	"metrics/internal/server/apperrors"
+	"metrics/internal/apperrors"
 	"metrics/internal/server/dto"
 	"net/http"
 	"strconv"

@@ -2,7 +2,7 @@ package repository
 
 import (
 	"context"
-	"metrics/internal/server/dto"
+	"metrics/internal/config"
 	"os"
 	"testing"
 	"time"
@@ -20,7 +20,7 @@ func setupFileRetryStorageWrapper(t *testing.T) *FileRetryStorageWrapper {
 		_ = os.Remove(tempFile.Name())
 	}()
 
-	cfg := &dto.Config{
+	cfg := &config.ServerConfig{
 		FileStoragePath: tempFileNamePattern,
 		StoreInterval:   1,
 		Restore:         false,

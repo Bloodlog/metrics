@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"metrics/internal/server/config"
-	"metrics/internal/server/dto"
-	"metrics/internal/server/logger"
+	"metrics/internal/config"
+	server2 "metrics/internal/config/server"
+	"metrics/internal/logger"
 	"metrics/internal/server/repository"
 	"metrics/internal/server/server"
 
@@ -42,7 +42,7 @@ func main() {
 // @host 127.0.0.1:8080
 // @BasePath /.
 func run(loggerZap *zap.SugaredLogger) error {
-	cfg, err := config.ParseFlags()
+	cfg, err := server2.ParseFlags()
 	if err != nil {
 		loggerZap.Info(err.Error(), "failed to parse flags")
 		return fmt.Errorf("failed to parse flags: %w", err)
@@ -61,7 +61,7 @@ func run(loggerZap *zap.SugaredLogger) error {
 	return nil
 }
 
-func initPprof(cfg *dto.Config, zapLog *zap.SugaredLogger) {
+func initPprof(cfg *config.ServerConfig, zapLog *zap.SugaredLogger) {
 	if cfg.Debug {
 		go func() {
 			err := http.ListenAndServe("0.0.0.0"+":6060", nil)

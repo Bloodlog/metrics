@@ -4,6 +4,7 @@ import (
 	"metrics/internal/agent/clients"
 	"metrics/internal/agent/dto"
 	"metrics/internal/agent/repository"
+	"metrics/internal/config"
 	"net/http"
 	"testing"
 
@@ -35,7 +36,7 @@ func TestSendAPI_Success(t *testing.T) {
 
 	h := NewHandlers(
 		client,
-		&dto.Config{},
+		&config.AgentConfig{},
 		repository.NewMemoryRepository(),
 		repository.NewSystemRepository(),
 		client.Logger,
@@ -53,7 +54,7 @@ func TestSendBatch_Success(t *testing.T) {
 
 	h := NewHandlers(
 		client,
-		&dto.Config{},
+		&config.AgentConfig{},
 		repository.NewMemoryRepository(),
 		repository.NewSystemRepository(),
 		client.Logger,

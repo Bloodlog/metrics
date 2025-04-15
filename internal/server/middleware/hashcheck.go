@@ -2,14 +2,11 @@ package middleware
 
 import (
 	"bytes"
-	"crypto/hmac"
-	"encoding/base64"
 	"io"
+	"metrics/internal/security"
 	"net/http"
 
 	"go.uber.org/zap"
-
-	"crypto/sha256"
 )
 
 func CheckHashMiddleware(logger *zap.SugaredLogger, key string) func(next http.Handler) http.Handler {
@@ -29,24 +26,12 @@ func CheckHashMiddleware(logger *zap.SugaredLogger, key string) func(next http.H
 			}
 			r.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
 
-			providedHashBytes, err := base64.StdEncoding.DecodeString(providedHash)
-			if err != nil {
-				logger.Infoln("invalid hash format")
-				http.Error(w, "", http.StatusBadRequest)
-				return
-			}
-
-			h := hmac.New(sha256.New, []byte(key))
-			h.Write(bodyBytes)
-			expectedHash := h.Sum(nil)
-
-			if !hmac.Equal(expectedHash, providedHashBytes) {
+			if !security.CheckHMACSHA256Base64(bodyBytes, []byte(key), providedHash) {
 				http.Error(w, "", http.StatusBadRequest)
 				logger.Infoln(
 					"hash mismatch",
 					"method", r.Method,
 					"uri", r.RequestURI,
-					"expectedHash", expectedHash,
 					"providedHash", providedHash,
 				)
 				return

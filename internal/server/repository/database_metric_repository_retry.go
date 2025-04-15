@@ -3,19 +3,19 @@ package repository
 import (
 	"context"
 	"fmt"
-	"metrics/internal/server/dto"
+	"metrics/internal/config"
 
 	"go.uber.org/zap"
 )
 
 type RetryDBRepository struct {
 	storage *DBRepository
-	cfg     *dto.Config
+	cfg     *config.ServerConfig
 }
 
 func NewRetryBRepository(
 	ctx context.Context,
-	cfg *dto.Config,
+	cfg *config.ServerConfig,
 	logger *zap.SugaredLogger,
 ) (*RetryDBRepository, error) {
 	handlerLogger := logger.With("retry", "NewRetryBRepository")

@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"metrics/internal/server/apperrors"
+	"metrics/internal/apperrors"
 	"metrics/internal/server/dto"
 	"metrics/internal/server/repository"
 

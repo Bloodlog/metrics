@@ -2,7 +2,7 @@ package server
 
 import (
 	"fmt"
-	"metrics/internal/server/dto"
+	"metrics/internal/config"
 	"metrics/internal/server/repository"
 	"metrics/internal/server/router"
 	"net/http"
@@ -12,7 +12,7 @@ import (
 
 func ConfigureServerHandler(
 	memStorage repository.MetricStorage,
-	cfg *dto.Config,
+	cfg *config.ServerConfig,
 	logger *zap.SugaredLogger,
 ) error {
 	handlerLogger := logger.With("r", "r")

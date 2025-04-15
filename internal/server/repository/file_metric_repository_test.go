@@ -2,7 +2,7 @@ package repository
 
 import (
 	"context"
-	"metrics/internal/server/dto"
+	"metrics/internal/config"
 	"os"
 	"sync"
 	"testing"
@@ -28,7 +28,7 @@ func setupTestFileStorage(t *testing.T) *FileStorageWrapper {
 		_ = os.Remove(tempFile.Name())
 	}()
 
-	cfg := &dto.Config{
+	cfg := &config.ServerConfig{
 		FileStoragePath: tempFileNamePattern,
 		StoreInterval:   1,
 		Restore:         false,
@@ -49,7 +49,7 @@ func TestSaveToFileAndLoadFromFile(t *testing.T) {
 		_ = os.Remove(tempFile.Name())
 	}()
 
-	cfg := &dto.Config{
+	cfg := &config.ServerConfig{
 		FileStoragePath: tempFile.Name(),
 		Restore:         false,
 		StoreInterval:   0,

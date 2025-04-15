@@ -1,7 +1,7 @@
 package router
 
 import (
-	"metrics/internal/server/dto"
+	"metrics/internal/config"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -27,7 +27,7 @@ func TestRouter(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.method, func(t *testing.T) {
-			configs := dto.Config{}
+			configs := config.ServerConfig{}
 			logger := zap.NewNop()
 			sugar := logger.Sugar()
 

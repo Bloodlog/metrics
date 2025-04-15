@@ -2,7 +2,7 @@ package repository
 
 import (
 	"context"
-	"metrics/internal/server/dto"
+	"metrics/internal/config"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -13,16 +13,16 @@ func TestNewMetricStorage(t *testing.T) {
 	logger := zap.NewExample().Sugar()
 
 	tests := []struct {
-		cfg  *dto.Config
+		cfg  *config.ServerConfig
 		name string
 	}{
 		{
 			name: "Memory storage",
-			cfg:  &dto.Config{},
+			cfg:  &config.ServerConfig{},
 		},
 		{
 			name: "File retry storage",
-			cfg: &dto.Config{
+			cfg: &config.ServerConfig{
 				FileStoragePath: "/some/path",
 			},
 		},

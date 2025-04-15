@@ -3,20 +3,20 @@ package repository
 import (
 	"context"
 	"fmt"
-	"metrics/internal/server/dto"
+	"metrics/internal/config"
 
 	"go.uber.org/zap"
 )
 
 type FileRetryStorageWrapper struct {
 	fileStorage *FileStorageWrapper
-	cfg         *dto.Config
+	cfg         *config.ServerConfig
 	logger      *zap.SugaredLogger
 }
 
 func NewRetryFileStorage(
 	ctx context.Context,
-	cfg *dto.Config,
+	cfg *config.ServerConfig,
 	logger *zap.SugaredLogger,
 ) (*FileRetryStorageWrapper, error) {
 	handlerLogger := logger.With("file-retry", "NewRetryFileStorageWrapper")

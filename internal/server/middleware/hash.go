@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"crypto/hmac"
 	"crypto/sha256"
-	"encoding/base64"
 	"fmt"
+	"metrics/internal/security"
 	"net/http"
 )
 
@@ -23,9 +23,9 @@ func ResponseHashMiddleware(key string) func(next http.Handler) http.Handler {
 			}
 			h := hmac.New(sha256.New, []byte(key))
 			h.Write(hashWriter.body.Bytes())
-			hashHex := base64.StdEncoding.EncodeToString(h.Sum(nil))
+			hash := security.HMACSHA256Base64(hashWriter.body.Bytes(), []byte(key))
 
-			w.Header().Set("HashSHA256", hashHex)
+			w.Header().Set("HashSHA256", hash)
 
 			next.ServeHTTP(hashWriter, r)
 		})
