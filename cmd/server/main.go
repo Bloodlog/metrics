@@ -4,11 +4,11 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"metrics/internal/server/config"
-	"metrics/internal/server/logger"
-	"metrics/internal/server/repository"
-	"metrics/internal/server/server"
-
+	"metrics/internal/config"
+	server2 "metrics/internal/config/server"
+	"metrics/internal/logger"
+	"metrics/internal/repository"
+	"metrics/internal/server"
 	"net/http"
 	_ "net/http/pprof"
 
@@ -41,7 +41,7 @@ func main() {
 // @host 127.0.0.1:8080
 // @BasePath /.
 func run(loggerZap *zap.SugaredLogger) error {
-	cfg, err := config.ParseFlags()
+	cfg, err := server2.ParseFlags()
 	if err != nil {
 		loggerZap.Info(err.Error(), "failed to parse flags")
 		return fmt.Errorf("failed to parse flags: %w", err)
@@ -60,10 +60,10 @@ func run(loggerZap *zap.SugaredLogger) error {
 	return nil
 }
 
-func initPprof(cfg *config.Config, zapLog *zap.SugaredLogger) {
+func initPprof(cfg *config.ServerConfig, zapLog *zap.SugaredLogger) {
 	if cfg.Debug {
 		go func() {
-			err := http.ListenAndServe(cfg.NetAddress.Host+":6060", nil)
+			err := http.ListenAndServe("0.0.0.0"+":6060", nil)
 			if err != nil {
 				zapLog.Info(err.Error(), "failed start profiler")
 			}
