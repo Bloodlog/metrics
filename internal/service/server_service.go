@@ -4,8 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"go.uber.org/zap"
 	"metrics/internal/repository"
+
+	"go.uber.org/zap"
 )
 
 var ErrMetricNotFound = errors.New("metric not found")
