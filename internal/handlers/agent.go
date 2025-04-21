@@ -1,11 +1,15 @@
 package handlers
 
 import (
+	"context"
 	"fmt"
 	"metrics/internal/config"
 	repository2 "metrics/internal/repository"
 	"metrics/internal/service"
+	"os"
+	"os/signal"
 	"sync"
+	"syscall"
 	"time"
 
 	"go.uber.org/zap"
@@ -51,6 +55,12 @@ func NewAgentHandler(
 }
 
 func (h *AgentHandler) Handle() error {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	sigCh := make(chan os.Signal, 1)
+	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
+
 	pollTicker := time.NewTicker(time.Duration(h.configs.PollInterval) * time.Second)
 	reportTicker := time.NewTicker(time.Duration(h.configs.ReportInterval) * time.Second)
 	defer pollTicker.Stop()
@@ -66,31 +76,56 @@ func (h *AgentHandler) Handle() error {
 
 	var runtimeMetrics []repository2.Metric
 	var systemMetrics []repository2.Metric
-	counter := 0
+	var counter int64 = 0
 
 	go func() {
-		for range pollTicker.C {
-			runtimeMetrics = h.memoryRepository.GetMetrics()
-			counter++
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-pollTicker.C:
+				runtimeMetrics = h.memoryRepository.GetMetrics()
+				counter++
+			}
 		}
 	}()
 
 	go func() {
-		for range pollTicker.C {
-			systemMetrics = h.systemRepository.GetMetrics()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-pollTicker.C:
+				systemMetrics = h.systemRepository.GetMetrics()
+			}
 		}
 	}()
 
-	for range reportTicker.C {
-		h.sendQueue <- MetricsPayload{
-			Metrics:   append(runtimeMetrics, systemMetrics...),
-			PollCount: int64(counter),
+loop:
+	for {
+		select {
+		case <-ctx.Done():
+			break loop
+		case <-reportTicker.C:
+			h.sendQueue <- MetricsPayload{
+				Metrics:   append(runtimeMetrics, systemMetrics...),
+				PollCount: counter,
+			}
+		case sig := <-sigCh:
+			h.logger.Infof("Received signal: %s, shutting down...", sig)
+			cancel()
+			break loop
 		}
+	}
+	h.sendQueue <- MetricsPayload{
+		Metrics:   append(runtimeMetrics, systemMetrics...),
+		PollCount: counter,
 	}
 
 	close(h.sendQueue)
 	wg.Wait()
 
+	h.logger.Info("Agent gracefully shut down")
 	return nil
 }
 
