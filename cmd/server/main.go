@@ -11,6 +11,8 @@ import (
 	"metrics/internal/server"
 	"net/http"
 	_ "net/http/pprof"
+	"os/signal"
+	"syscall"
 
 	"go.uber.org/zap"
 )
@@ -46,7 +48,9 @@ func run(loggerZap *zap.SugaredLogger) error {
 		loggerZap.Info(err.Error(), "failed to parse flags")
 		return fmt.Errorf("failed to parse flags: %w", err)
 	}
-	ctx := context.Background()
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
+	defer stop()
+
 	memStorage, err := repository.NewMetricStorage(ctx, cfg, loggerZap)
 	if err != nil {
 		return fmt.Errorf("repository error: %w", err)
@@ -56,6 +60,9 @@ func run(loggerZap *zap.SugaredLogger) error {
 	if err = server.ConfigureServerHandler(memStorage, cfg, loggerZap); err != nil {
 		return fmt.Errorf("failed to run router: %w", err)
 	}
+
+	<-ctx.Done()
+	loggerZap.Info("Shutdown signal received")
 
 	return nil
 }
