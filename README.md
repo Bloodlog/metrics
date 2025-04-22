@@ -44,3 +44,41 @@ git fetch template && git checkout template/main .github
 * [Go doc dto](http://127.0.0.1:8081/pkg/metrics/internal/server/dto/)
 * [Go doc api handlers](http://127.0.0.1:8081/pkg/metrics/internal/server/handlers/api/)
 * [Go doc web handlers](http://localhost:8081/pkg/metrics/internal/server/handlers/web/)
+
+ 
+### Поддержка асимметричного шифрования
+* флаг: -crypto-key 
+* env CRYPTO_KEY
+
+Папка cert - может использоваться для сертификатов.
+
+``` make certificate ``` - может использоваться для создания сертификатов
+
+
+### Поддержка внешнего конфига
+* флаг -c -config
+* env CONFIG 
+
+example configs:
+
+agent_config
+```json
+{
+  "address": "localhost:8080", // аналог переменной окружения ADDRESS или флага -a
+  "report_interval": "1s", // аналог переменной окружения REPORT_INTERVAL или флага -r
+  "poll_interval": "1s", // аналог переменной окружения POLL_INTERVAL или флага -p
+  "crypto_key": "/path/to/key.pem" // аналог переменной окружения CRYPTO_KEY или флага -crypto-key
+}
+```
+
+server_config
+```json
+{
+  "address": "localhost:8080", // аналог переменной окружения ADDRESS или флага -a
+  "restore": true, // аналог переменной окружения RESTORE или флага -r
+  "store_interval": "1s", // аналог переменной окружения STORE_INTERVAL или флага -i
+  "store_file": "/path/to/file.db", // аналог переменной окружения STORE_FILE или -f
+  "database_dsn": "", // аналог переменной окружения DATABASE_DSN или флага -d
+  "crypto_key": "/path/to/key.pem" // аналог переменной окружения CRYPTO_KEY или флага -crypto-key
+} 
+```
