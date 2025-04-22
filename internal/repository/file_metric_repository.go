@@ -174,29 +174,29 @@ func (fw *FileStorageWrapper) isEnableAutoSave() bool {
 }
 
 func (fw *FileStorageWrapper) loadFromFile(ctx context.Context) error {
-	file, err := os.Open(fw.cfg.FileStoragePath)
+	info, err := os.Stat(fw.cfg.FileStoragePath)
 	if err != nil {
 		if os.IsNotExist(err) {
-			fw.logger.Info("loadFromFile: File not exist.")
+			fw.logger.Info("loadFromFile: File does not exist")
 			return nil
 		}
+		return fmt.Errorf("error stat file %s: %w", fw.cfg.FileStoragePath, err)
+	}
 
-		return fmt.Errorf("error load file %s: %w", fw.cfg.FileStoragePath, err)
+	if info.Size() == 0 {
+		fw.logger.Warn("loadFromFile: File is empty, skipping restore")
+		return nil
+	}
+
+	file, err := os.Open(fw.cfg.FileStoragePath)
+	if err != nil {
+		return fmt.Errorf("error opening file %s: %w", fw.cfg.FileStoragePath, err)
 	}
 	defer func() {
 		if closeErr := file.Close(); closeErr != nil {
 			err = fmt.Errorf("error closing file %s: %w", fw.cfg.FileStoragePath, closeErr)
 		}
 	}()
-
-	info, err := file.Stat()
-	if err != nil {
-		return fmt.Errorf("failed to stat file %s: %w", fw.cfg.FileStoragePath, err)
-	}
-	if info.Size() == 0 {
-		fw.logger.Warn("loadFromFile: File is empty, skipping restore")
-		return nil
-	}
 
 	var data struct {
 		Gauges   map[string]float64 `json:"gauges"`
