@@ -34,14 +34,14 @@ func NewRetryFileStorage(
 		return nil, fmt.Errorf("failed to create FileStorageWrapper: %w", err)
 	}
 
-	fileRetryrepo := &FileRetryStorageWrapper{
+	fileRetryRepo := &FileRetryStorageWrapper{
 		fileStorage: fileRepo,
 		cfg:         cfg,
 		logger:      handlerLogger,
 	}
 
 	handlerLogger.Infof("Using file storage with retry: %s", cfg.FileStoragePath)
-	return fileRetryrepo, nil
+	return fileRetryRepo, nil
 }
 
 func (fr *FileRetryStorageWrapper) SetGauge(ctx context.Context, name string, value float64) (float64, error) {

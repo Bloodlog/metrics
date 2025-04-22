@@ -31,22 +31,23 @@ func NewFileStorageWrapper(
 		logger:  handlerLogger,
 	}
 	if fileStorage.cfg.Restore {
-		logger.Info("Restore is enabled, loading from file...")
+		handlerLogger.Info("Restore is enabled, loading from file...")
 		if err := fileStorage.loadFromFile(ctx); err != nil {
 			return nil, &RetriableError{Err: err}
 		}
-		logger.Info("Successfully loaded metrics from file.")
+		handlerLogger.Info("Successfully loaded metrics from file.")
 	}
 
 	if fileStorage.isEnableAutoSave() {
 		go func() {
+			handlerLogger.Info("autoSave enabled")
 			if err := fileStorage.autoSave(ctx); err != nil {
 				handlerLogger.Info("Error during autoSave", "error", err)
 			}
 		}()
 	}
 
-	logger.Infof("Using file storage: %s", fileStorage.cfg.FileStoragePath)
+	handlerLogger.Infof("Using file storage: %s", fileStorage.cfg.FileStoragePath)
 	return fileStorage, nil
 }
 
@@ -188,6 +189,15 @@ func (fw *FileStorageWrapper) loadFromFile(ctx context.Context) error {
 		}
 	}()
 
+	info, err := file.Stat()
+	if err != nil {
+		return fmt.Errorf("failed to stat file %s: %w", fw.cfg.FileStoragePath, err)
+	}
+	if info.Size() == 0 {
+		fw.logger.Warn("loadFromFile: File is empty, skipping restore")
+		return nil
+	}
+
 	var data struct {
 		Gauges   map[string]float64 `json:"gauges"`
 		Counters map[string]uint64  `json:"counters"`
@@ -222,11 +232,16 @@ func (fw *FileStorageWrapper) autoSave(ctx context.Context) error {
 	ticker := time.NewTicker(time.Duration(fw.cfg.StoreInterval) * time.Second)
 	defer ticker.Stop()
 
-	for range ticker.C {
-		if err := fw.saveToFile(ctx); err != nil {
-			return fmt.Errorf("error saving: %w", err)
+	for {
+		select {
+		case <-ctx.Done():
+			_ = fw.saveToFile(context.Background())
+			fw.logger.Info("AutoSave stopped due to context cancel")
+			return nil
+		case <-ticker.C:
+			if err := fw.saveToFile(ctx); err != nil {
+				return fmt.Errorf("error saving: %w", err)
+			}
 		}
 	}
-
-	return nil
 }

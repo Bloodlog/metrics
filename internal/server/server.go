@@ -1,7 +1,6 @@
 package server
 
 import (
-	"fmt"
 	"metrics/internal/config"
 	"metrics/internal/repository"
 	"metrics/internal/router"
@@ -22,9 +21,11 @@ func ConfigureServerHandler(
 		"Starting server",
 		"addr", cfg.Address,
 	)
-	err := http.ListenAndServe(cfg.Address, r)
-	if err != nil {
-		return fmt.Errorf("failed to start server: %w", err)
-	}
+	go func() {
+		err := http.ListenAndServe(cfg.Address, r)
+		if err != nil {
+			handlerLogger.Info("Failed to start server", "err", err)
+		}
+	}()
 	return nil
 }
