@@ -159,3 +159,7 @@ func (r *DBRepository) UpdateCounterAndGauges(
 
 	return nil
 }
+
+func (r *DBRepository) Shutdown(ctx context.Context) {
+	r.pool.Close()
+}

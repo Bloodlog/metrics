@@ -112,3 +112,6 @@ func (r *RetryDBRepository) UpdateCounterAndGauges(
 		return r.storage.UpdateCounterAndGauges(ctx, counters, gauges)
 	})
 }
+
+func (r *RetryDBRepository) Shutdown(ctx context.Context) {
+}

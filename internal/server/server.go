@@ -2,6 +2,7 @@ package server
 
 import (
 	"errors"
+	"fmt"
 	"metrics/internal/config"
 	"metrics/internal/repository"
 	"metrics/internal/router"
@@ -28,27 +29,30 @@ func ConfigureServerHandler(
 		Addr:    cfg.Address,
 		Handler: r,
 	}
-	go func() {
-		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			handlerLogger.Errorw("Failed to start server", "err", err)
+	if err := srv.ListenAndServe(); err != nil {
+		if errors.Is(err, http.ErrServerClosed) {
+			return nil, nil
 		}
-	}()
+		return nil, fmt.Errorf("listen and server has failed: %w", err)
+	}
 
 	return srv, nil
 }
 
-func InitPprof(cfg *config.ServerConfig, zapLog *zap.SugaredLogger) *http.Server {
+func InitPprof(cfg *config.ServerConfig, zapLog *zap.SugaredLogger) (*http.Server, error) {
 	if cfg.Debug {
-		return nil
+		return nil, nil
 	}
 	pprofServer := &http.Server{
 		Addr: "0.0.0.0:6060",
 	}
-	go func() {
-		if err := pprofServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			zapLog.Warnw("failed to start profiler", "err", err)
+	if err := pprofServer.ListenAndServe(); err != nil {
+		if !errors.Is(err, http.ErrServerClosed) {
+			return nil, nil
 		}
-	}()
 
-	return pprofServer
+		return nil, fmt.Errorf("listen and server has failed: %w", err)
+	}
+
+	return pprofServer, nil
 }

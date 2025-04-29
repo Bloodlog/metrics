@@ -136,3 +136,6 @@ func (fr *FileRetryStorageWrapper) UpdateCounterAndGauges(
 		return nil
 	})
 }
+
+func (fr *FileRetryStorageWrapper) Shutdown(ctx context.Context) {
+}

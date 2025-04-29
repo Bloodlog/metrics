@@ -12,6 +12,9 @@ type MemStorage struct {
 	mu       *sync.RWMutex
 }
 
+func (ms *MemStorage) Shutdown(ctx context.Context) {
+}
+
 func NewMemStorage() (MetricStorage, error) {
 	memStorage := &MemStorage{
 		mu:       &sync.RWMutex{},

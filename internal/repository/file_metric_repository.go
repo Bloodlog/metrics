@@ -245,3 +245,7 @@ func (fw *FileStorageWrapper) autoSave(ctx context.Context) error {
 		}
 	}
 }
+
+func (fw *FileStorageWrapper) Shutdown(ctx context.Context) {
+	_ = fw.saveToFile(ctx)
+}

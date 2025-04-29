@@ -4,12 +4,16 @@ import (
 	"context"
 	"fmt"
 	"log"
-	server2 "metrics/internal/config/server"
+	config "metrics/internal/config/server"
 	"metrics/internal/logger"
 	"metrics/internal/repository"
 	"metrics/internal/server"
+	"net/http"
 	"os/signal"
 	"syscall"
+	"time"
+
+	"golang.org/x/sync/errgroup"
 
 	"go.uber.org/zap"
 )
@@ -18,6 +22,11 @@ var (
 	version     = "N/A"
 	buildTime   = "N/A"
 	buildCommit = "N/A"
+)
+
+const (
+	timeoutServerShutdown = time.Second * 5
+	timeoutShutdown       = time.Second * 10
 )
 
 func main() {
@@ -40,38 +49,80 @@ func main() {
 // @host 127.0.0.1:8080
 // @BasePath /.
 func run(loggerZap *zap.SugaredLogger) error {
-	cfg, err := server2.ParseFlags()
+	rootCtx, cancelCtx := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
+	defer cancelCtx()
+
+	g, ctx := errgroup.WithContext(rootCtx)
+
+	context.AfterFunc(ctx, func() {
+		ctx, cancelCtx := context.WithTimeout(context.Background(), timeoutShutdown)
+		defer cancelCtx()
+
+		<-ctx.Done()
+		log.Fatal("failed to gracefully shutdown the service")
+	})
+
+	cfg, err := config.ParseFlags()
 	if err != nil {
 		loggerZap.Info(err.Error(), "failed to parse flags")
 		return fmt.Errorf("failed to parse flags: %w", err)
 	}
-	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
-	defer stop()
 
 	memStorage, err := repository.NewMetricStorage(ctx, cfg, loggerZap)
 	if err != nil {
 		return fmt.Errorf("repository error: %w", err)
 	}
 
-	pprofServer := server.InitPprof(cfg, loggerZap)
+	g.Go(func() error {
+		defer log.Print("closed DB")
 
-	httpServer, err := server.ConfigureServerHandler(memStorage, cfg, loggerZap)
-	if err != nil {
-		return fmt.Errorf("failed to run router: %w", err)
-	}
+		<-ctx.Done()
 
-	<-ctx.Done()
-	loggerZap.Info("Shutdown signal received")
-	if err = httpServer.Shutdown(context.Background()); err != nil {
-		loggerZap.Info("HTTP server Shutdown: %v", err)
-	}
+		memStorage.Shutdown(ctx)
+		return nil
+	})
 
-	if pprofServer != nil {
-		if err = pprofServer.Shutdown(context.Background()); err != nil {
-			loggerZap.Errorw("PProf server Shutdown failed", "error", err)
-		} else {
-			loggerZap.Info("PProf server gracefully stopped")
+	var httpServer *http.Server
+	var pprofServer *http.Server
+
+	g.Go(func() (err error) {
+		pprofServer, err = server.InitPprof(cfg, loggerZap)
+		if err != nil {
+			return fmt.Errorf("listen and server has failed: %w", err)
 		}
+		return nil
+	})
+	g.Go(func() (err error) {
+		httpServer, err = server.ConfigureServerHandler(memStorage, cfg, loggerZap)
+		if err != nil {
+			return fmt.Errorf("listen and server has failed: %w", err)
+		}
+
+		return nil
+	})
+
+	g.Go(func() error {
+		defer log.Print("server has been shutdown")
+		<-ctx.Done()
+
+		shutdownTimeoutCtx, cancelShutdownTimeoutCtx := context.WithTimeout(context.Background(), timeoutServerShutdown)
+		defer cancelShutdownTimeoutCtx()
+		if pprofServer != nil {
+			if err := pprofServer.Shutdown(shutdownTimeoutCtx); err != nil {
+				loggerZap.Info("PProf server gracefully stopped: %v", err)
+			}
+		}
+		if httpServer != nil {
+			if err := httpServer.Shutdown(shutdownTimeoutCtx); err != nil {
+				loggerZap.Info("HTTP server Shutdown: %v", err)
+			}
+		}
+
+		return nil
+	})
+
+	if err := g.Wait(); err != nil {
+		return err
 	}
 
 	return nil

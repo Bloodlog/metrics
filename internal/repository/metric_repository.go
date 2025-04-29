@@ -10,4 +10,5 @@ type MetricStorage interface {
 	Gauges(ctx context.Context) (map[string]float64, error)
 	Counters(ctx context.Context) (map[string]uint64, error)
 	UpdateCounterAndGauges(ctx context.Context, counters map[string]uint64, gauges map[string]float64) error
+	Shutdown(ctx context.Context)
 }
