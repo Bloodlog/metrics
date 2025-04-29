@@ -1,7 +1,6 @@
 package server
 
 import (
-	"errors"
 	"fmt"
 	"metrics/internal/config"
 	"metrics/internal/repository"
@@ -30,27 +29,17 @@ func ConfigureServerHandler(
 		Handler: r,
 	}
 	if err := srv.ListenAndServe(); err != nil {
-		if errors.Is(err, http.ErrServerClosed) {
-			return nil, nil
-		}
-		return nil, fmt.Errorf("listen and server has failed: %w", err)
+		return srv, fmt.Errorf("listen and server has failed: %w", err)
 	}
 
 	return srv, nil
 }
 
-func InitPprof(cfg *config.ServerConfig, zapLog *zap.SugaredLogger) (*http.Server, error) {
-	if cfg.Debug {
-		return nil, nil
-	}
+func InitPprof() (*http.Server, error) {
 	pprofServer := &http.Server{
 		Addr: "0.0.0.0:6060",
 	}
 	if err := pprofServer.ListenAndServe(); err != nil {
-		if !errors.Is(err, http.ErrServerClosed) {
-			return nil, nil
-		}
-
 		return nil, fmt.Errorf("listen and server has failed: %w", err)
 	}
 

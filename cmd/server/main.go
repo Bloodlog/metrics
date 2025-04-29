@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	config "metrics/internal/config/server"
@@ -85,16 +86,39 @@ func run(loggerZap *zap.SugaredLogger) error {
 	var httpServer *http.Server
 	var pprofServer *http.Server
 
-	g.Go(func() (err error) {
-		pprofServer, err = server.InitPprof(cfg, loggerZap)
-		if err != nil {
-			return fmt.Errorf("listen and server has failed: %w", err)
-		}
-		return nil
-	})
+	if cfg.Debug {
+		g.Go(func() (err error) {
+			pprofServer, err = server.InitPprof()
+			if err != nil {
+				if errors.Is(err, http.ErrServerClosed) {
+					return
+				}
+				return fmt.Errorf("listen and server has failed: %w", err)
+			}
+			return nil
+		})
+		g.Go(func() error {
+			defer log.Print("PProf server has been shutdown")
+			<-ctx.Done()
+
+			shutdownTimeoutCtx, cancelShutdownTimeoutCtx := context.WithTimeout(context.Background(), timeoutServerShutdown)
+			defer cancelShutdownTimeoutCtx()
+
+			if pprofServer != nil {
+				if err := pprofServer.Shutdown(shutdownTimeoutCtx); err != nil {
+					loggerZap.Info("PProf server gracefully stopped: %v", err)
+				}
+			}
+			return nil
+		})
+	}
+
 	g.Go(func() (err error) {
 		httpServer, err = server.ConfigureServerHandler(memStorage, cfg, loggerZap)
 		if err != nil {
+			if errors.Is(err, http.ErrServerClosed) {
+				return
+			}
 			return fmt.Errorf("listen and server has failed: %w", err)
 		}
 
@@ -107,11 +131,7 @@ func run(loggerZap *zap.SugaredLogger) error {
 
 		shutdownTimeoutCtx, cancelShutdownTimeoutCtx := context.WithTimeout(context.Background(), timeoutServerShutdown)
 		defer cancelShutdownTimeoutCtx()
-		if pprofServer != nil {
-			if err := pprofServer.Shutdown(shutdownTimeoutCtx); err != nil {
-				loggerZap.Info("PProf server gracefully stopped: %v", err)
-			}
-		}
+
 		if httpServer != nil {
 			if err := httpServer.Shutdown(shutdownTimeoutCtx); err != nil {
 				loggerZap.Info("HTTP server Shutdown: %v", err)
@@ -122,7 +142,7 @@ func run(loggerZap *zap.SugaredLogger) error {
 	})
 
 	if err := g.Wait(); err != nil {
-		return err
+		return fmt.Errorf("failed to wait for errgroup: %w", err)
 	}
 
 	return nil
