@@ -4,13 +4,10 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"metrics/internal/config"
 	server2 "metrics/internal/config/server"
 	"metrics/internal/logger"
 	"metrics/internal/repository"
 	"metrics/internal/server"
-	"net/http"
-	_ "net/http/pprof"
 	"os/signal"
 	"syscall"
 
@@ -56,24 +53,26 @@ func run(loggerZap *zap.SugaredLogger) error {
 		return fmt.Errorf("repository error: %w", err)
 	}
 
-	initPprof(cfg, loggerZap)
-	if err = server.ConfigureServerHandler(memStorage, cfg, loggerZap); err != nil {
+	pprofServer := server.InitPprof(cfg, loggerZap)
+
+	httpServer, err := server.ConfigureServerHandler(memStorage, cfg, loggerZap)
+	if err != nil {
 		return fmt.Errorf("failed to run router: %w", err)
 	}
 
 	<-ctx.Done()
 	loggerZap.Info("Shutdown signal received")
+	if err = httpServer.Shutdown(context.Background()); err != nil {
+		loggerZap.Info("HTTP server Shutdown: %v", err)
+	}
+
+	if pprofServer != nil {
+		if err = pprofServer.Shutdown(context.Background()); err != nil {
+			loggerZap.Errorw("PProf server Shutdown failed", "error", err)
+		} else {
+			loggerZap.Info("PProf server gracefully stopped")
+		}
+	}
 
 	return nil
-}
-
-func initPprof(cfg *config.ServerConfig, zapLog *zap.SugaredLogger) {
-	if cfg.Debug {
-		go func() {
-			err := http.ListenAndServe("0.0.0.0"+":6060", nil)
-			if err != nil {
-				zapLog.Info(err.Error(), "failed start profiler")
-			}
-		}()
-	}
 }
