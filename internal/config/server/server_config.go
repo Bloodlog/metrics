@@ -64,6 +64,7 @@ func ParseFlags() (*config.ServerConfig, error) {
 	keyFlag := flag.String(flagKey, defaultKey, descriptionKey)
 	cryptoFlag := flag.String(flagCryptoKey, "", cryptoKeyDescription)
 	enablePprof := flag.Bool("pprof", false, "enable pprof for debugging")
+	trustedSubnet := flag.String("t", "", "CIDR")
 	configShort := flag.String("c", "", "Path to config file (short)")
 	configLong := flag.String("config", "", "Path to config file (long)")
 	flag.Parse()
@@ -82,6 +83,7 @@ func ParseFlags() (*config.ServerConfig, error) {
 		*keyFlag,
 		*cryptoFlag,
 		*enablePprof,
+		*trustedSubnet,
 		*configShort,
 		*configLong,
 	)
@@ -96,6 +98,7 @@ func processFlags(
 	keyFlag string,
 	cryptoKeyFlag string,
 	enablePprof bool,
+	trustedSubnetFlag string,
 	configShort string,
 	configLong string,
 ) (*config.ServerConfig, error) {
@@ -157,6 +160,22 @@ func processFlags(
 		cryptoKey = ""
 	}
 
+	trustedSubnet, err := config.GetStringValue(trustedSubnetFlag, "TRUSTED_SUBNET", fileCfg.TrustedSubnet)
+	if err != nil {
+		trustedSubnet = ""
+	}
+
+	var trustedNet *net.IPNet
+	if trustedSubnet != "" {
+		ip, cidr, err := net.ParseCIDR(trustedSubnet)
+		if err != nil {
+			return nil, fmt.Errorf("invalid trusted_subnet: %w", err)
+		}
+		if ip != nil && cidr != nil {
+			trustedNet = cidr
+		}
+	}
+
 	return &config.ServerConfig{
 		Address:         address,
 		StoreInterval:   storeInterval,
@@ -166,5 +185,7 @@ func processFlags(
 		Key:             key,
 		Debug:           enablePprof,
 		CryptoKey:       cryptoKey,
+		TrustedSubnet:   trustedSubnet,
+		TrustedNet:      trustedNet,
 	}, nil
 }
