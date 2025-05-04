@@ -79,6 +79,7 @@ server_config
   "store_interval": "1s", // аналог переменной окружения STORE_INTERVAL или флага -i
   "store_file": "/path/to/file.db", // аналог переменной окружения STORE_FILE или -f
   "database_dsn": "", // аналог переменной окружения DATABASE_DSN или флага -d
-  "crypto_key": "/path/to/key.pem" // аналог переменной окружения CRYPTO_KEY или флага -crypto-key
+  "crypto_key": "/path/to/key.pem", // аналог переменной окружения CRYPTO_KEY или флага -crypto-key
+  "trusted_subnet" : "" // CIDR
 } 
 ```

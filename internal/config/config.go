@@ -1,5 +1,9 @@
 package config
 
+import (
+	"net"
+)
+
 type AgentConfig struct {
 	// Ключ для вычисления хеша.
 	Key string `json:"-"`
@@ -18,6 +22,9 @@ type AgentConfig struct {
 }
 
 type ServerConfig struct {
+	TrustedNet *net.IPNet `json:"-"`
+	// CIDR
+	TrustedSubnet string `json:"trusted_subnet,omitempty"`
 	// Ключ для вычисления хеша.
 	Key string `json:"-"`
 	// Адрес сервера.

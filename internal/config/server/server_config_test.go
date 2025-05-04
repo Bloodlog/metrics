@@ -18,6 +18,7 @@ func TestParseAddressFlags(t *testing.T) {
 		true,
 		"",
 		"",
+		"",
 	)
 	assert.NoError(t, err)
 
