@@ -3,12 +3,11 @@ package main
 import (
 	"fmt"
 	"log"
-	"metrics/internal/agent/clients"
-	"metrics/internal/agent/config"
-	"metrics/internal/agent/handlers"
-	"metrics/internal/agent/logger"
-	"metrics/internal/agent/repository"
-	"net"
+	"metrics/internal/config/agent"
+	"metrics/internal/handlers"
+	"metrics/internal/logger"
+	repository2 "metrics/internal/repository"
+	"metrics/internal/service"
 
 	"go.uber.org/zap"
 )
@@ -34,18 +33,17 @@ func main() {
 }
 
 func run(loggerZap *zap.SugaredLogger) error {
-	configs, err := config.ParseFlags()
+	configs, err := agent.ParseAgentFlags()
 	if err != nil {
 		return fmt.Errorf("failed to parse flags: %w", err)
 	}
 
-	memoryRepository := repository.NewMemoryRepository()
-	systemRepository := repository.NewSystemRepository()
+	memoryRepository := repository2.NewMemoryRepository()
+	systemRepository := repository2.NewSystemRepository()
 
-	serverAddr := "http://" + net.JoinHostPort(configs.NetAddress.Host, configs.NetAddress.Port)
-	client := clients.NewClient(serverAddr, configs.Key, loggerZap)
+	client := service.NewClient(configs.Address, configs.Key, configs.CryptoKey, loggerZap)
 
-	applicationHandlers := handlers.NewHandlers(
+	applicationHandlers := handlers.NewAgentHandler(
 		client,
 		configs,
 		memoryRepository,

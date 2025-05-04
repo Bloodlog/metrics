@@ -17,6 +17,7 @@ cmd/agent/agent
 cmd/server/main
 cmd/server/server
 cmd/staticlint/multichecker
+cmd/cert/cert
 
 # Dependency directories (remove the comment below to include it)
 vendor/
@@ -34,3 +35,7 @@ cmd/server/metrics.json
 
 # pprof
 profiles
+
+cert/*.cert
+
+*.json

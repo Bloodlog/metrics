@@ -63,6 +63,10 @@ func checkOsExitCall(pass *analysis.Pass, call *ast.CallExpr) {
 }
 
 func main() {
+	multichecker.Main(getAnalyzers()...)
+}
+
+func getAnalyzers() []*analysis.Analyzer {
 	myChecks := []*analysis.Analyzer{
 		NoOsExitAnalyzer,
 		bodyclose.Analyzer,
@@ -73,10 +77,7 @@ func main() {
 		structtag.Analyzer,
 		shift.Analyzer,
 	}
-
-	myChecks = appendStaticcheckAnalyzers(myChecks)
-
-	multichecker.Main(myChecks...)
+	return appendStaticcheckAnalyzers(myChecks)
 }
 
 func appendStaticcheckAnalyzers(checks []*analysis.Analyzer) []*analysis.Analyzer {

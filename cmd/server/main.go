@@ -2,15 +2,19 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
-	"metrics/internal/server/config"
-	"metrics/internal/server/logger"
-	"metrics/internal/server/repository"
-	"metrics/internal/server/server"
-
+	config "metrics/internal/config/server"
+	"metrics/internal/logger"
+	"metrics/internal/repository"
+	"metrics/internal/server"
 	"net/http"
-	_ "net/http/pprof"
+	"os/signal"
+	"syscall"
+	"time"
+
+	"golang.org/x/sync/errgroup"
 
 	"go.uber.org/zap"
 )
@@ -19,6 +23,11 @@ var (
 	version     = "N/A"
 	buildTime   = "N/A"
 	buildCommit = "N/A"
+)
+
+const (
+	timeoutServerShutdown = time.Second * 5
+	timeoutShutdown       = time.Second * 10
 )
 
 func main() {
@@ -41,32 +50,100 @@ func main() {
 // @host 127.0.0.1:8080
 // @BasePath /.
 func run(loggerZap *zap.SugaredLogger) error {
+	rootCtx, cancelCtx := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
+	defer cancelCtx()
+
+	g, ctx := errgroup.WithContext(rootCtx)
+
+	context.AfterFunc(ctx, func() {
+		ctx, cancelCtx := context.WithTimeout(context.Background(), timeoutShutdown)
+		defer cancelCtx()
+
+		<-ctx.Done()
+		log.Fatal("failed to gracefully shutdown the service")
+	})
+
 	cfg, err := config.ParseFlags()
 	if err != nil {
 		loggerZap.Info(err.Error(), "failed to parse flags")
 		return fmt.Errorf("failed to parse flags: %w", err)
 	}
-	ctx := context.Background()
+
 	memStorage, err := repository.NewMetricStorage(ctx, cfg, loggerZap)
 	if err != nil {
 		return fmt.Errorf("repository error: %w", err)
 	}
 
-	initPprof(cfg, loggerZap)
-	if err = server.ConfigureServerHandler(memStorage, cfg, loggerZap); err != nil {
-		return fmt.Errorf("failed to run router: %w", err)
+	g.Go(func() error {
+		defer log.Print("closed DB")
+
+		<-ctx.Done()
+
+		memStorage.Shutdown(ctx)
+		return nil
+	})
+
+	var httpServer *http.Server
+	var pprofServer *http.Server
+
+	if cfg.Debug {
+		g.Go(func() (err error) {
+			pprofServer, err = server.InitPprof()
+			if err != nil {
+				if errors.Is(err, http.ErrServerClosed) {
+					return
+				}
+				return fmt.Errorf("listen and server has failed: %w", err)
+			}
+			return nil
+		})
+		g.Go(func() error {
+			defer log.Print("PProf server has been shutdown")
+			<-ctx.Done()
+
+			shutdownTimeoutCtx, cancelShutdownTimeoutCtx := context.WithTimeout(context.Background(), timeoutServerShutdown)
+			defer cancelShutdownTimeoutCtx()
+
+			if pprofServer != nil {
+				if err := pprofServer.Shutdown(shutdownTimeoutCtx); err != nil {
+					loggerZap.Info("PProf server gracefully stopped: %v", err)
+				}
+			}
+			return nil
+		})
+	}
+
+	g.Go(func() (err error) {
+		httpServer, err = server.ConfigureServerHandler(memStorage, cfg, loggerZap)
+		if err != nil {
+			if errors.Is(err, http.ErrServerClosed) {
+				return
+			}
+			return fmt.Errorf("listen and server has failed: %w", err)
+		}
+
+		return nil
+	})
+
+	g.Go(func() error {
+		defer log.Print("server has been shutdown")
+		<-ctx.Done()
+
+		shutdownTimeoutCtx, cancelShutdownTimeoutCtx := context.WithTimeout(context.Background(), timeoutServerShutdown)
+		defer cancelShutdownTimeoutCtx()
+
+		if httpServer != nil {
+			if err := httpServer.Shutdown(shutdownTimeoutCtx); err != nil {
+				loggerZap.Info("HTTP server Shutdown: %v", err)
+			}
+		}
+
+		return nil
+	})
+
+	if err := g.Wait(); err != nil {
+		return fmt.Errorf("failed to wait for errgroup: %w", err)
 	}
 
 	return nil
-}
-
-func initPprof(cfg *config.Config, zapLog *zap.SugaredLogger) {
-	if cfg.Debug {
-		go func() {
-			err := http.ListenAndServe(cfg.NetAddress.Host+":6060", nil)
-			if err != nil {
-				zapLog.Info(err.Error(), "failed start profiler")
-			}
-		}()
-	}
 }
