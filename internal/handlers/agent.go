@@ -131,14 +131,15 @@ func (h *AgentHandler) worker(wg *sync.WaitGroup) {
 	defer wg.Done()
 
 	for payload := range h.sendQueue {
+		ctx := context.Background()
 		pollCount := payload.PollCount
 		metrics := payload.Metrics
 
 		var err error
 		if h.configs.Batch {
-			err = h.sendBatch(metrics, pollCount)
+			err = h.sendBatch(ctx, metrics, pollCount)
 		} else {
-			err = h.sendAPI(metrics, pollCount)
+			err = h.sendAPI(ctx, metrics, pollCount)
 		}
 		if err != nil {
 			fmt.Printf("Failed to send metrics: %v\n", err)
@@ -146,7 +147,7 @@ func (h *AgentHandler) worker(wg *sync.WaitGroup) {
 	}
 }
 
-func (h *AgentHandler) sendBatch(metrics []repository.Metric, counter int64) error {
+func (h *AgentHandler) sendBatch(ctx context.Context, metrics []repository.Metric, counter int64) error {
 	metricsRequests := service.AgentMetricsUpdateRequests{}
 	metric := service.AgentMetricsUpdateRequest{
 		Delta: &counter,
@@ -165,7 +166,7 @@ func (h *AgentHandler) sendBatch(metrics []repository.Metric, counter int64) err
 		metricsRequests.Metrics = append(metricsRequests.Metrics, metric)
 	}
 
-	err := h.agentService.SendMetricsBatch(metricsRequests)
+	err := h.agentService.SendMetricsBatch(ctx, metricsRequests)
 	if err != nil {
 		return fmt.Errorf("failed to send metric to server: %w", err)
 	}
@@ -173,14 +174,14 @@ func (h *AgentHandler) sendBatch(metrics []repository.Metric, counter int64) err
 	return nil
 }
 
-func (h *AgentHandler) sendAPI(metrics []repository.Metric, counter int64) error {
+func (h *AgentHandler) sendAPI(ctx context.Context, metrics []repository.Metric, counter int64) error {
 	metricCounterRequest := service.AgentMetricsCounterRequest{
 		Delta: &counter,
 		ID:    nameCounter,
 		MType: typeCounter,
 	}
 
-	err := h.agentService.SendIncrement(metricCounterRequest)
+	err := h.agentService.SendIncrement(ctx, metricCounterRequest)
 	if err != nil {
 		return fmt.Errorf("failed to send Increment %d to server: %w", counter, err)
 	}
@@ -195,7 +196,7 @@ func (h *AgentHandler) sendAPI(metrics []repository.Metric, counter int64) error
 			MType: typeMetricName,
 		}
 
-		err = h.agentService.SendMetric(MetricGaugeUpdateRequest)
+		err = h.agentService.SendMetric(ctx, MetricGaugeUpdateRequest)
 		if err != nil {
 			return fmt.Errorf("failed to send metric %s to server: %w", metric.Name, err)
 		}

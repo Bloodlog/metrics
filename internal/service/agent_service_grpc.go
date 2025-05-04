@@ -5,7 +5,6 @@ import (
 	"fmt"
 	pb "metrics/internal/proto/v1"
 	pbModel "metrics/internal/proto/v1/model"
-	"time"
 )
 
 type GRPCMetricSender struct {
@@ -16,30 +15,27 @@ func NewGRPCMetricSender(client pb.MetricsClient) *GRPCMetricSender {
 	return &GRPCMetricSender{client: client}
 }
 
-func (s *GRPCMetricSender) SendIncrement(req AgentMetricsCounterRequest) error {
+func (s *GRPCMetricSender) SendIncrement(ctx context.Context, req AgentMetricsCounterRequest) error {
 	metric := &pbModel.Metric{
 		Id:    &req.ID,
 		Type:  &req.MType,
 		Delta: req.Delta,
 	}
 
-	return s.sendSingle(metric)
+	return s.sendSingle(ctx, metric)
 }
 
-func (s *GRPCMetricSender) SendMetric(req AgentMetricsGaugeUpdateRequest) error {
+func (s *GRPCMetricSender) SendMetric(ctx context.Context, req AgentMetricsGaugeUpdateRequest) error {
 	metric := &pbModel.Metric{
 		Id:    &req.ID,
 		Type:  &req.MType,
 		Value: req.Value,
 	}
 
-	return s.sendSingle(metric)
+	return s.sendSingle(ctx, metric)
 }
 
-func (s *GRPCMetricSender) sendSingle(metric *pbModel.Metric) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-	defer cancel()
-
+func (s *GRPCMetricSender) sendSingle(ctx context.Context, metric *pbModel.Metric) error {
 	request := &pbModel.MetricsRequest{
 		Metrics: []*pbModel.Metric{metric},
 	}
@@ -52,7 +48,7 @@ func (s *GRPCMetricSender) sendSingle(metric *pbModel.Metric) error {
 	return nil
 }
 
-func (s *GRPCMetricSender) SendMetricsBatch(req AgentMetricsUpdateRequests) error {
+func (s *GRPCMetricSender) SendMetricsBatch(ctx context.Context, req AgentMetricsUpdateRequests) error {
 	grpcMetrics := make([]*pbModel.Metric, 0, len(req.Metrics))
 	for _, m := range req.Metrics {
 		metric := &pbModel.Metric{
@@ -63,9 +59,6 @@ func (s *GRPCMetricSender) SendMetricsBatch(req AgentMetricsUpdateRequests) erro
 		}
 		grpcMetrics = append(grpcMetrics, metric)
 	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
 
 	_, err := s.client.SendMetrics(ctx, &pbModel.MetricsRequest{
 		Metrics: grpcMetrics,

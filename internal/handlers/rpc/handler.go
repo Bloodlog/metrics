@@ -16,21 +16,21 @@ type MetricServer struct {
 	logger        *zap.SugaredLogger
 }
 
-func NewServer(service service.MetricService, logger *zap.SugaredLogger) *MetricServer {
+func NewServer(svc service.MetricService, logger *zap.SugaredLogger) *MetricServer {
 	return &MetricServer{
-		metricService: service,
+		metricService: svc,
 		logger:        logger.With("component", "rpc MetricServer"),
 	}
 }
 
 func (s *MetricServer) SendMetrics(ctx context.Context, req *pbModel.MetricsRequest) (*pbModel.MetricsResponse, error) {
-	metrics := make([]service.MetricsUpdateRequest, 0, len(req.Metrics))
-	for _, m := range req.Metrics {
+	metrics := make([]service.MetricsUpdateRequest, 0, len(req.GetMetrics()))
+	for _, m := range req.GetMetrics() {
 		metrics = append(metrics, service.MetricsUpdateRequest{
-			Delta: m.Delta,
-			Value: m.Value,
-			ID:    getString(m.Id),
-			MType: getString(m.Type),
+			Delta: ptrInt64(m.GetDelta()),
+			Value: ptrFloat64(m.GetValue()),
+			ID:    m.GetId(),
+			MType: m.GetType(),
 		})
 	}
 
@@ -45,13 +45,13 @@ func (s *MetricServer) SendMetrics(ctx context.Context, req *pbModel.MetricsRequ
 	}, nil
 }
 
-func getString(s *string) string {
-	if s != nil {
-		return *s
-	}
-	return ""
-}
-
 func strPtr(s string) *string {
 	return &s
+}
+
+func ptrInt64(v int64) *int64 {
+	return &v
+}
+func ptrFloat64(v float64) *float64 {
+	return &v
 }

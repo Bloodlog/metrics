@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 
@@ -8,9 +9,9 @@ import (
 )
 
 type MetricSender interface {
-	SendIncrement(req AgentMetricsCounterRequest) error
-	SendMetric(req AgentMetricsGaugeUpdateRequest) error
-	SendMetricsBatch(req AgentMetricsUpdateRequests) error
+	SendIncrement(ctx context.Context, req AgentMetricsCounterRequest) error
+	SendMetric(ctx context.Context, req AgentMetricsGaugeUpdateRequest) error
+	SendMetricsBatch(ctx context.Context, req AgentMetricsUpdateRequests) error
 }
 
 type HTTPMetricSender struct {
@@ -44,7 +45,7 @@ type AgentMetricsUpdateRequests struct {
 	Metrics []AgentMetricsUpdateRequest `json:"metrics"`
 }
 
-func (s *HTTPMetricSender) SendIncrement(request AgentMetricsCounterRequest) error {
+func (s *HTTPMetricSender) SendIncrement(ctx context.Context, request AgentMetricsCounterRequest) error {
 	requestData, err := json.Marshal(request)
 	if err != nil {
 		return fmt.Errorf("error serializing the structure: %w", err)
@@ -60,7 +61,7 @@ func (s *HTTPMetricSender) SendIncrement(request AgentMetricsCounterRequest) err
 	return nil
 }
 
-func (s *HTTPMetricSender) SendMetric(request AgentMetricsGaugeUpdateRequest) error {
+func (s *HTTPMetricSender) SendMetric(ctx context.Context, request AgentMetricsGaugeUpdateRequest) error {
 	requestData, err := json.Marshal(request)
 	if err != nil {
 		return fmt.Errorf("error serializing the structure: %w", err)
@@ -76,7 +77,7 @@ func (s *HTTPMetricSender) SendMetric(request AgentMetricsGaugeUpdateRequest) er
 	return nil
 }
 
-func (s *HTTPMetricSender) SendMetricsBatch(request AgentMetricsUpdateRequests) error {
+func (s *HTTPMetricSender) SendMetricsBatch(ctx context.Context, request AgentMetricsUpdateRequests) error {
 	requestData, err := json.Marshal(request)
 	if err != nil {
 		return fmt.Errorf("error serializing the structure: %w", err)

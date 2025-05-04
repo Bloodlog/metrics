@@ -57,7 +57,7 @@ func InitPprof() (*http.Server, error) {
 func Serve(memStorage repository.MetricStorage, logger *zap.SugaredLogger) (*grpc.Server, error) {
 	lis, err := net.Listen("tcp", "localhost:8081")
 	if err != nil {
-		return nil, fmt.Errorf("failed to run gRPC server: %v", err)
+		return nil, fmt.Errorf("failed to run gRPC server: %w", err)
 	}
 	logger.Infow(
 		"Starting grpc server",
@@ -70,6 +70,10 @@ func Serve(memStorage repository.MetricStorage, logger *zap.SugaredLogger) (*grp
 	pb.RegisterMetricsServer(grpcServer, rpc.NewServer(metricService, logger))
 
 	reflection.Register(grpcServer)
+	err = grpcServer.Serve(lis)
+	if err != nil {
+		return nil, fmt.Errorf("failed to run gRPC server: %w", err)
+	}
 
-	return grpcServer, grpcServer.Serve(lis)
+	return grpcServer, nil
 }

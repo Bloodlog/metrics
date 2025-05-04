@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"metrics/internal/config"
 	repository2 "metrics/internal/repository"
 	"metrics/internal/service"
@@ -41,7 +42,8 @@ func TestSendAPI_Success(t *testing.T) {
 		agentService,
 		client.Logger,
 	)
-	err := h.sendAPI([]repository2.Metric{{Name: "metric1", Value: 10}}, 5)
+	ctx := context.Background()
+	err := h.sendAPI(ctx, []repository2.Metric{{Name: "metric1", Value: 10}}, 5)
 	assert.NoError(t, err)
 }
 
@@ -66,6 +68,7 @@ func TestSendBatch_Success(t *testing.T) {
 		{Name: "metric2", Value: 20},
 	}
 
-	err := h.sendBatch(metrics, 5)
+	ctx := context.Background()
+	err := h.sendBatch(ctx, metrics, 5)
 	assert.NoError(t, err)
 }

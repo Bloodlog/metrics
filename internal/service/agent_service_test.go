@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"net/http"
 	"testing"
 
@@ -28,8 +29,9 @@ func TestCounterService_SendIncrement(t *testing.T) {
 		ID:    "PoolCounter",
 		MType: "counter",
 	}
+	ctx := context.Background()
 	agentService := NewHTTPMetricSender(client)
-	err := agentService.SendIncrement(metricCounterRequest)
+	err := agentService.SendIncrement(ctx, metricCounterRequest)
 
 	assert.NoError(t, err)
 }
@@ -55,9 +57,9 @@ func TestSendMetricsBatch(t *testing.T) {
 	url := "/updates"
 	responder := httpmock.NewStringResponder(http.StatusOK, "")
 	httpmock.RegisterResponder("POST", url, responder)
-
+	ctx := context.Background()
 	agentService := NewHTTPMetricSender(client)
-	err := agentService.SendMetricsBatch(metricsUpdateRequest)
+	err := agentService.SendMetricsBatch(ctx, metricsUpdateRequest)
 
 	assert.NoError(t, err)
 
@@ -83,8 +85,9 @@ func TestCounterService_SendGauge(t *testing.T) {
 		ID:    metricName,
 		MType: "gauge",
 	}
+	ctx := context.Background()
 	agentService := NewHTTPMetricSender(client)
-	err := agentService.SendMetric(MetricGaugeUpdateRequest)
+	err := agentService.SendMetric(ctx, MetricGaugeUpdateRequest)
 
 	assert.NoError(t, err)
 }
