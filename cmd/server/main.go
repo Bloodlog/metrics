@@ -14,6 +14,8 @@ import (
 	"syscall"
 	"time"
 
+	"google.golang.org/grpc"
+
 	"golang.org/x/sync/errgroup"
 
 	"go.uber.org/zap"
@@ -85,6 +87,7 @@ func run(loggerZap *zap.SugaredLogger) error {
 
 	var httpServer *http.Server
 	var pprofServer *http.Server
+	var grpcServer *grpc.Server
 
 	if cfg.Debug {
 		g.Go(func() (err error) {
@@ -138,6 +141,27 @@ func run(loggerZap *zap.SugaredLogger) error {
 			}
 		}
 
+		return nil
+	})
+
+	g.Go(func() (err error) {
+		grpcServer, err = server.Serve(memStorage, loggerZap)
+		if err != nil {
+			return fmt.Errorf("listen and server grpc has failed: %w", err)
+		}
+
+		return nil
+	})
+
+	g.Go(func() error {
+		defer log.Print("grpc server has been shutdown")
+		<-ctx.Done()
+
+		if grpcServer != nil {
+			grpcServer.GracefulStop()
+		}
+
+		log.Print("gRPC server has been shutdown")
 		return nil
 	})
 

@@ -33,6 +33,7 @@ func ConfigureServerHandler(
 		middleware2.CheckHashMiddleware(logger, cfg.Key),
 		middleware2.ResponseHashMiddleware(cfg.Key),
 		middleware2.ResponseCompressionMiddleware(logger),
+		middleware2.CheckTrustedSubnetMiddleware(logger, cfg.TrustedNet),
 	)
 
 	register(router, cfg, memStorage, logger)

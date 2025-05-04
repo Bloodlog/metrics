@@ -133,5 +133,6 @@ func processAgentFlags(
 		Key:            key,
 		RateLimit:      rateLimit,
 		CryptoKey:      cryptoKey,
+		Grpc:           false,
 	}, nil
 }
