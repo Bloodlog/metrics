@@ -1,0 +1,9 @@
+edition = "2023";
+
+option go_package = "metrics/internal/proto/v1/model";
+
+package metrics.go.grpc.v1.model;
+
+message MetricsResponse {
+  string status = 1;
+}

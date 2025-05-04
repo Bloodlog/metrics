@@ -28,8 +28,8 @@ func TestCounterService_SendIncrement(t *testing.T) {
 		ID:    "PoolCounter",
 		MType: "counter",
 	}
-
-	err := SendIncrement(client, metricCounterRequest)
+	agentService := NewHTTPMetricSender(client)
+	err := agentService.SendIncrement(metricCounterRequest)
 
 	assert.NoError(t, err)
 }
@@ -56,7 +56,8 @@ func TestSendMetricsBatch(t *testing.T) {
 	responder := httpmock.NewStringResponder(http.StatusOK, "")
 	httpmock.RegisterResponder("POST", url, responder)
 
-	err := SendMetricsBatch(client, metricsUpdateRequest)
+	agentService := NewHTTPMetricSender(client)
+	err := agentService.SendMetricsBatch(metricsUpdateRequest)
 
 	assert.NoError(t, err)
 
@@ -82,8 +83,8 @@ func TestCounterService_SendGauge(t *testing.T) {
 		ID:    metricName,
 		MType: "gauge",
 	}
-
-	err := SendMetric(client, MetricGaugeUpdateRequest)
+	agentService := NewHTTPMetricSender(client)
+	err := agentService.SendMetric(MetricGaugeUpdateRequest)
 
 	assert.NoError(t, err)
 }

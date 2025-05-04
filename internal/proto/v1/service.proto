@@ -1,0 +1,12 @@
+edition = "2023";
+
+option go_package = "metrics/internal/proto/v1";
+
+package metrics.go.grpc.v1;
+
+import "model/metric_request.proto";
+import "model/metric_response.proto";
+
+service Metrics {
+  rpc SendMetrics (model.MetricsRequest) returns (model.MetricsResponse);
+}

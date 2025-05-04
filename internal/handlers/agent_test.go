@@ -33,11 +33,12 @@ func TestSendAPI_Success(t *testing.T) {
 	url := "/update/"
 	httpmock.RegisterResponder(http.MethodPost, url, httpmock.NewStringResponder(http.StatusOK, ""))
 
+	agentService := service.NewHTTPMetricSender(client.RestyClient)
 	h := NewAgentHandler(
-		client,
 		&config.AgentConfig{},
 		repository2.NewMemoryRepository(),
 		repository2.NewSystemRepository(),
+		agentService,
 		client.Logger,
 	)
 	err := h.sendAPI([]repository2.Metric{{Name: "metric1", Value: 10}}, 5)
@@ -51,11 +52,12 @@ func TestSendBatch_Success(t *testing.T) {
 	url := "/updates"
 	httpmock.RegisterResponder(http.MethodPost, url, httpmock.NewStringResponder(http.StatusOK, ""))
 
+	agentService := service.NewHTTPMetricSender(client.RestyClient)
 	h := NewAgentHandler(
-		client,
 		&config.AgentConfig{},
 		repository2.NewMemoryRepository(),
 		repository2.NewSystemRepository(),
+		agentService,
 		client.Logger,
 	)
 

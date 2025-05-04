@@ -129,9 +129,10 @@ func processAgentFlags(
 		Address:        address,
 		ReportInterval: reportInterval,
 		PollInterval:   poolInterval,
-		Batch:          false,
+		Batch:          true,
 		Key:            key,
 		RateLimit:      rateLimit,
 		CryptoKey:      cryptoKey,
+		Grpc:           true,
 	}, nil
 }

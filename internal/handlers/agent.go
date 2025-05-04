@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"metrics/internal/config"
-	repository2 "metrics/internal/repository"
+	"metrics/internal/repository"
 	"metrics/internal/service"
 	"os"
 	"os/signal"
@@ -13,8 +13,6 @@ import (
 	"time"
 
 	"go.uber.org/zap"
-
-	"github.com/go-resty/resty/v2"
 )
 
 const (
@@ -25,32 +23,32 @@ const (
 const typeMetricName = "gauge"
 
 type MetricsPayload struct {
-	Metrics   []repository2.Metric
+	Metrics   []repository.Metric
 	PollCount int64
 }
 
 type AgentHandler struct {
 	configs          *config.AgentConfig
-	memoryRepository *repository2.MemoryRepository
-	systemRepository *repository2.SystemRepository
+	memoryRepository *repository.MemoryRepository
+	systemRepository *repository.SystemRepository
+	agentService     service.MetricSender
 	logger           *zap.SugaredLogger
-	client           *resty.Client
 	sendQueue        chan MetricsPayload
 }
 
 func NewAgentHandler(
-	client *service.Client,
 	configs *config.AgentConfig,
-	memoryRepository *repository2.MemoryRepository,
-	systemRepository *repository2.SystemRepository,
+	memoryRepository *repository.MemoryRepository,
+	systemRepository *repository.SystemRepository,
+	metricService service.MetricSender,
 	logger *zap.SugaredLogger,
 ) *AgentHandler {
 	return &AgentHandler{
 		configs:          configs,
 		memoryRepository: memoryRepository,
 		systemRepository: systemRepository,
+		agentService:     metricService,
 		logger:           logger,
-		client:           client.RestyClient,
 	}
 }
 
@@ -74,8 +72,8 @@ func (h *AgentHandler) Handle() error {
 		go h.worker(&wg)
 	}
 
-	var runtimeMetrics []repository2.Metric
-	var systemMetrics []repository2.Metric
+	var runtimeMetrics []repository.Metric
+	var systemMetrics []repository.Metric
 	var counter int64 = 0
 
 	go func() {
@@ -148,7 +146,7 @@ func (h *AgentHandler) worker(wg *sync.WaitGroup) {
 	}
 }
 
-func (h *AgentHandler) sendBatch(metrics []repository2.Metric, counter int64) error {
+func (h *AgentHandler) sendBatch(metrics []repository.Metric, counter int64) error {
 	metricsRequests := service.AgentMetricsUpdateRequests{}
 	metric := service.AgentMetricsUpdateRequest{
 		Delta: &counter,
@@ -167,7 +165,7 @@ func (h *AgentHandler) sendBatch(metrics []repository2.Metric, counter int64) er
 		metricsRequests.Metrics = append(metricsRequests.Metrics, metric)
 	}
 
-	err := service.SendMetricsBatch(h.client, metricsRequests)
+	err := h.agentService.SendMetricsBatch(metricsRequests)
 	if err != nil {
 		return fmt.Errorf("failed to send metric to server: %w", err)
 	}
@@ -175,14 +173,14 @@ func (h *AgentHandler) sendBatch(metrics []repository2.Metric, counter int64) er
 	return nil
 }
 
-func (h *AgentHandler) sendAPI(metrics []repository2.Metric, counter int64) error {
+func (h *AgentHandler) sendAPI(metrics []repository.Metric, counter int64) error {
 	metricCounterRequest := service.AgentMetricsCounterRequest{
 		Delta: &counter,
 		ID:    nameCounter,
 		MType: typeCounter,
 	}
 
-	err := service.SendIncrement(h.client, metricCounterRequest)
+	err := h.agentService.SendIncrement(metricCounterRequest)
 	if err != nil {
 		return fmt.Errorf("failed to send Increment %d to server: %w", counter, err)
 	}
@@ -197,7 +195,7 @@ func (h *AgentHandler) sendAPI(metrics []repository2.Metric, counter int64) erro
 			MType: typeMetricName,
 		}
 
-		err = service.SendMetric(h.client, MetricGaugeUpdateRequest)
+		err = h.agentService.SendMetric(MetricGaugeUpdateRequest)
 		if err != nil {
 			return fmt.Errorf("failed to send metric %s to server: %w", metric.Name, err)
 		}

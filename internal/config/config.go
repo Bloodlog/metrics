@@ -19,6 +19,7 @@ type AgentConfig struct {
 	RateLimit int `json:"-"`
 	// Разрешить отправку метрик одним пакетным запросом.
 	Batch bool `json:"-"`
+	Grpc  bool `json:"-"`
 }
 
 type ServerConfig struct {
