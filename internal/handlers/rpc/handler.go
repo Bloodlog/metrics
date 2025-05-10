@@ -27,8 +27,8 @@ func (s *MetricServer) SendMetrics(ctx context.Context, req *pbModel.MetricsRequ
 	metrics := make([]service.MetricsUpdateRequest, 0, len(req.GetMetrics()))
 	for _, m := range req.GetMetrics() {
 		metrics = append(metrics, service.MetricsUpdateRequest{
-			Delta: ptrInt64(m.GetDelta()),
-			Value: ptrFloat64(m.GetValue()),
+			Delta: ptr(m.GetDelta()),
+			Value: ptr(m.GetValue()),
 			ID:    m.GetId(),
 			MType: m.GetType(),
 		})
@@ -41,17 +41,10 @@ func (s *MetricServer) SendMetrics(ctx context.Context, req *pbModel.MetricsRequ
 	}
 
 	return &pbModel.MetricsResponse{
-		Status: strPtr("ok"),
+		Status: ptr("ok"),
 	}, nil
 }
 
-func strPtr(s string) *string {
-	return &s
-}
-
-func ptrInt64(v int64) *int64 {
-	return &v
-}
-func ptrFloat64(v float64) *float64 {
+func ptr[T any](v T) *T {
 	return &v
 }
