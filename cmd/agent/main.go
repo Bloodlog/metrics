@@ -3,10 +3,11 @@ package main
 import (
 	"fmt"
 	"log"
+	"metrics/internal/config"
 	"metrics/internal/config/agent"
 	"metrics/internal/handlers"
 	"metrics/internal/logger"
-	repository2 "metrics/internal/repository"
+	"metrics/internal/repository"
 	"metrics/internal/service"
 
 	"go.uber.org/zap"
@@ -38,16 +39,19 @@ func run(loggerZap *zap.SugaredLogger) error {
 		return fmt.Errorf("failed to parse flags: %w", err)
 	}
 
-	memoryRepository := repository2.NewMemoryRepository()
-	systemRepository := repository2.NewSystemRepository()
+	memoryRepository := repository.NewMemoryRepository()
+	systemRepository := repository.NewSystemRepository()
 
-	client := service.NewClient(configs.Address, configs.Key, configs.CryptoKey, loggerZap)
+	agentService, err := serviceResolver(configs, loggerZap)
+	if err != nil {
+		return fmt.Errorf("failed to create agent service: %w", err)
+	}
 
 	applicationHandlers := handlers.NewAgentHandler(
-		client,
 		configs,
 		memoryRepository,
 		systemRepository,
+		agentService,
 		loggerZap,
 	)
 	if err = applicationHandlers.Handle(); err != nil {
@@ -55,4 +59,17 @@ func run(loggerZap *zap.SugaredLogger) error {
 	}
 
 	return nil
+}
+
+func serviceResolver(configs *config.AgentConfig, loggerZap *zap.SugaredLogger) (service.MetricSender, error) {
+	if configs.Grpc {
+		client, err := service.NewGrpcClient()
+		if err != nil {
+			return nil, fmt.Errorf("failed to create grpc client: %w", err)
+		}
+		return service.NewGRPCMetricSender(client), nil
+	}
+	client := service.NewClient(configs.Address, configs.Key, configs.CryptoKey, loggerZap)
+
+	return service.NewHTTPMetricSender(client.RestyClient), nil
 }

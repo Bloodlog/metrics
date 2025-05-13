@@ -1,5 +1,9 @@
 package config
 
+import (
+	"net"
+)
+
 type AgentConfig struct {
 	// Ключ для вычисления хеша.
 	Key string `json:"-"`
@@ -15,9 +19,13 @@ type AgentConfig struct {
 	RateLimit int `json:"-"`
 	// Разрешить отправку метрик одним пакетным запросом.
 	Batch bool `json:"-"`
+	Grpc  bool `json:"-"`
 }
 
 type ServerConfig struct {
+	TrustedNet *net.IPNet `json:"-"`
+	// CIDR
+	TrustedSubnet string `json:"trusted_subnet,omitempty"`
 	// Ключ для вычисления хеша.
 	Key string `json:"-"`
 	// Адрес сервера.

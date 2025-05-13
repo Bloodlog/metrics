@@ -67,3 +67,18 @@ build:
 certificate:
 	go build -o cmd/cert/cert cmd/cert/main.go
 	cmd/cert/cert
+
+proto:
+	protoc \
+	  --proto_path=internal/proto/v1 \
+      --go_out=internal/proto/v1 \
+	  --go_opt=paths=source_relative \
+	  internal/proto/v1/model/*.proto
+	protoc \
+	  --proto_path=internal/proto/v1 \
+	  --proto_path=internal/proto/v1/model \
+	  --go_out=internal/proto/v1 \
+	  --go_opt=paths=source_relative \
+	  --go-grpc_out=internal/proto/v1 \
+	  --go-grpc_opt=paths=source_relative \
+      internal/proto/v1/service.proto

@@ -5,11 +5,19 @@ import (
 	"metrics/internal/config"
 	"metrics/internal/repository"
 	"metrics/internal/router"
+	"metrics/internal/service"
+	"net"
 	"net/http"
+
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 
 	_ "net/http/pprof"
 
 	"go.uber.org/zap"
+
+	"metrics/internal/handlers/rpc"
+	pb "metrics/internal/proto/v1"
 )
 
 func ConfigureServerHandler(
@@ -44,4 +52,28 @@ func InitPprof() (*http.Server, error) {
 	}
 
 	return pprofServer, nil
+}
+
+func Serve(memStorage repository.MetricStorage, logger *zap.SugaredLogger) (*grpc.Server, error) {
+	lis, err := net.Listen("tcp", "localhost:8081")
+	if err != nil {
+		return nil, fmt.Errorf("failed to run gRPC server: %w", err)
+	}
+	logger.Infow(
+		"Starting grpc server",
+		"addr", "localhost:8081",
+	)
+
+	metricService := service.NewMetricService(memStorage, logger)
+
+	grpcServer := grpc.NewServer()
+	pb.RegisterMetricsServer(grpcServer, rpc.NewServer(metricService, logger))
+
+	reflection.Register(grpcServer)
+	err = grpcServer.Serve(lis)
+	if err != nil {
+		return nil, fmt.Errorf("failed to run gRPC server: %w", err)
+	}
+
+	return grpcServer, nil
 }

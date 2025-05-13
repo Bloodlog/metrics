@@ -1,11 +1,26 @@
 package service
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 
 	"github.com/go-resty/resty/v2"
 )
+
+type MetricSender interface {
+	SendIncrement(ctx context.Context, req AgentMetricsCounterRequest) error
+	SendMetric(ctx context.Context, req AgentMetricsGaugeUpdateRequest) error
+	SendMetricsBatch(ctx context.Context, req AgentMetricsUpdateRequests) error
+}
+
+type HTTPMetricSender struct {
+	client *resty.Client
+}
+
+func NewHTTPMetricSender(client *resty.Client) *HTTPMetricSender {
+	return &HTTPMetricSender{client: client}
+}
 
 type AgentMetricsCounterRequest struct {
 	Delta *int64 `json:"delta,omitempty"`
@@ -30,13 +45,13 @@ type AgentMetricsUpdateRequests struct {
 	Metrics []AgentMetricsUpdateRequest `json:"metrics"`
 }
 
-func SendIncrement(client *resty.Client, request AgentMetricsCounterRequest) error {
+func (s *HTTPMetricSender) SendIncrement(ctx context.Context, request AgentMetricsCounterRequest) error {
 	requestData, err := json.Marshal(request)
 	if err != nil {
 		return fmt.Errorf("error serializing the structure: %w", err)
 	}
 
-	_, err = client.R().
+	_, err = s.client.R().
 		SetBody(requestData).
 		Post("/update/")
 	if err != nil {
@@ -46,13 +61,13 @@ func SendIncrement(client *resty.Client, request AgentMetricsCounterRequest) err
 	return nil
 }
 
-func SendMetric(client *resty.Client, request AgentMetricsGaugeUpdateRequest) error {
+func (s *HTTPMetricSender) SendMetric(ctx context.Context, request AgentMetricsGaugeUpdateRequest) error {
 	requestData, err := json.Marshal(request)
 	if err != nil {
 		return fmt.Errorf("error serializing the structure: %w", err)
 	}
 
-	_, err = client.R().
+	_, err = s.client.R().
 		SetBody(requestData).
 		Post("/update/")
 	if err != nil {
@@ -62,13 +77,13 @@ func SendMetric(client *resty.Client, request AgentMetricsGaugeUpdateRequest) er
 	return nil
 }
 
-func SendMetricsBatch(client *resty.Client, request AgentMetricsUpdateRequests) error {
+func (s *HTTPMetricSender) SendMetricsBatch(ctx context.Context, request AgentMetricsUpdateRequests) error {
 	requestData, err := json.Marshal(request)
 	if err != nil {
 		return fmt.Errorf("error serializing the structure: %w", err)
 	}
 
-	_, err = client.R().
+	_, err = s.client.R().
 		SetBody(requestData).
 		Post("/updates")
 	if err != nil {

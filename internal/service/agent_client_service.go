@@ -83,6 +83,13 @@ func (c *Client) processRequest(r *resty.Request) error {
 		}
 	}
 
+	ip, err := getLocalIP()
+	if err == nil {
+		r.SetHeader("X-Real-IP", ip)
+	} else {
+		c.Logger.Infoln("unable to detect local IP", "error", err)
+	}
+
 	compressedData, err := c.compress(requestBody)
 	if err != nil {
 		return fmt.Errorf("failed to compress request body: %w", err)
@@ -176,4 +183,33 @@ func customBackoff(min, max time.Duration, attemptNum int, resp *http.Response) 
 
 func (c *Client) hash(data []byte) string {
 	return security.HMACSHA256Base64(data, []byte(c.Key))
+}
+
+func getLocalIP() (string, error) {
+	conns, err := net.Interfaces()
+	if err != nil {
+		return "", fmt.Errorf("Get local ip: %w", err)
+	}
+	for _, conn := range conns {
+		addrs, err := conn.Addrs()
+		if err != nil {
+			continue
+		}
+		for _, addr := range addrs {
+			var ip net.IP
+			switch v := addr.(type) {
+			case *net.IPNet:
+				ip = v.IP
+			case *net.IPAddr:
+				ip = v.IP
+			}
+			if ip == nil || ip.IsLoopback() {
+				continue
+			}
+			if ip.To4() != nil {
+				return ip.String(), nil
+			}
+		}
+	}
+	return "", errors.New("cannot find non-loopback IP address")
 }
